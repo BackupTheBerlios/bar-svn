@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/bar.c,v $
-* $Revision: 1.20.2.1 $
+* $Revision: 1.20.2.2 $
 * $Author: torsten $
 * Contents: Backup ARchiver main program
 * Systems: all
@@ -115,14 +115,14 @@ LOCAL uint          keyBits;
 
 LOCAL JobOptions    jobOptions;
 LOCAL const char    *archiveFileName;
-LOCAL PatternList   includePatternList;
-LOCAL PatternList   excludePatternList;
 LOCAL FTPServer     defaultFTPServer;
 LOCAL SSHServer     defaultSSHServer;
 LOCAL FTPServerList ftpServerList;
 LOCAL SSHServerList sshServerList;
 LOCAL Device        defaultDevice;
 LOCAL DeviceList    deviceList;
+LOCAL PatternList   includePatternList;
+LOCAL PatternList   excludePatternList;
 LOCAL FTPServer     *currentFTPServer = &defaultFTPServer;
 LOCAL SSHServer     *currentSSHServer = &defaultSSHServer;
 LOCAL Device        *currentDevice = &defaultDevice;
@@ -1268,18 +1268,19 @@ LOCAL bool initAll(void)
   }
 
   /* initialise variables */
-  StringList_init(&configFileNameList);
-  tmpDirectory = String_new();
-  tmpLogFileName = String_new();
-  outputLine = String_new();
-  outputNewLineFlag = TRUE;
   initGlobalOptions();
+  initJobOptions(&jobOptions);
   List_init(&ftpServerList);
   List_init(&sshServerList);
   List_init(&deviceList);
   serverPassword = Password_new();
   PatternList_init(&includePatternList);
   PatternList_init(&excludePatternList);
+  StringList_init(&configFileNameList);
+  tmpDirectory = String_new();
+  tmpLogFileName = String_new();
+  outputLine = String_new();
+  outputNewLineFlag = TRUE;
 
   return TRUE;
 }
@@ -1547,9 +1548,9 @@ void initJobOptions(JobOptions *jobOptions)
 {
   assert(jobOptions != NULL);
 
+  memset(jobOptions,0,sizeof(JobOptions));
   jobOptions->owner.userId  = FILE_DEFAULT_USER_ID;
   jobOptions->owner.groupId = FILE_DEFAULT_GROUP_ID;
-  memset(jobOptions,0,sizeof(JobOptions));
 }
 
 void copyJobOptions(const JobOptions *fromJobOptions, JobOptions *toJobOptions)

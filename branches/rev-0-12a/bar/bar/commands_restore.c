@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/commands_restore.c,v $
-* $Revision: 1.5.2.1 $
+* $Revision: 1.5.2.2 $
 * $Author: torsten $
 * Contents: Backup ARchiver archive restore function
 * Systems : all
@@ -377,7 +377,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
 
                 /* set owner ship */
                 error = File_setOwner(directoryName,
-                                      (jobOptions->owner.userId != FILE_DEFAULT_USER_ID)?jobOptions->owner.userId:fileInfo.userId,
+                                      (jobOptions->owner.userId  != FILE_DEFAULT_USER_ID )?jobOptions->owner.userId:fileInfo.userId,
                                       (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID)?jobOptions->owner.groupId:fileInfo.groupId
                                      );
                 if (error != ERROR_NONE)
@@ -511,7 +511,9 @@ Errors Command_restore(StringList                      *archiveFileNameList,
               }
 #endif /* 0 */
 
-              /* set file time, permissions, file owner/group */
+              /* set file time, file owner/group */
+              if (jobOptions->owner.userId  != FILE_DEFAULT_USER_ID ) fileInfo.userId  = jobOptions->owner.userId;
+              if (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID) fileInfo.groupId = jobOptions->owner.groupId;
               error = File_setFileInfo(destinationFileName,&fileInfo);
               if (error != ERROR_NONE)
               {
@@ -607,8 +609,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
                                                           );
 
 
-              /* create directory */
-//File_delete(destinationFileName,TRUE);
+              /* check if directory already exists */
               if (!jobOptions->overwriteFilesFlag && File_exists(destinationFileName))
               {
                 printInfo(1,
@@ -623,9 +624,10 @@ Errors Command_restore(StringList                      *archiveFileNameList,
 
               printInfo(2,"  Restore directory '%s'...",String_cString(destinationFileName));
 
+              /* create directory */
               error = File_makeDirectory(destinationFileName,
-                                         (jobOptions->owner.userId != FILE_DEFAULT_USER_ID)?jobOptions->owner.userId:fileInfo.userId,
-                                         (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID)?jobOptions->owner.groupId:fileInfo.groupId,
+                                         FILE_DEFAULT_USER_ID,
+                                         FILE_DEFAULT_GROUP_ID,
                                          fileInfo.permission
                                         );
               if (error != ERROR_NONE)
@@ -645,23 +647,35 @@ Errors Command_restore(StringList                      *archiveFileNameList,
                 continue;
               }
 
-              /* set file time, permissions, file owner/group */
+              /* set file time, file owner/group */
+              if (jobOptions->owner.userId  != FILE_DEFAULT_USER_ID ) fileInfo.userId  = jobOptions->owner.userId;
+              if (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID) fileInfo.groupId = jobOptions->owner.groupId;
               error = File_setFileInfo(destinationFileName,&fileInfo);
               if (error != ERROR_NONE)
               {
-                printInfo(2,"FAIL!\n");
-                printError("Cannot set directory info of '%s' (error: %s)\n",
-                           String_cString(destinationFileName),
-                           Errors_getText(error)
-                          );
-                String_delete(destinationFileName);
-                Archive_closeEntry(&archiveFileInfo);
-                String_delete(directoryName);
                 if (jobOptions->stopOnErrorFlag)
                 {
-                  restoreInfo.error = error;
+                  printInfo(2,"FAIL!\n");
+                  printError("Cannot set directory info of '%s' (error: %s)\n",
+                             String_cString(destinationFileName),
+                             Errors_getText(error)
+                            );
+                  String_delete(destinationFileName);
+                  Archive_closeEntry(&archiveFileInfo);
+                  String_delete(directoryName);
+                  if (jobOptions->stopOnErrorFlag)
+                  {
+                    restoreInfo.error = error;
+                  }
+                  continue;
                 }
-                continue;
+                else
+                {
+                  printWarning("Cannot set directory info of '%s' (error: %s)\n",
+                               String_cString(destinationFileName),
+                               Errors_getText(error)
+                              );
+                }
               }
 
               /* free resources */
@@ -768,24 +782,36 @@ Errors Command_restore(StringList                      *archiveFileNameList,
                 continue;
               }
 
-              /* set file time, permissions, file owner/group */
+              /* set file time, file owner/group */
+              if (jobOptions->owner.userId  != FILE_DEFAULT_USER_ID ) fileInfo.userId  = jobOptions->owner.userId;
+              if (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID) fileInfo.groupId = jobOptions->owner.groupId;
               error = File_setFileInfo(destinationFileName,&fileInfo);
               if (error != ERROR_NONE)
               {
-                printInfo(2,"FAIL!\n");
-                printError("Cannot set file info of '%s' (error: %s)\n",
-                           String_cString(destinationFileName),
-                           Errors_getText(error)
-                          );
-                String_delete(destinationFileName);
-                Archive_closeEntry(&archiveFileInfo);
-                String_delete(fileName);
-                String_delete(linkName);
                 if (jobOptions->stopOnErrorFlag)
                 {
-                  restoreInfo.error = error;
+                  printInfo(2,"FAIL!\n");
+                  printError("Cannot set file info of '%s' (error: %s)\n",
+                             String_cString(destinationFileName),
+                             Errors_getText(error)
+                            );
+                  String_delete(destinationFileName);
+                  Archive_closeEntry(&archiveFileInfo);
+                  String_delete(fileName);
+                  String_delete(linkName);
+                  if (jobOptions->stopOnErrorFlag)
+                  {
+                    restoreInfo.error = error;
+                  }
+                  continue;
                 }
-                continue;
+                else
+                {
+                  printWarning("Cannot set file info of '%s' (error: %s)\n",
+                               String_cString(destinationFileName),
+                               Errors_getText(error)
+                              );
+                }
               }
 
               /* free resources */
@@ -890,23 +916,35 @@ Errors Command_restore(StringList                      *archiveFileNameList,
                 continue;
               }
 
-              /* set file time, permissions, file owner/group */
+              /* set file time, file owner/group */
+              if (jobOptions->owner.userId  != FILE_DEFAULT_USER_ID ) fileInfo.userId  = jobOptions->owner.userId;
+              if (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID) fileInfo.groupId = jobOptions->owner.groupId;
               error = File_setFileInfo(destinationFileName,&fileInfo);
               if (error != ERROR_NONE)
               {
-                printInfo(2,"FAIL!\n");
-                printError("Cannot set file info of '%s' (error: %s)\n",
-                           String_cString(destinationFileName),
-                           Errors_getText(error)
-                          );
-                String_delete(destinationFileName);
-                Archive_closeEntry(&archiveFileInfo);
-                String_delete(fileName);
                 if (jobOptions->stopOnErrorFlag)
                 {
-                  restoreInfo.error = error;
+                  printInfo(2,"FAIL!\n");
+                  printError("Cannot set file info of '%s' (error: %s)\n",
+                             String_cString(destinationFileName),
+                             Errors_getText(error)
+                            );
+                  String_delete(destinationFileName);
+                  Archive_closeEntry(&archiveFileInfo);
+                  String_delete(fileName);
+                  if (jobOptions->stopOnErrorFlag)
+                  {
+                    restoreInfo.error = error;
+                  }
+                  continue;
                 }
-                continue;
+                else
+                {
+                  printWarning("Cannot set file info of '%s' (error: %s)\n",
+                               String_cString(destinationFileName),
+                               Errors_getText(error)
+                              );
+                }
               }
 
               /* free resources */

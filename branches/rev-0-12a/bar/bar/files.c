@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/files.c,v $
-* $Revision: 1.6.2.1 $
+* $Revision: 1.6.2.2 $
 * $Author: torsten $
 * Contents: Backup ARchiver file functions
 * Systems: all
@@ -1471,20 +1471,24 @@ Errors File_setFileInfo(const String fileName,
       utimeBuffer.modtime = fileInfo->timeModified;
       if (utime(String_cString(fileName),&utimeBuffer) != 0)
       {
+fprintf(stderr,"%s,%d: \n",__FILE__,__LINE__);
         return ERRORX(IO_ERROR,errno,String_cString(fileName));
       }
       if (chown(String_cString(fileName),fileInfo->userId,fileInfo->groupId) != 0)
       {
+fprintf(stderr,"%s,%d: %d %d \n",__FILE__,__LINE__,fileInfo->userId,fileInfo->groupId);
         return ERRORX(IO_ERROR,errno,String_cString(fileName));
       }
       if (chmod(String_cString(fileName),fileInfo->permission) != 0)
       {
+fprintf(stderr,"%s,%d: \n",__FILE__,__LINE__);
         return ERRORX(IO_ERROR,errno,String_cString(fileName));
       }
       break;
     case FILE_TYPE_LINK:
       if (lchown(String_cString(fileName),fileInfo->userId,fileInfo->groupId) != 0)
       {
+fprintf(stderr,"%s,%d: \n",__FILE__,__LINE__);
         return ERRORX(IO_ERROR,errno,String_cString(fileName));
       }
       break;
@@ -1589,14 +1593,20 @@ Errors File_makeDirectory(const String pathName,
           gid = (groupId != FILE_DEFAULT_GROUP_ID) ? (gid_t)groupId : -1;
           if (chown(String_cString(directoryName),uid,gid) != 0)
           {
-            return ERRORX(IO_ERROR,errno,String_cString(directoryName));
+            error = ERRORX(IO_ERROR,errno,String_cString(directoryName));
+            File_doneSplitFileName(&pathNameTokenizer);
+            File_deleteFileName(directoryName);
+            return error;
           }
         }
         if (permission != FILE_DEFAULT_PERMISSION)
         {
           if (chmod(String_cString(directoryName),(permission|S_IXUSR|S_IXGRP|S_IXOTH) & ~currentCreationMask) != 0)
           {
-            return ERRORX(IO_ERROR,errno,String_cString(directoryName));
+            error = ERRORX(IO_ERROR,errno,String_cString(directoryName));
+            File_doneSplitFileName(&pathNameTokenizer);
+            File_deleteFileName(directoryName);
+            return error;
           }
         }
       }
