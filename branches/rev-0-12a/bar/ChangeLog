@@ -1,4 +1,15 @@
-2009-08-?? 0.12a
+2009-10-17 0.12b
+  * added option --owner to overwritting settings for
+    user/group of restored files
+  * fixed creating directories: use default user creation
+    mask for parent directories
+  * revert error to warning when permission/owner ship
+    cannot be set if --stop-on-error is not given
+  * fixed configure check for EPM: do not try to detect
+    version if no EPM installed
+  * fixed configure check for gcrypt version
+
+2009-09-15 0.12a
   * clean-up design of progress bars
   * fixed layout of part-editor (canvas widget)
 

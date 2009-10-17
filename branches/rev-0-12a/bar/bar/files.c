@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/files.c,v $
-* $Revision: 1.6 $
+* $Revision: 1.6.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver file functions
 * Systems: all
@@ -18,6 +18,8 @@
 #include <dirent.h>
 #include <utime.h>
 #include <sys/statvfs.h>
+#include <pwd.h>
+#include <grp.h>
 #include <errno.h>
 #include <assert.h>
 
@@ -985,6 +987,22 @@ Errors File_readDevice(DeviceHandle *deviceHandle,
   return ERROR_NONE;
 }
 
+uint32 File_userNameToUserId(const char *name)
+{
+  struct passwd *passwordEntry;
+
+  passwordEntry = getpwnam(name);
+  return (passwordEntry != NULL)?passwordEntry->pw_uid:FILE_DEFAULT_USER_ID;
+}
+
+uint32 File_groupNameToGroupId(const char *name)
+{
+  struct group *groupEntry;
+
+  groupEntry = getgrnam(name);
+  return (groupEntry != NULL)?groupEntry->gr_gid:FILE_DEFAULT_GROUP_ID;
+}
+
 FileTypes File_getType(const String fileName)
 {
   struct stat64 fileStat;
@@ -1402,6 +1420,39 @@ uint64 File_getFileTimeModified(const String fileName)
   return (uint64)fileStat.st_mtime;
 }
 
+Errors File_setPermission(const String fileName,
+                          uint32       permission
+                         )
+{
+  assert(fileName != NULL);
+
+  if (chmod(String_cString(fileName),permission) != 0)
+  {
+    return ERRORX(IO_ERROR,errno,String_cString(fileName));
+  }
+
+  return ERROR_NONE;
+}
+
+Errors File_setOwner(const String fileName,
+                     uint32       userId,
+                     uint32       groupId
+                    )
+{
+  assert(fileName != NULL);
+
+  if (chown(String_cString(fileName),
+            (userId != FILE_DEFAULT_USER_ID)?userId:-1,
+            (groupId != FILE_DEFAULT_GROUP_ID)?groupId:-1
+           ) != 0
+     )
+  {
+    return ERRORX(IO_ERROR,errno,String_cString(fileName));
+  }
+
+  return ERROR_NONE;
+}
+
 Errors File_setFileInfo(const String fileName,
                         FileInfo     *fileInfo
                        )
@@ -1453,6 +1504,7 @@ Errors File_makeDirectory(const String pathName,
                           uint32       permission
                          )
 {
+  mode_t          currentCreationMask;
   StringTokenizer pathNameTokenizer;
   String          directoryName;
   uid_t           uid;
@@ -1462,6 +1514,11 @@ Errors File_makeDirectory(const String pathName,
 
   assert(pathName != NULL);
 
+  /* get current umask */
+  currentCreationMask = umask(0);
+  umask(currentCreationMask);
+
+  /* create directory including parent directories */
   directoryName = File_newFileName();
   File_initSplitFileName(&pathNameTokenizer,pathName);
   if (File_getNextSplitFileName(&pathNameTokenizer,&name))
@@ -1477,7 +1534,7 @@ Errors File_makeDirectory(const String pathName,
   }
   if (!File_exists(directoryName))
   {
-    if (mkdir(String_cString(directoryName),0700) != 0)
+    if (mkdir(String_cString(directoryName),0777 & ~currentCreationMask) != 0)
     {
       error = ERRORX(IO_ERROR,errno,String_cString(directoryName));
       File_doneSplitFileName(&pathNameTokenizer);
@@ -1500,7 +1557,7 @@ Errors File_makeDirectory(const String pathName,
     }
     if (permission != FILE_DEFAULT_PERMISSION)
     {
-      if (chmod(String_cString(directoryName),permission) != 0)
+      if (chmod(String_cString(directoryName),(permission|S_IXUSR|S_IXGRP|S_IXOTH) & ~currentCreationMask) != 0)
       {
         error = ERROR(IO_ERROR,errno);
         File_doneSplitFileName(&pathNameTokenizer);
@@ -1517,7 +1574,7 @@ Errors File_makeDirectory(const String pathName,
 
       if (!File_exists(directoryName))
       {
-        if (mkdir(String_cString(directoryName),0700) != 0)
+        if (mkdir(String_cString(directoryName),0777 & ~currentCreationMask) != 0)
         {
           error = ERRORX(IO_ERROR,errno,String_cString(directoryName));
           File_doneSplitFileName(&pathNameTokenizer);
@@ -1537,7 +1594,7 @@ Errors File_makeDirectory(const String pathName,
         }
         if (permission != FILE_DEFAULT_PERMISSION)
         {
-          if (chmod(String_cString(directoryName),permission) != 0)
+          if (chmod(String_cString(directoryName),(permission|S_IXUSR|S_IXGRP|S_IXOTH) & ~currentCreationMask) != 0)
           {
             return ERRORX(IO_ERROR,errno,String_cString(directoryName));
           }

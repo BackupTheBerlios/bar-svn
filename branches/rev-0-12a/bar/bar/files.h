@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/files.h,v $
-* $Revision: 1.5 $
+* $Revision: 1.5.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver files functions
 * Systems: all
@@ -56,7 +56,7 @@ typedef enum
   FILE_SPECIAL_TYPE_CHARACTER_DEVICE,
   FILE_SPECIAL_TYPE_BLOCK_DEVICE,
   FILE_SPECIAL_TYPE_FIFO,
-  FILE_SPECIAL_TYPE_SOCKET,
+  FILE_SPECIAL_TYPE_SOCKET
 } FileSpecialTypes;
 
 #define FILE_DEFAULT_USER_ID    0xFFFFFFFF
@@ -577,6 +577,28 @@ Errors File_readDevice(DeviceHandle *deviceHandle,
 /*---------------------------------------------------------------------*/
 
 /***********************************************************************\
+* Name   : File_userNameToUserId
+* Purpose: convert user name to user id
+* Input  : name - user name
+* Output : -
+* Return : user id or FILE_DEFAULT_USER_ID if user not found
+* Notes  : -
+\***********************************************************************/
+
+uint32 File_userNameToUserId(const char *name);
+
+/***********************************************************************\
+* Name   : File_groupNameToGroupId
+* Purpose: convert group name to group id
+* Input  : name - group name
+* Output : -
+* Return : user id or FILE_DEFAULT_GROUP_ID if group not found
+* Notes  : -
+\***********************************************************************/
+
+uint32 File_groupNameToGroupId(const char *name);
+
+/***********************************************************************\
 * Name   : File_getType
 * Purpose: get file type
 * Input  : fileName - file name
@@ -714,7 +736,37 @@ Errors File_getFileInfo(const String fileName,
 uint64 File_getFileTimeModified(const String fileName);
 
 /***********************************************************************\
-* Name   : File_setInfo
+* Name   : File_setPermission
+* Purpose: set file permission
+* Input  : fileName   - file name
+*          permission - file permission
+* Output : -
+* Return : ERROR_NONE or error code
+* Notes  : -
+\***********************************************************************/
+
+Errors File_setPermission(const String fileName,
+                          uint32       permission
+                         );
+
+/***********************************************************************\
+* Name   : File_setOwner
+* Purpose: set file owner
+* Input  : fileName - file name
+*          userId   - user id or FILE_DEFAULT_USER_ID
+*          groupId  - group id or FILE_DEFAULT_GROUP_ID
+* Output : -
+* Return : ERROR_NONE or error code
+* Notes  : -
+\***********************************************************************/
+
+Errors File_setOwner(const String fileName,
+                     uint32       userId,
+                     uint32       groupId
+                    );
+
+/***********************************************************************\
+* Name   : File_setFileInfo
 * Purpose: set file info
 * Input  : fileName - file name
 *          fileInfo - file info

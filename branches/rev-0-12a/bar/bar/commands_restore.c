@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/commands_restore.c,v $
-* $Revision: 1.5 $
+* $Revision: 1.5.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver archive restore function
 * Systems : all
@@ -298,7 +298,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
                         );
               String_delete(fileName);
               if (restoreInfo.error == ERROR_NONE) restoreInfo.error = error;
-              break;
+              continue;
             }
 
             if (   (List_empty(includePatternList) || PatternList_match(includePatternList,fileName,PATTERN_MATCH_MODE_EXACT))
@@ -354,9 +354,10 @@ Errors Command_restore(StringList                      *archiveFileNameList,
               directoryName = File_getFilePathName(String_new(),destinationFileName);
               if (!File_exists(directoryName))
               {
+                /* create directory */
                 error = File_makeDirectory(directoryName,
-                                           fileInfo.userId,
-                                           fileInfo.groupId,
+                                           FILE_DEFAULT_USER_ID,
+                                           FILE_DEFAULT_GROUP_ID,
                                            fileInfo.permission
                                           );
                 if (error != ERROR_NONE)
@@ -373,6 +374,36 @@ Errors Command_restore(StringList                      *archiveFileNameList,
                   if (restoreInfo.error == ERROR_NONE) restoreInfo.error = error;
                   continue;
                 }
+
+                /* set owner ship */
+                error = File_setOwner(directoryName,
+                                      (jobOptions->owner.userId != FILE_DEFAULT_USER_ID)?jobOptions->owner.userId:fileInfo.userId,
+                                      (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID)?jobOptions->owner.groupId:fileInfo.groupId
+                                     );
+                if (error != ERROR_NONE)
+                {
+                  if (jobOptions->stopOnErrorFlag)
+                  {
+                    printInfo(2,"FAIL!\n");
+                    printError("Cannot set owner ship of directory '%s' (error: %s)\n",
+                               String_cString(directoryName),
+                               Errors_getText(error)
+                              );
+                    String_delete(directoryName);
+                    String_delete(destinationFileName);
+                    Archive_closeEntry(&archiveFileInfo);
+                    String_delete(fileName);
+                    if (restoreInfo.error == ERROR_NONE) restoreInfo.error = error;
+                    continue;
+                  }
+                  else
+                  {
+                    printWarning("Cannot set owner ship of directory '%s' (error: %s)\n",
+                                 String_cString(directoryName),
+                                 Errors_getText(error)
+                                );
+                  }
+                }
               }
               String_delete(directoryName);
 
@@ -382,7 +413,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
               if (error != ERROR_NONE)
               {
                 printInfo(2,"FAIL!\n");
-                printError("Cannot open file '%s' (error: %s)\n",
+                printError("Cannot create/write to file '%s' (error: %s)\n",
                            String_cString(destinationFileName),
                            Errors_getText(error)
                           );
@@ -484,19 +515,26 @@ Errors Command_restore(StringList                      *archiveFileNameList,
               error = File_setFileInfo(destinationFileName,&fileInfo);
               if (error != ERROR_NONE)
               {
-                printInfo(2,"FAIL!\n");
-                printError("Cannot set file info of '%s' (error: %s)\n",
-                           String_cString(destinationFileName),
-                           Errors_getText(error)
-                          );
-                String_delete(destinationFileName);
-                Archive_closeEntry(&archiveFileInfo);
-                String_delete(fileName);
                 if (jobOptions->stopOnErrorFlag)
                 {
+                  printInfo(2,"FAIL!\n");
+                  printError("Cannot set file info of '%s' (error: %s)\n",
+                             String_cString(destinationFileName),
+                             Errors_getText(error)
+                            );
+                  String_delete(destinationFileName);
+                  Archive_closeEntry(&archiveFileInfo);
+                  String_delete(fileName);
                   restoreInfo.error = error;
+                  continue;
                 }
-                continue;
+                else
+                {
+                  printWarning("Cannot set file info of '%s' (error: %s)\n",
+                               String_cString(destinationFileName),
+                               Errors_getText(error)
+                              );
+                }
               }
 
               /* add fragment to file fragment list */
@@ -586,8 +624,8 @@ Errors Command_restore(StringList                      *archiveFileNameList,
               printInfo(2,"  Restore directory '%s'...",String_cString(destinationFileName));
 
               error = File_makeDirectory(destinationFileName,
-                                         fileInfo.userId,
-                                         fileInfo.groupId,
+                                         (jobOptions->owner.userId != FILE_DEFAULT_USER_ID)?jobOptions->owner.userId:fileInfo.userId,
+                                         (jobOptions->owner.groupId != FILE_DEFAULT_GROUP_ID)?jobOptions->owner.groupId:fileInfo.groupId,
                                          fileInfo.permission
                                         );
               if (error != ERROR_NONE)
@@ -934,3 +972,4 @@ Errors Command_restore(StringList                      *archiveFileNameList,
 #endif
 
 /* end of file */
+

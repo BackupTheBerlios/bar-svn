@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/bar.h,v $
-* $Revision: 1.8 $
+* $Revision: 1.8.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver main program
 * Systems: all
@@ -290,6 +290,12 @@ typedef struct
 /* job options */
 typedef struct
 {
+  uint32              userId;                          // user id
+  uint32              groupId;                         // group id 
+} Owner;
+
+typedef struct
+{
   ArchiveTypes        archiveType;                     // archive type (normal, full, incremental)
 
   uint64              archivePartSize;                 // archive part size [bytes]
@@ -297,6 +303,7 @@ typedef struct
   String              incrementalListFileName;         // name of incremental list file
 
   uint                directoryStripCount;             // number of directories to strip in restore
+  Owner               owner;                           // restore owner
   String              directory;                       // restore destination directory
 
   PatternTypes        patternType;
@@ -315,7 +322,7 @@ typedef struct
   String              deviceName;
   Device              device;
 
-  bool                skipUnreadableFlag;
+  bool                skipUnreadableFlag;              // TRUE for skipping unreadable files
   bool                overwriteArchiveFilesFlag;
   bool                overwriteFilesFlag;
   bool                errorCorrectionCodesFlag;
@@ -719,3 +726,4 @@ bool configValueFormatSchedule(void **formatUserData, void *userData, String lin
 #endif /* __BAR__ */
 
 /* end of file */
+

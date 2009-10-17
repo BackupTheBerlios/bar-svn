@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/bar.c,v $
-* $Revision: 1.20 $
+* $Revision: 1.20.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver main program
 * Systems: all
@@ -167,6 +167,7 @@ LOCAL bool          outputNewLineFlag;
   extern "C" {
 #endif
 
+LOCAL bool cmdOptionParseOwner(void *userData, void *variable, const char *name, const char *value, const void *defaultValue);
 LOCAL bool cmdOptionParseString(void *userData, void *variable, const char *name, const char *value, const void *defaultValue);
 LOCAL bool cmdOptionParseConfigFile(void *userData, void *variable, const char *name, const char *value, const void *defaultValue);
 LOCAL bool cmdOptionParseIncludeExclude(void *userData, void *variable, const char *name, const char *value, const void *defaultValue);
@@ -290,6 +291,7 @@ LOCAL const CommandLineOption COMMAND_LINE_OPTIONS[] =
 
   CMD_OPTION_INTEGER      ("directory-strip",              'p',1,0,jobOptions.directoryStripCount,            0,0,INT_MAX,NULL,                                                  "number of directories to strip on extract"                                ),
   CMD_OPTION_SPECIAL      ("directory",                    0,  0,0,&jobOptions.directory   ,                  NULL,cmdOptionParseString,NULL,                                    "directory to restore files","path"                                        ),
+  CMD_OPTION_SPECIAL      ("owner",                        0,  0,0,&jobOptions.owner,                         NULL,cmdOptionParseOwner,NULL,                                     "owner of restored files","user:group"                                     ),
   CMD_OPTION_INTEGER      ("nice-level",                   0,  1,0,globalOptions.niceLevel,                   0,0,19,NULL,                                                       "general nice level of processes/threads"                                  ),
 
   CMD_OPTION_INTEGER      ("max-band-width",               0,  1,0,globalOptions.maxBandWidth,                0,0,INT_MAX,COMMAND_LINE_BITS_UNITS,                               "max. network band width to use"                                           ),
@@ -862,6 +864,60 @@ LOCAL bool cmdOptionParseString(void *userData, void *variable, const char *name
   {
     (*(String*)variable) = String_newCString(value);
   }
+
+  return TRUE;
+}
+
+/***********************************************************************\
+* Name   : cmdOptionParseOwner
+* Purpose: command line option call back for parsing owner
+* Input  : -
+* Output : -
+* Return : -
+* Notes  : -
+\***********************************************************************/
+
+LOCAL bool cmdOptionParseOwner(void *userData, void *variable, const char *name, const char *value, const void *defaultValue)
+{
+  const char userName[256],groupName[256];
+  uint32     userId,groupId;
+
+  assert(variable != NULL);
+  assert(value != NULL);
+
+  UNUSED_VARIABLE(name);
+  UNUSED_VARIABLE(defaultValue);
+  UNUSED_VARIABLE(userData);
+
+  /* parse */
+  if      (String_scanCString(value,"%256s:%256s",userName,groupName))
+  {
+    userId  = File_userNameToUserId(userName);
+    groupId = File_groupNameToGroupId(groupName);
+  }
+  else if (String_scanCString(value,"%256s:",userName))
+  {
+    userId  = File_userNameToUserId(userName);
+    groupId = FILE_DEFAULT_GROUP_ID;
+  }
+  else if (String_scanCString(value,":%256s",groupName))
+  {
+    userId  = FILE_DEFAULT_USER_ID;
+    groupId = File_groupNameToGroupId(groupName);
+  }
+  else if (String_scanCString(value,"%256s",userName))
+  {
+    userId  = File_userNameToUserId(userName);
+    groupId = FILE_DEFAULT_GROUP_ID;
+  }
+  else
+  {
+    return FALSE;
+  }
+
+  /* store owner values */
+  ((Owner*)variable)->userId  = userId;
+  ((Owner*)variable)->groupId = groupId;
 
   return TRUE;
 }
@@ -1491,6 +1547,8 @@ void initJobOptions(JobOptions *jobOptions)
 {
   assert(jobOptions != NULL);
 
+  jobOptions->owner.userId  = FILE_DEFAULT_USER_ID;
+  jobOptions->owner.groupId = FILE_DEFAULT_GROUP_ID;
   memset(jobOptions,0,sizeof(JobOptions));
 }
 
@@ -2831,3 +2889,4 @@ int main(int argc, const char *argv[])
 #endif
 
 /* end of file */
+
