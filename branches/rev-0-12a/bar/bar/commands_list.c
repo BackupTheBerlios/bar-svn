@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/commands_list.c,v $
-* $Revision: 1.6 $
+* $Revision: 1.6.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver archive list function
 * Systems: all
@@ -227,7 +227,7 @@ LOCAL void printFooter(ulong fileCount)
   if (!globalOptions.noHeaderFooterFlag)
   {
     printInfo(0,"--------------------------------------------------------------------------------------------------------------\n");
-    printInfo(0,"%lu file(s)\n",fileCount);
+    printInfo(0,"%lu %s\n",fileCount,(fileCount == 1)?"entry":"entries");
     printInfo(0,"\n");
   }
 }
@@ -1755,3 +1755,4 @@ if (String_length(line)>0) fprintf(stderr,"%s,%d: error=%s\n",__FILE__,__LINE__,
 #endif
 
 /* end of file */
+

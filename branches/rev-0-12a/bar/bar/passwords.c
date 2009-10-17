@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/passwords.c,v $
-* $Revision: 1.4 $
+* $Revision: 1.4.2.1 $
 * $Author: torsten $
 * Contents: functions for secure storage of passwords
 * Systems: all
@@ -545,7 +545,6 @@ bool Password_input(Password   *password,
       /* save current console settings */
       if (tcgetattr(STDIN_FILENO,&oldTermioSettings) != 0)
       {
-fprintf(stderr,"%s,%d: %d %s\n",__FILE__,__LINE__,errno,strerror(errno));
         return FALSE;
       }
 
@@ -554,7 +553,6 @@ fprintf(stderr,"%s,%d: %d %s\n",__FILE__,__LINE__,errno,strerror(errno));
       termioSettings.c_lflag &= ~ECHO;
       if (tcsetattr(STDIN_FILENO,TCSANOW,&termioSettings) != 0)
       {
-fprintf(stderr,"%s,%d: \n",__FILE__,__LINE__);
         return FALSE;
       }
 
@@ -582,7 +580,7 @@ fprintf(stderr,"%s,%d: \n",__FILE__,__LINE__);
 
       if (title != NULL)
       {
-        printf("\n");
+        fprintf(stderr,"\n");
       }
     }
     else
@@ -670,3 +668,4 @@ void Password_dump(const char *text, Password *password)
 #endif
 
 /* end of file */
+

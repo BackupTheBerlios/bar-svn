@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/commands_create.c,v $
-* $Revision: 1.13 $
+* $Revision: 1.13.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver archive create function
 * Systems: all
@@ -121,7 +121,7 @@ typedef struct
   FileTypes fileType;
 } FileMsg;
 
-/* storage messaeg, send from main -> storage thread */
+/* storage message, send from main -> storage thread */
 typedef struct
 {
   String fileName;
@@ -2723,3 +2723,4 @@ Errors Command_create(const char                      *storageName,
 #endif
 
 /* end of file */
+
