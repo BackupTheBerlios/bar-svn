@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 #
 # $Source: /home/torsten/cvs/bar/bar/Makefile.in,v $
-# $Revision: 1.16 $
+# $Revision: 1.16.2.1 $
 # $Author: torsten $
 # Contents: Makefile for bar
 # Systems: all
@@ -420,7 +420,7 @@ ifneq ($(DIRECTORY),)
                           test/data/smallfile.dat \
                           $(DIRECTORY)/bar/test/data
 else
-	$(ECHO) Please call 'make dist' from top-level directory to create a distribution.
+	@$(ECHO) Please call 'make dist' from top-level directory to create a distribution.
 endif
 
 -include Makefile.depend
