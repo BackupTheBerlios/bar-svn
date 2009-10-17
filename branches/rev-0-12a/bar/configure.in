@@ -1,7 +1,7 @@
 dnl --------------------------------------------------------------------
 dnl
 dnl $Source: /home/torsten/cvs/bar/configure.in,v $
-dnl $Revision: 1.30 $
+dnl $Revision: 1.30.2.1 $
 dnl $Author: torsten $
 dnl Contents: BAR auto-configure script
 dnl
@@ -98,23 +98,53 @@ EOF
   AC_PROVIDE([$0])dnl
 ])
 
-AC_DEFUN([AC_PROG_EPM_VERSION],
+AC_DEFUN([AC_JAVA_DATA_MODEL],
 [
   AC_CACHE_CHECK(
-    [$EPM version],
+    [$JAVA data model],
+    ac_cv_prog_java_data_model,
+    [
+      cat << \EOF > Test.java
+class Test
+{
+  public static void main(String[[]] args)
+  {
+    System.out.println(System.getProperty("sun.arch.data.model"));
+  }
+}
+EOF
+      if AC_TRY_COMMAND($JAVAC $JAVAC_FLAGS Test.java) && test -s Test.class; then
+        ac_cv_prog_java_data_model=`$JAVA $JAVA_FLAGS Test`
+      else
+        ac_cv_prog_java_data_model=32
+      fi
+      AS_VAR_SET($1,$ac_cv_prog_java_data_model)
+
+      rm -f Test.java Test.class
+    ]
+  )
+  AC_PROVIDE([$0])dnl
+])
+
+AC_DEFUN([AC_PROG_EPM_VERSION],
+[
+  AC_MSG_CHECKING([$EPM version])
+  AC_CACHE_VAL(
     ac_cv_prog_epm_version,
     [
       if   test -n "`$EPM --version 2>/dev/null | grep \"ESP Package Manager v4\"`"; then
-        AS_VAR_SET(ac_cv_prog_epm_version,4.x)
+        AC_MSG_RESULT([4.x])
+        ac_cv_prog_epm_version="4.x"
         EPM_VERSION_4=1
         EPM_VERSION_3=
       elif test -n "`$EPM --version 2>/dev/null | grep \"ESP Package Manager v3\"`"; then
-        AS_VAR_SET(ac_cv_prog_epm_version,3.x)
+        AC_MSG_RESULT([3.x])
+        ac_cv_prog_epm_version="3.x"
         EPM_VERSION_4=
         EPM_VERSION_3=1
       else
-        AC_MSG_WARN([Cannot detect version of EPM - assume version 4 or newer])
-        AS_VAR_SET(ac_cv_prog_epm_version,4.x)
+        AC_MSG_RESULT([unknown - assume version 4 or newer])
+        ac_cv_prog_epm_version="unknown"
         EPM_VERSION_4=1
         EPM_VERSION_3=
       fi
@@ -188,6 +218,7 @@ AC_SUBST(JAR)                               dnl jar command
 
 AC_SUBST(JAVA_FLAGS)                        dnl java flags
 AC_SUBST(JAVAC_FLAGS)                       dnl java compiler flags
+AC_SUBST(JAVA_DATA_MODEL)                   dnl java data model (32 or 64)
 
 AC_SUBST(SWT_DIR)                           dnl SWT directory
 AC_SUBST(LAUNCH4J_DIR)                      dnl launch4j directory
@@ -343,7 +374,9 @@ if test -z "$INSTALL"; then
   AC_MSG_ERROR([Cannot find a 'install' in PATH. Please check your PATH environment variable.])
 fi
 AC_PATH_PROGS(EPM,epm)
-AC_PROG_EPM_VERSION
+if test -n "$EPM"; then
+  AC_PROG_EPM_VERSION
+fi
 
 AC_PATH_PROGS(MD5SUM,md5sum)
 
@@ -381,6 +414,8 @@ if test "$ENABLE_GUI" = "yes"; then
     ENABLE_GUI="no"
   fi
   AC_PATH_PROGS(LAUNCH4J,launch4j)
+
+  AC_JAVA_DATA_MODEL(JAVA_DATA_MODEL)
 
   JAVA_FLAGS=""
   if test "$ENABLE_DEBUG" = "yes"; then
@@ -642,19 +677,28 @@ if test $ENABLE_GCRYPT = "yes"; then
       AC_DEFINE(HAVE_GCRYPT,1,[gcrypt installed (local)])
     fi
   else
-    dnl search for installed gpg-error/gcrypt library
-    AC_CHECK_TYPE(gcry_cipher_hd_t,,AC_MSG_WARN([no or wrong version of gcrypt. gcrypt version >=1.2.4 needed. Disabled gcrypt support.]); ENABLE_GCRYPT=no,[#include <gcrypt.h>])
-    LIBRARIES="$LIBRARIES dl"
-    if test $ENABLE_LINK_DYNAMIC = "yes"; then
-      AC_SEARCH_LIBS(gpg_strerror,gpg-error,[HAVE_GPG_ERROR=1;LIBRARIES="$LIBRARIES gpg-error";AC_DEFINE(HAVE_GPG_ERROR,1,[GPG error installed])])
-    else
-      AC_SEARCH_LIBS(gpg_strerror,gpg-error,[HAVE_GPG_ERROR=1;STATIC_LIBRARIES="$STATIC_LIBRARIES gpg-error";AC_DEFINE(HAVE_GPG_ERROR,1,[GPG error installed])])
-    fi
-    if test $ENABLE_LINK_DYNAMIC = "yes"; then
-      AC_SEARCH_LIBS(gcry_check_version,gcrypt,[HAVE_GCRYPT=1;LIBRARIES="$LIBRARIES gcrypt";AC_DEFINE(HAVE_GCRYPT,1,[gcrypt installed])])
-    else
-      AC_SEARCH_LIBS(gcry_check_version,gcrypt,[HAVE_GCRYPT=1;STATIC_LIBRARIES="$STATIC_LIBRARIES gcrypt";AC_DEFINE(HAVE_GCRYPT,1,[gcrypt installed])])
-    fi
+    dnl check if suitable gcrypt is installed
+    AC_CHECK_TYPE(gcry_cipher_hd_t,
+      [
+        dnl search for installed gpg-error/gcrypt library
+        LIBRARIES="$LIBRARIES dl"
+        if test $ENABLE_LINK_DYNAMIC = "yes"; then
+          AC_SEARCH_LIBS(gpg_strerror,gpg-error,[HAVE_GPG_ERROR=1;LIBRARIES="$LIBRARIES gpg-error";AC_DEFINE(HAVE_GPG_ERROR,1,[GPG error installed])])
+        else
+          AC_SEARCH_LIBS(gpg_strerror,gpg-error,[HAVE_GPG_ERROR=1;STATIC_LIBRARIES="$STATIC_LIBRARIES gpg-error";AC_DEFINE(HAVE_GPG_ERROR,1,[GPG error installed])])
+        fi
+        if test $ENABLE_LINK_DYNAMIC = "yes"; then
+          AC_SEARCH_LIBS(gcry_check_version,gcrypt,[HAVE_GCRYPT=1;LIBRARIES="$LIBRARIES gcrypt";AC_DEFINE(HAVE_GCRYPT,1,[gcrypt installed])])
+        else
+          AC_SEARCH_LIBS(gcry_check_version,gcrypt,[HAVE_GCRYPT=1;STATIC_LIBRARIES="$STATIC_LIBRARIES gcrypt";AC_DEFINE(HAVE_GCRYPT,1,[gcrypt installed])])
+        fi
+      ],
+      [
+        AC_MSG_WARN([no or wrong version of gcrypt. gcrypt version >=1.2.4 needed. Disabled gcrypt support.]);
+        ENABLE_GCRYPT=no
+      ],
+      [#include <gcrypt.h>]
+    )
   fi
 fi
 
@@ -830,7 +874,7 @@ for z in $LIBRARY_PATHS ""; do
 done
 for z in $LIBRARIES $STATIC_LIBRARIES ""; do
   if test -n "$z"; then
-    LDFLAGS="$LDFLAGS -l$z"
+    LIBS="$LIBS -l$z"
   fi
 done
 AC_MSG_WARN([$LDFLAGS])
@@ -843,10 +887,12 @@ AC_CHECK_FUNC(gethostbyname_r,AC_DEFINE(HAVE_GETBYHOSTNAME_R,1,[getbyhostname_r(
 AC_CHECK_FUNC(fseeko,,AC_ERROR([function fseeko() is not available]))
 AC_CHECK_FUNC(ftello,,AC_ERROR([function ftello() is not available]))
 
-AC_CHECK_FUNC(zlibVersion,,AC_ERROR([function zlibVersion() is not available in zlib.h]))
+AC_CHECK_FUNC(zlibVersion,,AC_ERROR([function zlibVersion() is not available]))
 
 AC_CHECK_FUNC(libssh2_channel_send_keepalive,AC_DEFINE(HAVE_SSH2_CHANNEL_SEND_KEEPALIVE,1,[SSH2 has libssh2_channel_send_keepalive()]))
 AC_CHECK_FUNC(libssh2_sftp_seek2,            AC_DEFINE(HAVE_SSH2_SFTP_SEEK2,            1,[SSH2 has libssh2_sftp_seek2() function.]))
+
+AC_CHECK_FUNC(backtrace,AC_DEFINE(HAVE_BACKTRACE,1,[backtrace() available]))
 
 dnl -------------------------------- misc ------------------------------
 
@@ -923,6 +969,8 @@ AC_CONFIG_COMMANDS(BUILD_NOTE,
                     echo "  GUI support      : `if test "$ENABLE_GUI" = "yes"; then echo yes; else echo no; fi`";
                     echo "  SWT directory    : $SWT_DIR"
                     echo ""
+                    echo "  Packages support : `if test -n "$EPM"; then echo yes; else echo no; fi`"
+                    echo ""
                     echo "  Install directory: $INSTALL_DIR"
                     echo "  Binary directory : $INSTALL_BIN_DIR"
                     echo "  Config directory : $CONFIG_DIR"
@@ -948,6 +996,7 @@ AC_CONFIG_COMMANDS(BUILD_NOTE,
                    INSTALL_BIN_DIR="$INSTALL_BIN_DIR"
                    CONFIG_DIR="$CONFIG_DIR"
                    TLS_DIR="$TLS_DIR"
+                   EPM="$EPM"
                   )
 
 AC_OUTPUT
