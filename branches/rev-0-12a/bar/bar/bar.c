@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/bar.c,v $
-* $Revision: 1.20.2.2 $
+* $Revision: 1.20.2.3 $
 * $Author: torsten $
 * Contents: Backup ARchiver main program
 * Systems: all
@@ -1394,7 +1394,8 @@ void printInfo(uint verboseLevel, const char *format, ...)
 
 void vlogMessage(ulong logType, const char *prefix, const char *text, va_list arguments)
 {
-  String dateTime;
+  String  dateTime;
+  va_list tmpArguments;
 
   assert(text != NULL);
 
@@ -1409,7 +1410,9 @@ void vlogMessage(ulong logType, const char *prefix, const char *text, va_list ar
         /* append to temporary log file */
         fprintf(tmpLogFile,"%s> ",String_cString(dateTime));
         if (prefix != NULL) fprintf(tmpLogFile,prefix);
-        vfprintf(tmpLogFile,text,arguments);
+        va_copy(tmpArguments,arguments);
+        vfprintf(tmpLogFile,text,tmpArguments);
+        va_end(tmpArguments);
         fprintf(tmpLogFile,"\n");
       }
 
@@ -1418,7 +1421,9 @@ void vlogMessage(ulong logType, const char *prefix, const char *text, va_list ar
         /* append to log file */
         fprintf(logFile,"%s> ",String_cString(dateTime));
         if (prefix != NULL) fprintf(logFile,prefix);
-        vfprintf(logFile,text,arguments);
+        va_copy(tmpArguments,arguments);
+        vfprintf(logFile,text,tmpArguments);
+        va_end(tmpArguments);
         fprintf(logFile,"\n");
       }
 

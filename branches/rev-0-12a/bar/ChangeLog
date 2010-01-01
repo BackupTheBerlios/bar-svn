@@ -1,3 +1,7 @@
+2009-01-01 0.12d
+  * fixed wrong usage of vprintf in log function (caused SigSegV
+    on 64bit systems)
+
 2009-10-20 0.12c
   * fixes in configure: fix large file support for some system
   * fixes in configure: add libcrypto only if available (required
