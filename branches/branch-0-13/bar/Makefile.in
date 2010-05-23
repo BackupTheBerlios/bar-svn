@@ -1,0 +1,470 @@
+# ----------------------------------------------------------------------------
+#
+# $Source: /home/torsten/cvs/bar/Makefile.in,v $
+# $Revision: 1.62.2.1 $
+# $Author: torsten $
+# Contents: Makefile for bar
+# Systems: all
+#			   
+# ----------------------------------------------------------------------------
+
+#---------------------------------- settings ---------------------------------
+
+ENABLE_DEBUG    = @ENABLE_DEBUG@
+ENABLE_GUI      = @ENABLE_GUI@
+
+PLATFORM        = @PLATFORM@
+
+#------------------------------------ paths ----------------------------------
+
+INSTALL_DIR     = @INSTALL_DIR@
+INSTALL_BIN_DIR = @INSTALL_BIN_DIR@
+CONFIG_DIR      = @CONFIG_DIR@
+TLS_DIR         = @TLS_DIR@
+MAN_DIR         = @MAN_DIR@
+
+#--------------------------------- tool chain --------------------------------
+
+CERTTOOL = @CERTTOOL@
+OPENSSL  = @OPENSSL@
+KEYTOOL  = @KEYTOOL@
+
+UNOCONV  = @UNOCONV@
+TXT2MAN  = @TXT2MAN@
+
+#---------------------------------- commands----------------------------------
+
+CAT        = cat
+CHMOD      = chmod
+CP         = cp
+DIFF       = diff
+ECHO       = echo
+ECHO_NO_LF = echo -n
+EPM        = @EPM@
+GREP       = grep
+INSTALL    = @INSTALL@
+MD5SUM     = @MD5SUM@
+MKDIR      = mkdir
+MV         = mv
+PERL       = @PERL@
+RMDIR      = rmdir
+RMF        = rm -f
+RMRF       = rm -rf
+SED        = sed
+TAR        = tar
+
+#------------------------ specific variables/settings ------------------------
+
+VERSION_MAJOR := $(shell $(CAT) version|$(GREP) MAJOR|$(SED) 's/MAJOR=//g')
+VERSION_MINOR := $(shell $(CAT) version|$(GREP) MINOR|$(SED) 's/MINOR=//g')
+
+CRYPT_NAMES    = none 3DES CAST5 BLOWFISH AES128 AES192 AES256 TWOFISH128 TWOFISH256
+COMPRESS_NAMES = none zip0 zip1 zip2 zip3 zip4 zip5 zip6 zip7 zip8 zip9 bzip1 bzip2 bzip3 bzip4 bzip5 bzip6 bzip7 bzip8 bzip9
+
+CRYPT=none
+COMPRESS=none
+
+TEST_PASSWORD=Franz_Kafka:Die_Verwandlung
+
+DISTRIBUTION_NAME = bar-$(VERSION_MAJOR).$(VERSION_MINOR)
+
+#---------------------------------- rules ------------------------------------
+
+#--------------------------------- objects -----------------------------------
+
+TARGETS              = bar/bar \
+                       bar/bar-keygen \
+                       $(if $(findstring $(ENABLE_GUI),yes),barcontrol/barcontrol) \
+
+MAN                  = doc/bar.7 \
+                       doc/bar.pdf \
+
+OTHER_SOURCES        = errors.pl \
+                       errors.def \
+
+KEY_FILES            = bar-key.pem \
+                       bar-ca.pem \
+                       bar-server-key.pem \
+                       bar-server-cert.pem \
+                       bar.jks \
+
+SCRIPTS              = scripts/barserver-SuSE \
+                       scripts/barserver-debian \
+
+#------------------------------ dependencies ---------------------------------
+
+.PHONY: all clean distclean
+all: \
+  $(TARGETS) \
+  $(MAN)\
+  $(KEY_FILES)
+
+clean: \
+  clean_keys \
+  clean_doc \
+  clean_rpm \
+  clean_deb
+	-$(MAKE) -C bar clean
+ifeq ($(ENABLE_GUI),yes)
+	-$(MAKE) -C barcontrol clean
+endif
+	$(RMRF) $(DISTRIBUTION_NAME)
+	$(RMF) $(DISTRIBUTION_NAME).tgz
+	$(RMRF) tmp
+
+distclean: clean
+	-$(MAKE) -C bar distclean
+ifeq ($(ENABLE_GUI),yes)
+	-$(MAKE) -C barcontrol distclean
+endif
+	$(RMF) Makefile
+	$(RMF) src/Config.java
+	$(RMF) epm.list
+	$(RMF) config.status
+	$(RMF) config.log
+
+# ----------------------------------------------------------------------------
+
+# create bar
+.PHONY: bar
+bar bar/bar:
+	$(MAKE) -C bar bar
+
+# create bar-keygen
+.PHONY: bar-keygen
+bar-keygen bar/bar-keygen:
+	$(MAKE) -C bar bar-keygen
+
+# create barcontrol
+.PHONY: barcontrol
+barcontrol barcontrol/barcontrol:
+ifeq ($(ENABLE_GUI),yes)
+	$(MAKE) -C barcontrol barcontrol
+else
+	@$(ECHO) "ERROR: GUI components not configured - cannot be built."
+endif
+
+# ----------------------------------------------------------------------------
+
+# create SSL keys and certificates
+.PHONY: keys clean_keys
+keys: $(KEY_FILES)
+
+clean_keys:
+	$(RMF) $(KEY_FILES)
+
+$(KEY_FILES):
+	$(MAKE) -C bar bar-keygen
+	bar/bar-keygen \
+          --private-directory=. \
+          --certs-directory=. \
+          $(if $(findstring $(KEYTOOL),certtool),--certtool) \
+          $(if $(findstring $(KEYTOOL),openssl),--openssl) \
+
+# ----------------------------------------------------------------------------
+
+# create documentation
+.PHONY: doc man clean_doc clean_man
+doc: \
+  doc/bar.7 \
+  doc/bar.pdf
+
+man: \
+  doc/bar.7
+
+clean_doc:
+	$(RMF) doc/bar.7
+	$(RMF) doc/bar.pdf
+
+clean_man:
+	$(RMF) doc/bar.7
+
+doc/bar.pdf: doc/bar.odt
+ifneq ($(UNOCONV),)
+	$(UNOCONV) -f pdf doc/bar.odt
+else
+	@$(ECHO) "ERROR: no 'unoconv' tool available! Cannot create PDF manual."
+endif
+
+doc/bar.7: doc/bar.txt
+ifneq ($(TXT2MAN),)
+	$(CAT) doc/bar.txt | $(TXT2MAN) -t bar -r $(VERSION_MAJOR).$(VERSION_MINOR) -s 7 -v "Linux User's Manual" > $@
+else
+	@$(ECHO) "ERROR: no 'txt2man' tool available! Cannot create man page."
+endif
+
+.PHONY: showman
+showman:
+ifneq ($(TXT2MAN),)
+	$(CAT) doc/bar.txt | $(TXT2MAN) -t bar -r $(VERSION_MAJOR).$(VERSION_MINOR) -s 7 -v "Linux User's Manual" -T
+else
+	$(ECHO) txt2man not available - cannot create man page.
+endif
+
+# ----------------------------------------------------------------------------
+
+# install/uninstall
+.PHONY: install install_keys uninstall
+install: \
+  $(TARGETS) \
+  $(if $(findstring $(ENABLE_GUI),yes),$(if $(findstring $(PLATFORM),Linux),barcontrol/barcontrol barcontrol/barcontrol-linux.jar) \
+                                       $(if $(findstring $(PLATFORM),Windows),$(if $(LAUNCH4J),barcontrol/barcontrol.exe,barcontrol/barcontrol.bat barcontrol/barcontrol-windows.jar)) \
+  ) \
+  $(KEY_FILES) \
+  $(SCRIPTS) \
+  $(MAN)
+	$(INSTALL) -d "$(DESTDIR)$(INSTALL_DIR)"
+	$(INSTALL) -d "$(DESTDIR)$(INSTALL_BIN_DIR)"
+	$(INSTALL) bar/bar@EXEEXT@ "$(DESTDIR)$(INSTALL_BIN_DIR)"
+ifeq ($(ENABLE_GUI),yes)
+ifeq ($(PLATFORM),Linux)
+	$(INSTALL) barcontrol/barcontrol \
+                   barcontrol/barcontrol-linux.jar \
+                   "$(DESTDIR)$(INSTALL_BIN_DIR)"
+endif
+ifeq ($(PLATFORM),Windows)
+	$(INSTALL) $(if $(LAUNCH4J),barcontrol/barcontrol.exe,\
+                                    barcontrol/barcontrol.bat barcontrol/barcontrol-windows.jar \
+                    ) \
+                   "$(DESTDIR)$(INSTALL_BIN_DIR)"
+endif
+endif
+	$(INSTALL) -d "$(DESTDIR)$(CONFIG_DIR)"
+	if test ! -f "$(DESTDIR)$(CONFIG_DIR)/bar.cfg"; then \
+          $(INSTALL) -m 600 bar/bar.cfg "$(DESTDIR)$(CONFIG_DIR)"; \
+        else \
+          echo "$(DESTDIR)$(CONFIG_DIR)/bar.cfg NOT installed - file already exists!"; \
+        fi
+ifeq ($(ENABLE_GUI),yes)
+	$(INSTALL) bar.jks "$(DESTDIR)$(CONFIG_DIR)"
+endif
+	$(INSTALL) -d "$(DESTDIR)$(CONFIG_DIR)/jobs"
+	$(INSTALL) -d "$(DESTDIR)$(TLS_DIR)"
+	$(INSTALL) -d "$(DESTDIR)$(TLS_DIR)/certs"
+	$(INSTALL) -m 644 bar-ca.pem "$(DESTDIR)$(TLS_DIR)/certs"
+	$(INSTALL) -m 644 bar-server-cert.pem "$(DESTDIR)$(TLS_DIR)/certs"
+	$(INSTALL) -d -m 700 "$(DESTDIR)$(TLS_DIR)/private"
+	$(INSTALL) -m 600 bar-server-key.pem "$(DESTDIR)$(TLS_DIR)/private"
+	if test ! -f /etc/init.d/barserver; then \
+          if test -f /etc/SuSE-release; then \
+            $(INSTALL) -m 600 scripts/barserver-SuSE /etc/init.d/barserver; \
+          else \
+            $(INSTALL) -m 600 scripts/barserver-debian /etc/init.d/barserver; \
+          fi; \
+        else \
+          echo "/etc/init.d/barserver NOT installed - file already exists!"; \
+        fi
+	$(INSTALL) -d "$(MAN_DIR)/7"
+	$(INSTALL) -m 644 doc/bar.7 "$(MAN_DIR)/man7"
+
+install_keys: \
+  $(KEY_FILES)
+	$(INSTALL) -d "$(DESTDIR)$(TLS_DIR)"
+	$(INSTALL) -d "$(DESTDIR)$(TLS_DIR)/certs"
+	$(INSTALL) -m 644 bar-ca.pem "$(DESTDIR)$(TLS_DIR)/certs"
+	$(INSTALL) -m 644 bar-server-cert.pem "$(DESTDIR)$(TLS_DIR)/certs"
+	$(INSTALL) -d -m 700 "$(DESTDIR)$(TLS_DIR)/private"
+	$(INSTALL) -m 600 bar-server-key.pem "$(DESTDIR)$(TLS_DIR)/private"
+
+uninstall:
+	@read -n 1 -p "Really uninstall? [y/N] " s; \
+        if test "$s" = "y" -o "$s" = "Y"; then \
+          $(RMF) "$(DESTDIR)$(INSTALL_BIN_DIR)/bar@EXEEXT@"; \
+          $(if $(findstring $(ENABLE_GUI),yes),$(RMF) "$(DESTDIR)$(INSTALL_BIN_DIR)/barcontrol" \
+                                                      "$(DESTDIR)$(INSTALL_BIN_DIR)/barcontrol.jar" \
+                                                      "$(DESTDIR)$(INSTALL_BIN_DIR)/barcontrol.exe"; \
+          ) \
+          $(RMF) "$(DESTDIR)$(CONFIG_DIR)/bar.cfg"; \
+          $(RMF) "$(DESTDIR)$(TLS_DIR)/certs/bar-ca.pem"; \
+          $(RMF) "$(DESTDIR)$(TLS_DIR)/certs/bar-server-cert.pem"; \
+          $(RMF) "$(DESTDIR)$(TLS_DIR)/private/bar-server-key.pem"; \
+          $(if $(findstring $(ENABLE_GUI),yes),$(RMF) "$(DESTDIR)$(CONFIG_DIR)/bar.jks"; \
+          ) \
+          $(RMF) "/etc/init.d/barserver"; \
+          $(RMF) "$(MAN_DIR)/man7/bar.7"; \
+        fi
+
+# ----------------------------------------------------------------------------
+
+# run server
+.PHONY: barserver barserver_ssl
+barserver:
+	@$(MAKE) -C bar barserver
+
+barserver_ssl:
+	@$(MAKE) -C bar barserver_ssl
+
+# do test
+.PHONY: test test1 test2 test3 test4 test5 testall
+test:
+	@$(MAKE) -C bar test
+test1:
+	@$(MAKE) -C bar test1
+test2:
+	@$(MAKE) -C bar test2
+test3:
+	@$(MAKE) -C bar test3
+test4:
+	@$(MAKE) -C bar test4
+test5:
+	@$(MAKE) -C bar test5
+test_all:
+	@$(MAKE) -C bar test_all
+
+.PHONY: memcheck memcheck1
+memcheck:
+	@$(MAKE) -C bar memcheck
+
+.PHONY: memcheck_extended
+memcheck_extended:
+	@$(MAKE) -C bar memcheck_extended
+
+# ----------------------------------------------------------------------------
+
+# create distribution
+.PHONY: dist $(DISTRIBUTION_NAME).tar.bz2
+dist: $(DISTRIBUTION_NAME).tar.bz2
+
+$(DISTRIBUTION_NAME).tar.bz2: \
+  $(MAN)
+	$(INSTALL) -d $(DISTRIBUTION_NAME)
+	$(INSTALL) -m 775 \
+                   configure \
+                   download-third-party-packages.sh \
+                   $(OTHER_SOURCES) \
+                   $(DISTRIBUTION_NAME)
+	$(INSTALL) -m 664 \
+                   configure.in \
+                   Makefile.in \
+                   epm.list.in \
+                   version \
+                   ToDo \
+                   ChangeLog \
+                   $(DISTRIBUTION_NAME)
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/bin
+	$(INSTALL) -m 664 \
+                   bin/config.guess \
+                   bin/config.sub \
+                   bin/install-sh \
+                   $(DISTRIBUTION_NAME)/bin
+	$(MAKE) -C bar dist DIRECTORY="../$(DISTRIBUTION_NAME)"
+	$(MAKE) -C barcontrol dist DIRECTORY="../$(DISTRIBUTION_NAME)"
+	#
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/bin
+	$(INSTALL) -m 664 \
+                   bin/config.guess \
+                   bin/config.sub bin/install-sh \
+                   $(DISTRIBUTION_NAME)/bin
+	#
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/ssl
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/ssl/certtool
+	$(INSTALL) -m 664 \
+                   ssl/certtool/*.tmpl \
+                   $(DISTRIBUTION_NAME)/ssl/certtool
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/ssl/openssl
+	$(INSTALL) -m 664 \
+                   ssl/openssl/*.tmpl \
+                   $(DISTRIBUTION_NAME)/ssl/openssl
+	#
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/scripts
+	$(INSTALL) -m 664 \
+                   $(SCRIPTS) \
+                   $(DISTRIBUTION_NAME)/scripts
+	#
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/misc
+	$(INSTALL) -m 664 \
+                   misc/*.patch \
+                   $(DISTRIBUTION_NAME)/misc
+	#
+	$(INSTALL) -d $(DISTRIBUTION_NAME)/doc
+	$(INSTALL) -m 664 \
+                   doc/README \
+                   doc/COPYING \
+                   doc/bar.odt \
+                   doc/bar.pdf \
+                   doc/*.txt \
+                   doc/bar.7 \
+                   $(DISTRIBUTION_NAME)/doc
+	#
+	$(TAR) cjf $@ $(DISTRIBUTION_NAME)
+	$(RMRF) $(DISTRIBUTION_NAME)
+	#
+ifneq ($(MD5SUM),)
+	$(MD5SUM) $@
+endif
+
+# ----------------------------------------------------------------------------
+
+# create RPM
+.PHONY: rpm clean_rpm
+rpm: \
+  bar-$(VERSION_MAJOR).$(VERSION_MINOR).rpm
+
+clean_rpm:
+	$(RMF) bar-$(VERSION_MAJOR).$(VERSION_MINOR).rpm
+
+bar-$(VERSION_MAJOR).$(VERSION_MINOR).rpm: epm.list
+ifneq ($(EPM),)
+	$(INSTALL) -d tmp/package
+	$(EPM) \
+          -f rpm \
+          --output-dir tmp/package \
+          PACKAGE_CMD=1 \
+          PACKAGE_GUI=1 \
+          bar \
+          epm.list
+	$(MV) tmp/package/*rpm $@
+	$(RMRF) tmp/package
+ifneq ($(MD5SUM),)
+	$(MD5SUM) $@
+endif
+else
+	@$(ECHO) "No EPM installed. Cannot create RPM package."
+endif
+
+# create DEB
+.PHONY: deb
+deb: \
+  bar-$(VERSION_MAJOR).$(VERSION_MINOR).deb \
+  bar-gui-$(VERSION_MAJOR).$(VERSION_MINOR).deb
+
+clean_deb:
+	$(RMF) bar-$(VERSION_MAJOR).$(VERSION_MINOR).deb
+	$(RMF) bar-gui-$(VERSION_MAJOR).$(VERSION_MINOR).deb
+
+bar-$(VERSION_MAJOR).$(VERSION_MINOR).deb: epm.list
+ifneq ($(EPM),)
+	$(INSTALL) -d tmp/package
+	$(EPM) \
+          -f deb \
+          --output-dir tmp/package \
+          PACKAGE_CMD=1 \
+          bar \
+          epm.list
+	$(MV) tmp/package/*deb $@
+	$(RMRF) tmp/package
+ifneq ($(MD5SUM),)
+	$(MD5SUM) $@
+endif
+else
+	@$(ECHO) "No EPM installed. Cannot create DEB package."
+endif
+bar-gui-$(VERSION_MAJOR).$(VERSION_MINOR).deb: epm.list
+ifneq ($(EPM),)
+	$(INSTALL) -d tmp/package
+	$(EPM) \
+          -f deb \
+          --output-dir tmp/package \
+          PACKAGE_GUI=1 \
+          bar-gui \
+          epm.list
+	$(MV) tmp/package/*deb $@
+	$(RMRF) tmp/package
+ifneq ($(MD5SUM),)
+	$(MD5SUM) $@
+endif
+else
+	@$(ECHO) "No EPM installed. Cannot create DEB package."
+endif
+
+# end of file
