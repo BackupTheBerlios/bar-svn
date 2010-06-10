@@ -1,3 +1,7 @@
+2010-06-10 0.13c
+  * fix bar-keygen: wrong template file names
+  * fix some typing errors in manual
+
 2010-05-23 0.13b
   * fix assert-error in options -#/-!
   * improved test of file functions (added -#, -!)
