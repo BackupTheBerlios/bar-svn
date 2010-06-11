@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/barcontrol/src/BARServer.java,v $
-* $Revision: 1.16.2.1 $
+* $Revision: 1.16.2.1.2.1 $
 * $Author: torsten $
 * Contents: BARControl (frontend for BAR)
 * Systems: all
@@ -571,7 +571,8 @@ class BARServer
         {
           JAVA_SSL_KEY_FILE_NAME,
           System.getProperty("user.home")+File.separator+".bar"+File.separator+JAVA_SSL_KEY_FILE_NAME,
-          Config.CONFIG_DIR+File.separator+JAVA_SSL_KEY_FILE_NAME
+          Config.CONFIG_DIR+File.separator+JAVA_SSL_KEY_FILE_NAME,
+          Config.TLS_DIR+File.separator+"private"+File.separator+JAVA_SSL_KEY_FILE_NAME
         };
       }
 
