@@ -1,3 +1,7 @@
+2010-07-24 0.13d
+  * fix wrong installation path "/man/man7" man pages: now
+    /usr/share/man/man7
+
 2010-06-11 0.13c
   * fix bar-keygen which caused broken Debian package: wrong template
     file names
