@@ -1,0 +1,331 @@
+# ----------------------------------------------------------------------------
+#
+# $Source: /home/torsten/cvs/bar/barcontrol/Makefile.in,v $
+# $Revision: 1.19 $
+# $Author: torsten $
+# Contents: Makefile for barcontrol
+# Systems: all
+#			   
+# ----------------------------------------------------------------------------
+
+#---------------------------------- settings ---------------------------------
+
+PLATFORM           = @PLATFORM@
+
+ENABLE_DEBUG       = @ENABLE_DEBUG@
+ENABLE_GUI         = @ENABLE_GUI@
+
+#------------------------------------ paths ----------------------------------
+
+SWT_DIR            = @SWT_DIR@
+LAUNCH4J_DIR       = @LAUNCH4J_DIR@
+
+#--------------------------------- tool chain --------------------------------
+
+JAVA               = @JAVA@
+JAVA_FLAGS         = @JAVA_FLAGS@ -Xmx128m
+
+JAVAC              = @JAVAC@
+JAVAC_FLAGS        = @JAVAC_FLAGS@ -source 1.5
+# -Xlint
+
+JAR                = @JAR@
+
+SWT_JAR_LINUX      = jars/linux/swt-3.6.jar
+SWT_JAR_LINUX_64   = jars/linux/swt-3.6_64.jar
+SWT_JAR_WINDOWS    = jars/windows/swt-3.6.jar
+SWT_JAR_WINDOWS_64 = jars/windows/swt-3.6_64.jar
+SWT_JAR_SOLARIS    = jars/solaris/swt-3.6.jar
+SWT_JAR_MACOSX     = jars/macosx/swt-3.6.jar
+
+ifneq ($(SWT_DIR),)
+SWT_JAR          = $(SWT_DIR)/swt.jar
+else
+ifeq ($(PLATFORM),Linux)
+ifeq ($(JAVA_DATA_MODEL),64)
+SWT_JAR          = $(SWT_JAR_LINUX_64)
+else
+SWT_JAR          = $(SWT_JAR_LINUX)
+endif
+endif
+ifeq ($(PLATFORM),Windows)
+ifeq ($(JAVA_DATA_MODEL),64)
+SWT_JAR          = $(SWT_JAR_WINDOWS_64)
+else
+SWT_JAR          = $(SWT_JAR_WINDOWS)
+endif
+endif
+ifeq ($(PLATFORM),Solaris)
+SWT_JAR          = $(SWT_JAR_SOLARIS)
+endif
+ifeq ($(PLATFORM),MacOSX)
+SWT_JAR          = $(SWT_JAR_MACOSX)
+endif
+endif
+
+CLASSPATH        = classes:$(SWT_JAR)
+
+#---------------------------------- commands----------------------------------
+
+CAT        = cat
+CD         = cd
+CHMOD      = chmod
+CP         = cp
+DIFF       = diff
+ECHO       = echo
+ECHO_NO_LF = echo -n
+GREP       = grep
+INSTALL    = @INSTALL@
+MKDIR      = mkdir
+PERL       = @PERL@
+RMDIR      = rmdir
+RMF        = rm -f
+RMRF       = rm -rf
+SED        = sed
+TAR        = tar
+UNZIP      = unzip
+
+#------------------------ specific variables/settings ------------------------
+
+VERSION_MAJOR := $(shell $(CAT) ../version|$(GREP) MAJOR|$(SED) 's/MAJOR=//g')
+VERSION_MINOR := $(shell $(CAT) ../version|$(GREP) MINOR|$(SED) 's/MINOR=//g')
+
+#---------------------------------- rules ------------------------------------
+
+classes/%.class:src/%.java src/Errors.java
+	$(INSTALL) -d classes
+ifneq ($(JAVAC),)
+	$(JAVAC) $(JAVAC_FLAGS) -d classes -classpath $(CLASSPATH) src/*.java
+else
+	@$(ECHO) "ERROR: no 'javac' command - cannot compile Java sources"
+endif
+
+#--------------------------------- objects -----------------------------------
+
+SOURCES        = src/BARControl.java \
+                 src/TabStatus.java \
+                 src/TabJobs.java \
+                 src/TabRestore.java \
+                 src/BARServer.java \
+                 src/Settings.java \
+                 \
+                 src/TableLayout.java \
+                 src/TableLayoutData.java \
+                 src/Pane.java \
+                 src/ProgressBar.java \
+                 src/BusyDialog.java \
+                 src/Widgets.java \
+                 src/Dialogs.java \
+                 src/StringParser.java \
+                 src/Dprintf.java \
+
+OTHER_SOURCES  = barcontrol.in \
+                 barcontrol.bat.in \
+                 barcontrol.xml \
+                 jar.txt \
+
+OBJECTS        = $(foreach z,$(SOURCES),$(basename $(subst src/,classes/,$z)).class) \
+                 classes/Errors.class \
+                 classes/Config.class \
+
+INTERMEDIATE   = src/Errors.java \
+                 barcontrol.jar \
+                 barcontrol-linux.jar \
+                 barcontrol-linux_64.jar \
+                 barcontrol-windows.jar
+
+TARGETS        = barcontrol \
+                 $(if $(LAUNCH4J),barcontrol.exe,barcontrol.bat) \
+
+#------------------------------ dependencies ---------------------------------
+
+.PHONY: all clean distclean depend
+all: $(TARGETS)
+
+clean:
+	$(RMF) $(OBJECTS)
+	$(RMF) $(INTERMEDIATE)
+	$(RMF) classes/*.class
+	$(RMF) $(TARGETS)
+	$(RMRF) tmp
+
+distclean: clean
+	$(RMF) Makefile
+	$(RMF) src/Config.java
+	$(RMF) barcontrol
+	$(RMF) barcontrol.bat
+
+# error definition
+src/Errors.java: ../errors.def ../errors.pl
+	$(PERL) ../errors.pl < $^ -j $@
+
+# jars
+.PHONY: jars
+jars: barcontrol.jar barcontrol-linux.jar barcontrol-linux_64.jar barcontrol-windows.jar
+
+# create jars
+barcontrol.jar: jar.txt $(OBJECTS) images/*.gif
+ifneq ($(JAR),)
+	$(INSTALL) -d tmp/jar
+	$(CP) classes/*.class tmp/jar
+	$(INSTALL) -d tmp/jar/images
+	$(CP) images/*.gif tmp/jar/images
+	($(CD) tmp/jar; $(JAR) cmf ../../jar.txt ../../$@ *)
+	$(RMRF) tmp/jar
+else
+	@$(ECHO) "ERROR: no 'jar' command - cannot create $@"
+endif
+
+barcontrol-linux.jar: jar.txt $(OBJECTS) src/Errors.java images/*.gif $(SWT_JAR_LINUX)
+ifneq ($(JAR),)
+	$(INSTALL) -d tmp/jar
+	($(CD) tmp/jar; $(UNZIP) ../../$(SWT_JAR_LINUX) 1>/dev/null; $(RMRF) META-INF)
+	$(CP) classes/*.class tmp/jar
+	$(INSTALL) -d tmp/jar/images
+	$(CP) images/*.gif tmp/jar/images
+	($(CD) tmp/jar; $(JAR) cmf ../../jar.txt ../../$@ *)
+	$(RMRF) tmp/jar
+else
+	@$(ECHO) "ERROR: no 'jar' command - cannot create $@"
+endif
+
+barcontrol-linux_64.jar: jar.txt $(OBJECTS) src/Errors.java images/*.gif $(SWT_JAR_LINUX_64)
+ifneq ($(JAR),)
+	$(INSTALL) -d tmp/jar
+	($(CD) tmp/jar; $(UNZIP) ../../$(SWT_JAR_LINUX_64) 1>/dev/null; $(RMRF) META-INF)
+	$(CP) classes/*.class tmp/jar
+	$(INSTALL) -d tmp/jar/images
+	$(CP) images/*.gif tmp/jar/images
+	($(CD) tmp/jar; $(JAR) cmf ../../jar.txt ../../$@ *)
+	$(RMRF) tmp/jar
+else
+	@$(ECHO) "ERROR: no 'jar' command - cannot create $@"
+endif
+
+barcontrol-windows.jar: jar.txt $(OBJECTS) images/*.gif jars/windows/swt-3.6.jar
+ifneq ($(JAR),)
+	$(INSTALL) -d tmp/jar
+	($(CD) tmp/jar; $(UNZIP) ../../$(SWT_JAR_WINDOWS) 1>/dev/null; $(RMRF) META-INF)
+	$(CP) classes/*.class tmp/jar
+	$(INSTALL) -d tmp/jar/images
+	$(CP) images/*.gif tmp/jar/images
+	($(CD) tmp/jar; $(JAR) cmf ../../jar.txt ../../$@ *)
+	$(RMRF) tmp/jar
+else
+	@$(ECHO) "ERROR: no 'jar' command - cannot create $@"
+endif
+
+# create Unix start script
+barcontrol: barcontrol.in barcontrol-linux.jar barcontrol-linux_64.jar
+	$(CAT) barcontrol.in | \
+        ( \
+          while IFS="" read line; do \
+            line=`$(ECHO) "$$line"|$(SED) 's|\@JAVA\@|$(JAVA)|g'`; \
+            $(ECHO) "$$line"; \
+          done; \
+        ) > $@
+	$(CHMOD) 775 $@
+
+ifneq ($(LAUNCH4J),)
+# create Windows executable
+barcontrol.exe: barcontrol-windows.jar
+	$(LAUNCH4J) barcontrol.xml
+else
+# create Windows start script
+barcontrol.bat: barcontrol.bat.in barcontrol-windows.jar
+	$(CAT) barcontrol.bat.in | \
+        ( \
+          while IFS="" read line; do \
+            line=`$(ECHO) "$$line"|$(SED) 's|\@JAVA\@|$(JAVA)|g'`; \
+            $(ECHO) "$$line"; \
+          done; \
+        ) > $@
+	$(CHMOD) 775 $@
+endif
+
+# run
+run: $(OBJECTS)
+ifneq ($(JAVA),)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(CLASSPATH) BARControl $(OPTIONS)
+else
+	@$(ECHO) "ERROR: no 'java' command - cannot execute BARControl"
+endif
+rundebug: $(OBJECTS)
+ifneq ($(JAVA),)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(CLASSPATH) BARControl --debug $(OPTIONS)
+else
+	@$(ECHO) "ERROR: no 'java' command - cannot execute BARControl"
+endif
+runxdebug: $(OBJECTS)
+ifneq ($(JAVA),)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(CLASSPATH) BARControl --debug --bar-server-debug $(OPTIONS)
+else
+	@$(ECHO) "ERROR: no 'java' command - cannot execute BARControl"
+endif
+
+rundev: $(OBJECTS)
+ifneq ($(JAVA),)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(CLASSPATH) BARControl --tls-port=39909 --key-file=../bar.jks $(OPTIONS)
+else
+	@$(ECHO) "ERROR: no 'java' command - cannot execute BARControl"
+endif
+rundevdebug: $(OBJECTS)
+ifneq ($(JAVA),)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(CLASSPATH) BARControl --tls-port=39909 --key-file=../bar.jks --debug $(OPTIONS)
+else
+	@$(ECHO) "ERROR: no 'java' command - cannot execute BARControl"
+endif
+rundevxdebug: $(OBJECTS)
+ifneq ($(JAVA),)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(CLASSPATH) BARControl --tls-port=39909 --key-file=../bar.jks --debug --bar-server-debug $(OPTIONS)
+else
+	@$(ECHO) "ERROR: no 'java' command - cannot execute BARControl"
+endif
+
+# run with jar file
+ifneq ($(JAVA),)
+runjar: barcontrol
+	./barcontrol
+else
+	@$(ECHO) "ERROR: no 'java' commadn - cannot execute BARControl"
+endif
+
+# copy distribution files
+.PHONY: dist
+dist:
+ifneq ($(DIRECTORY),)
+	$(INSTALL) -d $(DIRECTORY)/barcontrol
+	$(INSTALL) -d $(DIRECTORY)/barcontrol/src
+	$(INSTALL) -m 664 \
+                   Makefile.in \
+                   barcontrol.cfg \
+                   $(DIRECTORY)/barcontrol
+	$(INSTALL) -m 664 \
+                   $(sort $(SOURCES)) \
+                   src/Config.java.in \
+                   $(DIRECTORY)/barcontrol/src
+	$(INSTALL) -d $(DIRECTORY)/barcontrol/classes
+	$(INSTALL) -m 664 \
+                   $(sort $(OTHER_SOURCES)) \
+                   $(DIRECTORY)/barcontrol
+	$(INSTALL) -d $(DIRECTORY)/barcontrol/images
+	$(INSTALL) -m 664 \
+                   images/*.gif \
+                   $(DIRECTORY)/barcontrol/images
+	$(INSTALL) -d $(DIRECTORY)/barcontrol/jars/linux
+	$(INSTALL) -m 664 \
+                   jars/linux/*.jar \
+                   $(DIRECTORY)/barcontrol/jars/linux
+	$(INSTALL) -d $(DIRECTORY)/barcontrol/jars/solaris
+	$(INSTALL) -m 664 \
+                   jars/solaris/*.jar \
+                   $(DIRECTORY)/barcontrol/jars/solaris
+	$(INSTALL) -d $(DIRECTORY)/barcontrol/jars/windows
+	$(INSTALL) -m 664 \
+                   jars/windows/*.jar \
+                   $(DIRECTORY)/barcontrol/jars/windows
+else
+	$(ECHO) Please call 'make dist' from top-level directory to create a distribution.
+endif
+
+# end of file

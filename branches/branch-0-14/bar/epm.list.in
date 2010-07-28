@@ -1,0 +1,94 @@
+$epmVersion3=@EPM_VERSION_3@
+$epmVersion4=@EPM_VERSION_4@
+
+$prefix=@INSTALL_DIR@
+$exec_prefix=@INSTALL_DIR@
+$bindir=${exec_prefix}/bin
+$datarootdir=/usr/share
+$docdir=${datarootdir}/doc/bar
+$mandir=@MAN_DIR@
+$configdir=@CONFIG_DIR@
+$tlsdir=@TLS_DIR@
+
+%product BAR
+%copyright @COPYRIGHT_DATE@ by Torsten Rupp, All Rights Reserved.
+%vendor Torsten Rupp
+%if epmVersion3
+%license GPL v2
+%licensefile doc/COPYING
+%readmefile doc/README
+%endif
+%if epmVersion4
+%license doc/COPYING
+%readme doc/README
+%endif
+%ifdef     PACKAGE_CMD
+%description Backup archiver program for UNIX (command line tools).
+%elseifdef PACKAGE_GUI
+%description Backup archiver program for UNIX (GUI tools).
+%else
+%description Backup archiver program for UNIX.
+%endif
+%version @VERSION_MAJOR@.@VERSION_MINOR@
+
+# executables
+%system all
+%ifdef     PACKAGE_CMD
+f 0755 root sys ${bindir}/bar bar/bar
+f 0755 root sys ${bindir}/bar-keygen bar/bar-keygen
+%elseifdef PACKAGE_GUI
+f 0755 root sys ${bindir}/barcontrol barcontrol/barcontrol
+f 0644 root sys ${bindir}/barcontrol-linux.jar barcontrol/barcontrol-linux.jar
+%endif
+
+# configuration
+%system all
+%ifdef     PACKAGE_CMD
+f 0600 root sys ${configdir}/bar.cfg bar/bar.cfg
+%elseifdef PACKAGE_GUI
+f 0600 root sys ${configdir}/barcontrol.cfg barcontrol/barcontrol.cfg
+%endif
+d 0755 root sys ${configdir}/jobs
+
+# documentation
+%system all
+%ifdef PACKAGE_CMD
+f 0644 root sys ${docdir}/README doc/README
+f 0644 root sys ${docdir}/COPYING doc/COPYING
+f 0644 root sys ${docdir}/bar.7 doc/bar.7
+f 0644 root sys ${docdir}/bar.pdf doc/bar.pdf
+f 0644 root sys ${docdir}/quickstart.txt doc/quickstart.txt
+%endif
+
+# man pages
+%system all
+%ifdef PACKAGE_CMD
+f 0644 root sys ${mandir}/man7/bar.7 doc/bar.7
+%endif
+
+# startup scripts
+%system linux
+%ifdef PACKAGE_CMD
+%format rpm
+f 0755 root sys /etc/init.d/barserver scripts/barserver-SuSE
+%format deb
+f 0755 root sys /etc/init.d/barserver scripts/barserver-debian
+%endif
+
+# create keys
+%ifdef PACKAGE_CMD
+%postinstall <<EOT
+  bar-keygen --tls-directory=$tlsdir --java-private-directory=$configdir --quiet
+EOT
+%endif
+
+# uninstall
+%ifdef PACKAGE_CMD
+%preremove <<EOT
+  rm -f $configdir/bar.jks
+  rm -f $tlsdir/private/bar-key.pem
+  rm -f $tlsdir/private/bar-server-key.pem
+  rm -f $tlsdir/certs/bar-ca.pem
+  rm -f $tlsdir/certs/bar-server-cert.pem
+EOT
+%endif

@@ -1,0 +1,881 @@
+# ----------------------------------------------------------------------------
+#
+# $Source: /home/torsten/cvs/bar/bar/Makefile.in,v $
+# $Revision: 1.28 $
+# $Author: torsten $
+# Contents: Makefile for bar
+# Systems: all
+#			   
+# ----------------------------------------------------------------------------
+
+#------------------------------------ paths ----------------------------------
+
+INSTALL_DIR     = @INSTALL_DIR@
+INSTALL_BIN_DIR = @INSTALL_BIN_DIR@
+CONFIG_DIR      = @CONFIG_DIR@
+TLS_DIR         = @TLS_DIR@
+
+#--------------------------------- tool chain --------------------------------
+
+# shell in Makefile must be bash
+SHELL               = bash
+
+CC                  = @CC@
+CC_FLAGS            = @CC_FLAGS@ -g
+CC_WARN_FLAGS       = -Wall -Wpointer-arith -Wunused-label -Wunused-parameter -Wunused-variable -Wmissing-prototypes -Wmissing-declarations
+CC_OPTIMIZE         = @CC_OPTIMIZE@
+CC_DEFINES          = @CC_DEFINES@ _LONG_LONG
+# -D_LONG_LONG
+CC_INCLUDES         = @CC_INCLUDES@
+ifdef WERROR
+  CC_FLAGS += -Werror
+endif
+
+LD                  = @CC@
+LD_FLAGS            = @LD_FLAGS@
+LD_LIBRARY_PATHS    = @LIBRARY_PATHS@
+LD_LIBRARIES        = @LIBRARIES@ pthread c m
+LD_STATIC_LIBRARIES = @STATIC_LIBRARIES@
+LD_STATIC_PREFIX    = -Wl,-static
+
+#---------------------------------- commands----------------------------------
+
+CAT        = cat
+CHMOD      = chmod
+CP         = cp
+DD         = dd
+DIFF       = diff
+ECHO       = echo
+ECHO_NO_LF = echo -n
+GREP       = grep
+INSTALL    = @INSTALL@
+MKDIR      = mkdir
+PERL       = @PERL@
+RMDIR      = rmdir
+RMF        = rm -f
+RMRF       = rm -rf
+SED        = sed
+TAR        = tar
+
+# for tests only (create test devices)
+LOSETUP    = /sbin/losetup
+MKFS       = /sbin/mkfs
+MOUNT      = /bin/mount
+UMOUNT     = /bin/umount
+SUDO       = sudo
+
+LOOP0      = /dev/loop0
+LOOP1      = /dev/loop1
+
+#------------------------ specific variables/settings ------------------------
+
+# major, minor version number
+VERSION_MAJOR := $(shell $(CAT) ../version|$(GREP) MAJOR|$(SED) 's/MAJOR=//g')
+VERSION_MINOR := $(shell $(CAT) ../version|$(GREP) MINOR|$(SED) 's/MINOR=//g')
+
+# supported compress algorithms
+COMPRESS_NAMES = none zip0 zip1 zip2 zip3 zip4 zip5 zip6 zip7 zip8 zip9
+ifeq (@HAVE_BZ2@,1)
+COMPRESS_NAMES += bzip1 bzip2 bzip3 bzip4 bzip5 bzip6 bzip7 bzip8 bzip9
+endif
+ifeq (@HAVE_LZMA@,1)
+COMPRESS_NAMES += lzma1 lzma2 lzma3 lzma4 lzma5 lzma6 lzma7 lzma8 lzma9
+endif
+
+# supported crypt algorithms
+CRYPT_NAMES    = none
+ifeq (@HAVE_GCRYPT@,1)
+CRYPT_NAMES    += 3DES CAST5 BLOWFISH AES128 AES192 AES256 TWOFISH128 TWOFISH256
+endif
+
+# password used for tests
+TEST_PASSWORD=Franz_Kafka:Die_Verwandlung
+
+# crypt/compress used for all-test (do not select all available compress and
+# crypt algorithms, because this would take a long time)
+TEST_ALL_COMPRESS_NAMES=zip9
+ifeq (@HAVE_BZ2@,1)
+TEST_ALL_COMPRESS_NAMES += bzip9
+endif
+ifeq (@HAVE_LZMA@,1)
+TEST_ALL_COMPRESS_NAMES += lzma9
+endif
+TEST_ALL_CRYPT_NAMES=none
+ifeq (@HAVE_GCRYPT@,1)
+TEST_ALL_CRYPT_NAMES += AES256
+endif
+
+#---------------------------------- rules ------------------------------------
+
+# disable implicit rule for *.y -> *.c
+%.c:%.y
+
+%.o:%.c
+	$(CC) $(CC_FLAGS) $(CC_OPTIMIZE) -DVERSION_MAJOR="$(VERSION_MAJOR)" -DVERSION_MINOR="$(VERSION_MINOR)" $(foreach z,$(CC_DEFINES),-D$z) $(CC_WARN_FLAGS) $(foreach z,$(CC_INCLUDES),-I$z) -c $*.c -o $*.o
+
+%:%.o
+	$(LD) $(LD_FLAGS) -o $@ $^ $(foreach z,$(LD_LIBRARY_PATHS),-L$z) \
+          $(foreach z,$(LD_LIBRARIES), -l$z) $(foreach z,$(LD_LIBRARIES), -l$z) \
+          $(if $(LD_STATIC_LIBRARIES),$(LD_STATIC_PREFIX) $(foreach z,$(LD_STATIC_LIBRARIES),-l$z) $(foreach z,$(LD_STATIC_LIBRARIES),-l$z))
+
+#--------------------------------- objects -----------------------------------
+
+BAR_SOURCES          = bar.c \
+                       errors.c \
+                       commands_create.c \
+                       commands_list.c \
+                       commands_test.c \
+                       commands_compare.c \
+                       commands_restore.c \
+                       files.c \
+                       devices.c \
+                       filesystems.c \
+                       archive.c \
+                       archive_format.c \
+                       chunks.c \
+                       patterns.c \
+                       patternlists.c \
+                       entrylists.c \
+                       compress.c \
+                       crypt.c \
+                       passwords.c \
+                       misc.c \
+                       storage.c \
+                       network.c \
+                       server.c \
+                       \
+                       global.c \
+                       cmdoptions.c \
+                       configvalues.c \
+                       lists.c \
+                       strings.c \
+                       stringlists.c \
+                       threads.c \
+                       msgqueues.c \
+                       semaphores.c \
+                       fragmentlists.c \
+                       arrays.c \
+                       dictionaries.c \
+                       bitmaps.c \
+
+BAR_OBJECTS          = $(foreach z,$(BAR_SOURCES),$(subst .c,.o,$z)) \
+                       errors.o \
+                       archive_format.o
+
+DESTROYER_SOURCES    = destroyer.c \
+                       global.c \
+                       cmdoptions.c \
+                       lists.c \
+                       strings.c \
+
+DESTROYER_OBJECTS    = $(foreach z,$(DESTROYER_SOURCES),$(subst .c,.o,$z)) \
+
+OTHER_SOURCES        = filesystems_ext.c \
+                       filesystems_fat.c \
+                       filesystems_reiserfs.c \
+                       \
+                       archive_format.pl \
+                       archive_format.def \
+                       valgrind.supp \
+                       bar.cfg \
+                       bar-keygen.in \
+
+INTERMEDIATE         = errors.c \
+                       errors.h \
+                       archive_format.c \
+                       archive_format.h \
+
+TARGETS              = bar \
+                       bar-keygen \
+                       destroyer \
+
+#------------------------------ dependencies ---------------------------------
+
+# default target
+.PHONY: all clean distclean depend
+all: $(TARGETS)
+
+# clean
+clean:
+	$(RMF) $(BAR_OBJECTS)
+	$(RMF) $(DESTROYER_OBJECTS)
+	$(RMF) $(INTERMEDIATE)
+	$(RMF) $(TARGETS)
+
+distclean: clean
+	$(RMF) Makefile Makefile.depend
+	$(RMF) config.h
+
+# help
+.PHONY: help
+help:
+	@$(ECHO) "Help targets:"
+	@$(ECHO) ""
+	@$(ECHO) "  all "
+	@$(ECHO) "  clean "
+	@$(ECHO) "  distclean"
+	@$(ECHO) ""
+	@$(ECHO) "  runserver"
+	@$(ECHO) "  runserver_ssl"
+	@$(ECHO) ""
+	@$(ECHO) "  test"
+	@$(ECHO) "  test1, test_basic"
+	@$(ECHO) "  test2, test_compress"
+	@$(ECHO) "  test3, test_crypt"
+	@$(ECHO) "  test4, test_asymmetric_crypt"
+	@$(ECHO) "  test5, test_split"
+	@$(ECHO) "  test6, test_image"
+	@$(ECHO) "  test_all"
+	@$(ECHO) ""
+	@$(ECHO) "  test_image_raw"
+	@$(ECHO) "  test_image_ext"
+	@$(ECHO) "  test_image_fat"
+	@$(ECHO) "  test_image_reiserfs"
+	@$(ECHO) ""
+	@$(ECHO) "  memcheck"
+	@$(ECHO) "  memcheck_extended"
+	@$(ECHO) ""
+	@$(ECHO) "  dist"
+
+# create dependencies
+.PHONY: depend
+depend: Makefile.depend
+
+Makefile.depend: $(BAR_SOURCES) $(DESTROYER_SOURCES) $(INTERMEDIATE)
+	$(ECHO) > Makefile.depend
+	for z in $(BAR_SOURCES) $(DESTROYER_SOURCES); do \
+          $(CC) -MM >> Makefile.depend $$z; \
+        done;
+
+# ----------------------------------------------------------------------------
+
+# create BAR
+bar@EXEEXT@: $(BAR_OBJECTS)
+
+# create bar-keygen script
+bar-keygen: bar-keygen.in
+	$(CAT) bar-keygen.in | \
+        ( \
+          while IFS="" read -r line; do \
+            if   test "$$line" = "@CERTTOOL/CA.TEMPL@"; then \
+              $(CAT) ../ssl/certtool/ca.tmpl; \
+            elif test "$$line" = "@CERTTOOL/SERVER.TEMPL@"; then \
+              $(CAT) ../ssl/certtool/server.tmpl; \
+            elif test "$$line" = "@OPENSSL/CA.TEMPL@"; then \
+              $(CAT) ../ssl/openssl/ca.tmpl; \
+            elif test "$$line" = "@OPENSSL/SERVER.TEMPL@"; then \
+              $(CAT) ../ssl/openssl/server.tmpl; \
+            else \
+              line=`$(ECHO) "$$line"|$(SED) 's|\@TLS_DIR\@|$(DESTDIR)$(TLS_DIR)|g'`; \
+              line=`$(ECHO) "$$line"|$(SED) 's|\@CONFIG_DIR\@|$(DESTDIR)$(CONFIG_DIR)|g'`; \
+              $(ECHO) "$$line"; \
+            fi; \
+          done; \
+        ) > $@
+	$(CHMOD) 775 $@
+
+# error definition
+errors.h: ../errors.def ../errors.pl
+	$(PERL) ../errors.pl < $^ -h $@
+errors.c: ../errors.def ../errors.pl
+	$(PERL) ../errors.pl < $^ -c $@
+
+# archive format definition
+archive_format.h: archive_format.def
+	$(PERL) archive_format.pl < $^ -h $@
+archive_format.c: archive_format.def
+	$(PERL) archive_format.pl < $^ -c $@ -i archive_format.h
+
+# create destroyer (for testing only!)
+destroyer@EXEEXT@: $(DESTROYER_OBJECTS) 
+	$(LD) $(LD_FLAGS) -o $@ $^ -lc -lpthread
+
+# ----------------------------------------------------------------------------
+
+# run server
+.PHONY: barserver barserver_ssl
+runserver barserver: bar
+	$(INSTALL) -d jobs
+	nice ./bar \
+          --daemon -D \
+          --server-jobs-directory jobs
+
+runserver_ssl barserver_ssl: bar ../bar-ca.pem ../bar-server-cert.pem ../bar-server-key.pem
+	$(INSTALL) -d jobs
+	nice ./bar \
+          --daemon -D \
+          --server-jobs-directory jobs \
+          --server-ca-file=../bar-ca.pem \
+          --server-cert-file=../bar-server-cert.pem \
+          --server-key-file=../bar-server-key.pem
+
+# ----------------------------------------------------------------------------
+
+# do test
+.PHONY: test test1 test2 test3 test4 test5 test6 test_all
+.PHONY: test_basic test_compress test_crypt test_asymmetric_crypt test_split test_image
+test:
+	@$(MAKE) QUIET=1 --no-print-directory -s test1 test2 test3 test4 test5 test6 test_all
+
+test1 test_basic: bar
+	@$(ECHO_NO_LF) "Test 1: basic..."
+	@$(MAKE) \
+          BAR_FILE="test" \
+          OPTIONS="--compress-algorithm=none --crypt-algorithm=none" \
+          test_files
+	@$(ECHO) "ok"
+
+test2 test_compress: bar
+	@$(ECHO_NO_LF) "Test 2: compress..."
+	for compress in $(COMPRESS_NAMES); do \
+          $(MAKE) \
+            BAR_FILE="test" \
+            OPTIONS="--compress-algorithm=$$compress --crypt-algorithm=none" \
+            test_files \
+            ; \
+        done
+	@$(ECHO) "ok"
+
+test3 test_crypt: bar
+	@$(ECHO_NO_LF) "Test 3: crypt..."
+	for crypt in $(CRYPT_NAMES); do \
+          $(MAKE) \
+            BAR_FILE="test-###" \
+            OPTIONS="--compress-algorithm=none --crypt-algorithm=$$crypt --crypt-password=$(TEST_PASSWORD)" \
+            test_files \
+            ; \
+        done
+	@$(ECHO) "ok"
+
+test4 test_asymmetric_crypt: bar
+	@$(ECHO_NO_LF) "Test 4: asymmetric crypt..."
+	@$(RM) test/key.*; $(ECHO_NO_LF) -e "$(TEST_PASSWORD)\n$(TEST_PASSWORD)\n" | SSH_ASKPASS= ./bar --generate-keys test/key
+	for crypt in $(CRYPT_NAMES); do \
+          $(MAKE) \
+            BAR_FILE="test-###" \
+            OPTIONS="--compress-algorithm=none --crypt-algorithm=$$crypt --crypt-password=$(TEST_PASSWORD) --crypt-asymmetric --crypt-public-key=test/key.public --crypt-private-key=test/key.private" \
+            test_files \
+            ; \
+        done
+	@$(ECHO) "ok"
+
+test5 test_split: bar
+	@$(ECHO_NO_LF) "Test 5: split..."
+	$(MAKE) \
+          BAR_FILE="test-###" \
+          OPTIONS="--archive-part-size=100000 --compress-algorithm=none --crypt-algorithm=none" \
+          test_files
+	@$(ECHO) "ok"
+
+test6 test_image: bar
+	@$(ECHO_NO_LF) "Test 6: image..."
+	for compress in none zip9; do \
+          $(MAKE) \
+            BAR_FILE="test" \
+            OPTIONS="--compress-algorithm=$$compress --crypt-algorithm=none" \
+            test_files \
+            ; \
+        done
+	@$(ECHO) "ok"
+
+test_all: bar
+	@$(ECHO_NO_LF) "Test all..."
+	@$(RM) test/key.*; $(ECHO_NO_LF) -e "$(TEST_PASSWORD)\n$(TEST_PASSWORD)\n" | SSH_ASKPASS= ./bar --generate-keys test/key
+	for compress in $(TEST_ALL_COMPRESS_NAMES); do \
+          for crypt in $(TEST_ALL_CRYPT_NAMES); do \
+            $(MAKE) \
+              BAR_FILE=test-### \
+              OPTIONS="--compress-algorithm=$$compress --crypt-algorithm=$$crypt --crypt-password=$(TEST_PASSWORD) --crypt-asymmetric --crypt-public-key=test/key.public --crypt-private-key=test/key.private --archive-part-size=100K" \
+              test_files \
+              ; \
+            rc=$$?; \
+            if test $$rc -ne 0; then \
+              exit $$rc; \
+            fi; \
+            $(MAKE) \
+              BAR_FILE=test-### \
+              OPTIONS="--compress-algorithm=$$compress --crypt-algorithm=$$crypt --crypt-password=$(TEST_PASSWORD) --crypt-asymmetric --crypt-public-key=test/key.public --crypt-private-key=test/key.private --archive-part-size=10M" \
+              test_images \
+              ; \
+            rc=$$?; \
+            if test $$rc -ne 0; then \
+              exit $$rc; \
+            fi; \
+          done; \
+        done
+	@$(ECHO) "ok"
+
+TEST_FILES = test/*.bar test/*.bid test/new test/restore test/*.image
+
+.PHONY: test_files
+test_files: \
+  test_file_base
+
+.PHONY: test_file_base
+test_file_base: bar
+	$(RMRF) $(TEST_FILES)
+	SSH_ASKPASS= ./bar -c test/$(BAR_FILE).bar test/data $(OPTIONS) --overwrite-archive-files $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -l test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -l test/test*.bar -# '*rand*' -! '*512*' $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -t test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -d test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -x test/test*.bar $(OPTIONS) --destination test/restore $(if $(QUIET),1>/dev/null)
+	$(DIFF) -r -x unreadable.txt -x circular-link.dat -x fifo test/data test/restore/test/data
+	#
+	$(RMRF) $(TEST_FILES)
+	SSH_ASKPASS= ./bar -c test/$(BAR_FILE)-full.bar --full --incremental-list-file=test/$(BAR_FILE).bid test/data test/new $(OPTIONS) --overwrite-archive-files $(if $(QUIET),1>/dev/null)
+	$(MKDIR) test/new; $(CP) test/data/random1024.dat test/new/random1024-new.dat
+	SSH_ASKPASS= ./bar -c test/$(BAR_FILE)-incremental.bar --incremental --incremental-list-file=test/$(BAR_FILE).bid test/data test/new $(OPTIONS) --overwrite-archive-files $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -t test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -d test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -x test/test*.bar $(OPTIONS) --destination test/restore $(if $(QUIET),1>/dev/null)
+
+.PHONY: test_file_destroy test_file_base_destroy
+test_file_destroy test_file_base_destroy: bar destroyer
+	$(RMRF) $(TEST_FILES)
+	SSH_ASKPASS= ./bar -c test/$(if $(BAR_FILE),$(BAR_FILE),test).bar test/data/zero1024.dat $(OPTIONS) --overwrite-archive-files $(if $(QUIET),1>/dev/null)
+	./destroyer test/test.bar m:0 > test/test.bar_destroyed
+	SSH_ASKPASS= ./bar -l test/test.bar_destroyed $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -l test/test.bar_destroyed -# '*rand*' -! '*512*' $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -t test/test.bar_destroyed $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -d test/test.bar_destroyed $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -x test/test.bar_destroyed $(OPTIONS) --destination test/restore $(if $(QUIET),1>/dev/null)
+	$(DIFF) -r -x unreadable.txt test/data test/restore/test/data
+
+# helper function to create a test device
+# call FunctionTestDeviceCreate,<loop device> <file>
+FunctionTestDeviceCreate = \
+  ( \
+    $(SUDO) $(LOSETUP) -d $1 2>/dev/null; \
+    $(SUDO) $(LOSETUP) $1 $2; rc=$$?; if test $$rc -ne 0; then exit $$rc; fi; \
+  )
+
+# helper function to delete a test device
+# call FunctionTestDeviceDelete,<loop device> <file>
+FunctionTestDeviceDelete = \
+  ( \
+    $(SUDO) $(LOSETUP) -d $1; \
+    $(RMF) $2; \
+  )
+
+# helper function to zero out test file
+# call FunctionTestFileZero,<file>,<size>
+FunctionTestFileZero = \
+  ( \
+    $(DD) if=/dev/zero of=$1 bs=$2 count=1 2>/dev/null; \
+  )
+
+# helper function to fill test file with random data
+# call FunctionTestFileRandom,<file>,<size>
+FunctionTestFileRandom = \
+  ( \
+    $(DD) if=/dev/urandom of=$1 bs=$2 count=1 2>/dev/null; \
+  )
+
+# helper function to create huge spare test file
+# call FunctionTestDeviceHugeSpare,<file>,<size>
+FunctionTestDeviceHugeSpare = \
+  ( \
+    $(DD) if=/dev/zero of=$1 seek=$2 bs=1 count=1 2>/dev/null; \
+  )
+
+# helper function to initialize file system on a test device
+# call FunctionTestDeviceInitFilesystem,<loop device>,<mkfs options>,<mount point>
+FunctionTestDeviceInitFilesystem = \
+  ( \
+    $(SUDO) $(MKFS) $2 $1 $(if $(QUIET),1>/dev/null 2>/dev/null); \
+    $(if $3,($(MKDIR) test/dev 2>/dev/null; \
+             $(SUDO) $(MOUNT) $1 test/dev; rc=$$?; if test $$rc -ne 0; then exit $$rc; fi; \
+             $(SUDO) $(CP) -r test/data test/dev $(if $(QUIET),1>/dev/null 2>/dev/null); \
+             $(SUDO) $(UMOUNT) test/dev; $(RMDIR) test/dev; \
+            ) \
+     ) \
+  )
+
+# helper function to dump content of device to file
+# call FunctionTestDeviceDump,<loop device>,<file>
+FunctionTestDeviceDump = \
+  ( \
+    ($(SUDO) $(DD) if=$1 of=-) > $2 2>/dev/null; \
+  )
+
+.PHONY: test_images
+test_images: \
+  test_image_raw \
+  test_image_ext \
+  test_image_fat \
+  test_image_reiser
+
+.PHONY: test_image_raw
+test_image_raw:
+	# raw
+	$(call FunctionTestFileRandom,test/dev0,32M); $(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestFileZero,test/dev1,32M);   $(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1) \
+           OPTIONS="$(if $(OPTIONS),$(OPTIONS) --raw-images,--compress-algorithm=none --crypt-algorithm=none --raw-images)"
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+
+.PHONY: test_image_ext test_image_ext2 test_image_ext3 test_image_ext4
+test_image_ext: \
+  test_image_ext2 \
+  test_image_ext3 \
+  test_image_ext4 
+
+test_image_ext2:
+ifneq (@MKFS_EXT2@,)
+	# ext2
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext2,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext2 -b 1024,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext2 -b 2048,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext2 -b 4096,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	#
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+test_image_ext3:
+ifneq (@MKFS_EXT3@,)
+	# ext3
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext3,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext3 -b 1024,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext3 -b 2048,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext3 -b 4096,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+test_image_ext4:
+ifneq (@MKFS_EXT4@,)
+	# ext4
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext4,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext4 -b 1024,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext4 -b 2048,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,32M)
+	$(call FunctionTestFileZero,test/dev1,32M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext4 -b 4096,1)
+	$(MAKE) test_image_base \
+           DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	#$(call FunctionTestDeviceHugeSpare,test/dev0,512G)
+	#$(call FunctionTestDeviceHugeSpare,test/dev1,512G)
+	#$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	#$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	#$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t ext4 -b 4096,1)
+	#$(MAKE) test_image_base \
+        #   DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	#$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	#$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+.PHONY: test_image_fat test_image_fat12 test_image_fat16 test_image_fat32
+test_image_fat: \
+  test_image_fat12 \
+  test_image_fat16 \
+  test_image_fat32
+
+test_image_fat12:
+ifneq (@MKFS_MSDOS@,)
+	# FAT12
+	$(call FunctionTestFileZero,test/dev0,1440K)
+	$(call FunctionTestFileZero,test/dev1,1440K)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t msdos -F 12,1)
+	$(MAKE) test_image_base \
+          DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+test_image_fat16:
+ifneq (@MKFS_MSDOS@,)
+	# FAT16
+	$(call FunctionTestFileZero,test/dev0,20M)
+	$(call FunctionTestFileZero,test/dev1,20M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t msdos -F 16,1)
+	$(MAKE) test_image_base \
+          DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionDeleteTestDevice,$(LOOP1),test/dev1)
+	$(call FunctionDeleteTestDevice,$(LOOP0),test/dev0)
+endif
+
+test_image_fat32:
+ifneq (@MKFS_MSDOS@,)
+	# FAT32
+	$(call FunctionTestFileZero,test/dev0,40M)
+	$(call FunctionTestFileZero,test/dev1,40M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t msdos -F 32,1)
+	$(MAKE) test_image_base \
+          DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+.PHONY: test_image_reiser test_image_reiserfs1 test_image_reiserfs2 test_image_reiserfs3 test_image_reiser4
+test_image_reiser: \
+  test_image_reiserfs1 \
+  test_image_reiserfs2 \
+  test_image_reiserfs3 \
+  test_image_reiser4
+
+test_image_reiserfs1:
+ifneq (@MKFS_REISERFS@,)
+endif
+
+test_image_reiserfs2:
+ifneq (@MKFS_REISERFS@,)
+endif
+
+test_image_reiserfs3:
+ifneq (@MKFS_REISERFS@,)
+	# ReiserFS version 3 (Note: Linux only support block size 4096)
+	$(call FunctionTestFileZero,test/dev0,64M)
+	$(call FunctionTestFileZero,test/dev1,64M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t reiserfs -b 4096 -q --format 3.5,1)
+	$(MAKE) test_image_base \
+          DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+	#
+	$(call FunctionTestFileZero,test/dev0,64M)
+	$(call FunctionTestFileZero,test/dev1,64M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t reiserfs -b 4096 -q --format 3.6,1)
+	$(MAKE) test_image_base \
+          DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+test_image_reiser4:
+ifneq (@MKFS_REISER4@,)
+	# Reiser4 (Note: Linux only support block size 4096)
+	$(call FunctionTestFileZero,test/dev0,64M)
+	$(call FunctionTestFileZero,test/dev1,64M)
+	$(call FunctionTestDeviceCreate,$(LOOP0),test/dev0)
+	$(call FunctionTestDeviceCreate,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceInitFilesystem,$(LOOP0),-t reiser4 -b 4096 -y,1)
+	$(MAKE) test_image_base \
+          DEVICE0=$(LOOP0) DEVICE1=$(LOOP1)
+	$(call FunctionTestDeviceDelete,$(LOOP1),test/dev1)
+	$(call FunctionTestDeviceDelete,$(LOOP0),test/dev0)
+endif
+
+.PHONY: test_image_base
+test_image_base: bar
+	$(RMRF) $(TEST_FILES)
+	$(SUDO) $(CHMOD) o+rw $(DEVICE0)
+	$(SUDO) $(CHMOD) o+rw $(DEVICE1)
+	SSH_ASKPASS= ./bar -m test/$(if $(BAR_FILE),$(BAR_FILE),test).bar $(DEVICE0) $(if $(OPTIONS),$(OPTIONS),--compress-algorithm=none --crypt-algorithm=none) --overwrite-archive-files $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -t test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -d test/test*.bar $(OPTIONS) $(if $(QUIET),1>/dev/null)
+	SSH_ASKPASS= ./bar -x test/test*.bar $(OPTIONS) --destination $(DEVICE1) $(if $(QUIET),1>/dev/null)
+	$(call FunctionTestDeviceDump,$(DEVICE0),test/dev0.image)
+	$(call FunctionTestDeviceDump,$(DEVICE1),test/dev1.image)
+	$(DIFF) test/dev0.image test/dev1.image
+
+# ----------------------------------------------------------------------------
+
+# valgrind checks
+.PHONY: memcheck memcheck1
+memcheck: bar
+	$(MAKE) VALGRIND_OPTIONS="--leak-check=summary" $(if $(CHECK),memcheck$(CHECK),memcheck1 memcheck2 memcheck3 memcheck4 memcheck5 memcheck6 memcheck7)
+
+.PHONY: memcheck_extended
+memcheck_extended: bar
+	$(MAKE) VALGRIND_OPTIONS="--leak-check=full" $(if $(CHECK),memcheck$(CHECK),memcheck1 memcheck2 memcheck3 memcheck4 memcheck5 memcheck6 memcheck7)
+
+.PHONY: memcheck1 memcheck2 memcheck3 memcheck4 memcheck5 memcheck6 memcheck7
+memcheck1: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar --help > /dev/null
+memcheck2: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar -c test/test.bar test/data/zero1024.dat $(OPTIONS) --overwrite-archive-files > /dev/null
+memcheck3: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar -l test/test*.bar $(OPTIONS) > /dev/null
+memcheck4: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar -t test/test*.bar $(OPTIONS) > /dev/null
+memcheck5: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar -d test/test*.bar $(OPTIONS) > /dev/null
+memcheck6: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar -x test/test*.bar $(OPTIONS) --destination test/restore > /dev/null
+memcheck7: bar
+	valgrind \
+          --leak-resolution=high \
+          --track-fds=yes \
+          --suppressions=valgrind.supp \
+          $(VALGRIND_OPTIONS) \
+          ./bar \
+            --daemon \
+            --server-jobs-directory jobs \
+            --server-ca-file=bar-ca.pem \
+            --server-cert-file=bar-server-cert.pem \
+            --server-key-file=bar-server-key.pem
+
+# copy distribution files
+.PHONY: dist
+dist:
+ifneq ($(DIRECTORY),)
+	$(INSTALL) -d $(DIRECTORY)/bar
+	$(INSTALL) -m 664 \
+                   $(sort $(BAR_SOURCES) \
+                          $(patsubst %.c,%.h,$(BAR_SOURCES)) \
+                          $(DESTROYER_SOURCES) \
+                          $(patsubst %.c,%.h,$(DESTROYER_SOURCES)) \
+                          $(OTHER_SOURCES) \
+                          Makefile.in \
+                          config.h.in \
+                          bar.cfg \
+                   ) \
+                   $(DIRECTORY)/bar
+	$(INSTALL) -d $(DIRECTORY)/bar/test
+	$(INSTALL) -d $(DIRECTORY)/bar/test/data
+	$(INSTALL) -m 664 test/data/zero.dat \
+                          test/data/zero512k.dat \
+                          test/data/zero1024.dat \
+                          test/data/random512k.dat \
+                          test/data/random1024.dat \
+                          test/data/smallfile.dat \
+                          $(DIRECTORY)/bar/test/data
+else
+	@$(ECHO) Please call 'make dist' from top-level directory to create a distribution.
+endif
+
+-include Makefile.depend
+
+# end of file

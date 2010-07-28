@@ -1,0 +1,452 @@
+2010-07-28 0.14
+  * added command line control functions to barcontrol:
+    --list, --job, --job-mode, --abort, --ping, --pause,
+    --suspend, --continue
+  * improved barcontrol command line parser
+  * barcontrol: added file selector buttons for ssh keys, device name
+  * fixed barcontrol restore tab: listing path names
+  * fix C string parser: %s and %S can be empty strings
+  * barcontrol: fixed abort in restore dialog, some clean-up. Note:
+    The restore tab will be improved in some of the next releases.
+  * barcontrol: fixed parsing of archive part size (job was ignored
+    when number was bigger than 32bit; now 63bit are allowed)
+  * fixed display of archive/device sizes: units are G,M,K
+  * add warning when no BAR server password given
+  * BAR server: added support to list image entries
+  * updated manual
+  * clean-up
+
+2010-07-24 0.13d
+  * fix wrong installation path "/man/man7" man pages: now
+    /usr/share/man/man7
+
+2010-06-11 0.13c
+  * fix bar-keygen which caused broken Debian package: wrong template
+    file names
+  * fix bar-keygen: create bar.jsk in /etc/bar by default
+  * improved bar-keygen: check if keys exists, add option --force
+  * improved BAR server: additionall check /etc/ssl/private for
+    bar.jks
+  * fix some typing errors in manual
+  * fix Makefile of barcontrol: SWT JAR version
+
+2010-05-23 0.13b
+  * fix assert-error in options -#/-!
+  * improved test of file functions (added -#, -!)
+  * fix on-the-fly compiling of libgcrypt: use provided libgpg-error
+    instead of system-libraries (which may not exists)
+  * fixed and improved download of zlib: download recent version
+  * small fixes in manual
+
+2010-04-10 0.13a
+  * fix typing error in "owner"
+  * fix wrong parsing of "owner" in server
+  * fix memory leak in server
+  * barcontrol: fix opening directories in file tree
+  * added epm to download third-party script
+
+2010-03-21 0.13
+  * implemented device image functions: create images from devices
+  * implemented support for images with ext2/ext3, fat12/fat16/fat32
+    file systems
+  * renamed option --directory to --destination, use it for
+    destination of images, too
+    IMPORTANT: please edit your files in /etc/bar/jobs and
+    replaced "directory = ..." by "destination = ..."!
+  * verify if server TLS certificate expired; output error
+    message
+  * fix halt on some not implemented functions when
+    restoring files
+  * added stack backtrace output in string-debug functions
+  * fix lost string when directory cannot be created
+  * added option --owner
+  * barcontrol: added support for 64bit systems
+  * fixed some C compiler warnings
+  * fixed creating directory when writing incremental file list
+  * improved error messages
+  * fixed memory leak
+  * improved valgrind suppression rules
+  * fixed compilation warnings
+  * improved and clean-up command line/config value parsing
+  * set socket timeout in barcontrol (20s)
+  * improved error messages in barcontrol
+  * updated SWT JAR to 3.6 (this fix a bug with GTK versions
+    >= 2.18)
+  * added 64bit SWT JAR for Windows
+  * added SWT JAR for MacOSX (experimental)
+  * fixed C stacktrace output in debug mode: print function names
+  * added option -L = --long-format
+  * added option --human-format, -H: print sizes in human readable
+    format (size+unit)
+  * added first version of a manual!
+  * improved configure checks for doc tools
+
+2010-01-01 0.12d
+  * fixed wrong usage of vprintf in log function (caused SigSegV
+    on 64bit systems)
+
+2009-10-20 0.12c
+  * fixes in configure: fix large file support for some system
+  * fixes in configure: add libcrypto only if available (required
+    for some older libssh2 implemenations)
+
+2009-10-17 0.12b
+  * added option --owner to overwritting settings for
+    user/group of restored files
+  * fixed creating directories: use default user creation
+    mask for parent directories
+  * revert error to warning when permission/owner ship
+    cannot be set if --stop-on-error is not given
+  * fixed configure check for EPM: do not try to detect
+    version if no EPM installed
+  * fixed configure check for gcrypt version
+
+2009-09-15 0.12a
+  * clean-up design of progress bars
+  * fixed layout of part-editor (canvas widget)
+
+2009-07-19 0.12
+  * disabled -fschedule-insns2 optimization. This cause with my
+    gcc 3.3 a problem in String_parse() when a boolean value
+    should be read. It seems the address of the variable become
+    wrong when -fno-schedule-insns2 is not given (thus
+    schedule-insns2 optimization is enabled). Is this a gcc
+    bug?
+  * added crypt password in jobs-storage-tab: password can be
+    default (read from configuration file), interactive input
+    (ask) or specified password
+  * barcontrol: added check if JDK key file is valid
+  * barcontrol: improved password dialog
+  * barcontrol: added password dialog when crypt password mode
+    is "ask"
+  * fixed statics of skipped/error files
+  * barcontrol; added pause button with timeout (default
+    60min)
+  * added support for lzma compression
+  * added script for simple download of additional packages
+  * added support to build additional packages when compiling
+    bar (extract packages to specific sub-directories or use
+    links)
+  * barcontrol: added copy job button
+  * barcontrol: check if job exists for new, copy, rename
+
+2009-04-12 0.11b
+  * barcontrol: improved volume dialog: unload tray button
+  * fixed handling of DVDs
+  * barcontrol: fixed progress bar for volume
+  * barcontrol/server: fixed writing crypt-type entry (was empty)
+
+2009-03-31 0.11a
+  * fixed accidently removed save/cancel button in
+    storage part edit dialog
+  * barcontrol: fixed URI parsing
+  * fixed string-error in DVD functions
+
+2009-03-22 0.11
+  * added selection of multiple days to schedule days
+    configuration, e. g. you can specify "Mon,Tue,Sat"
+  * barcontrol: fixed quit (internal threads blocked quit)
+  * barcontrol: changed names of buttons in file tree
+  * barcontrol: added button to open all included directories
+    in file tree list (green directory symbol at the bottom
+    right side)
+  * barcontrol: added function to detect sizes of directories;
+    when "directory info" checkbox is enabled and a
+    sub-directory is opened the sizes of the directories are
+    detected in the background
+  * internal change in protocol bar/barcontrol
+  * fixed some lost strings
+  * improved speed: inline some function calls
+  * barcontrol: added version number in about-dialog
+  * fixed parsing of schedule data (type was missing)
+  * fixed detection of size of current archive (was always 0)
+  * new scheme to build a incremental file name from an 
+    archive file name if no incremental file name is given:
+      - discard all %-macros
+      - discard all #
+      - remove - and _ between macros
+      - replace file name extension .bar by .bid
+    A name like backup/system-%type-%a-####%last.bar will
+    be transformed to backup/system.bid
+  * improved error messages
+  * fixed debug function in string library: limit number of
+    entries in string-free-list.
+  * fixed problem with "broken pipe" error in network code
+  * added support for openssl command in bar-keygen
+  * fixed generating Java SSL key
+  * added creating RPM and DEB packages
+
+2009-02-14 0.10a
+  * fixed layout of login dialog
+  * fixed missing barcontrol.bat.in in distribution
+
+2009-02-11 0.10
+  * fixed some not freed resources
+  * fixed error message when password is not given or wrong
+  * improved input password: ask for password if not given
+    in some configuration file when mode is "default"
+  * added option --group: group equals files in list; limit
+    output to most recent entries if not given option --all.
+    Add archive name in group mode. Usage: find most recent
+    file 'foo' in a set of backups, e. g.
+    bar *.bar -# "*/foo" -g
+  * added option --all: list all entries in group
+  * barcontrol: fixed Java exception when scheduling date/time
+    can not be parsed
+  * barcontrol: added "normal" type to start-dialog
+  * default value for ssh port is now 22
+  * do not ask for a password if bar is started server- or
+    batch mode
+  * barcontrol: flush not written configuration data to disk
+    when terminating barcontrol
+  * barcontrol: fixed reseting port number
+  * barcontrol: set default sort mode to "weekday" for scheduling
+    list
+  * barcontrol: try to login with preset server name and login
+    password. Open login-dialog only when login fail or when option
+    --login-dialog is given.
+  * delete old archive files (only possible for file, ftp, sftp).
+    Can be disabled by --keep-old-archive-files
+  * barcontrol: fixed bug when double-clicking file entry in file
+  * fixed default login name/password for ftp, ssh: use command line
+    options if not set otherwise
+  * fixed default device name: use command line options if not set
+    otherwise
+  * fix problem with infinite backup when temporary directory is
+    included in file list. The bar temporary directory and all
+    created files are now not included in a backup. Note: this cannot
+    work when two instances of bar are running doing a backup of
+    each other.
+  * added bar man page (finally!)
+  * improved GUI layout manager
+  * added animated busy-dialogs to restore, added abort-function
+  * added confirmation dialog to abort job button
+
+2008-12-10 0.09i
+  * fixed creating pid file: when server is detached write pid of
+    running process, not of terminated parent (thanks to Matthias
+    Albert)
+
+2008-12-09 0.09h
+  * fixed problem with internal data alignment on 64bit systems
+  * added test data to distribution
+  * added chunk BAR0 to archive files as indicator for a bar file;
+    chunk is skipped when reading an archive
+
+2008-12-09 0.09g
+  * added option --pid-file
+
+2008-12-07 0.09f
+  * small fix in "make install"
+
+2008-12-04 0.09e
+  * changed FTP URL to <login name>:<password>@<host name>/<filename>
+  * improved password input: check if connection to ftp/ssh-server is
+    possible in advance; select the right password
+  * barcontrol: change FTP field names, added password field
+  * fixed problem when writing incremental file list and current
+    directory is not writable: create the temporary file in the same
+    directory like the destination file
+  * removed some debug code
+  * barcontrol: fixed error handling when authorization fail
+  * barcontrol: fixed internal protocol data parser when data contain
+    a negative number
+  * fixed some wrong file names in "make install"
+  * added barserver start script for Debian (Thanks to Matthias Albert)
+  * fixed lost string
+  * run bar as daemon in background; added option -D to disable detach
+    mode
+  * fixed missing server result when new job cannot be created
+
+2008-12-03 0.09d
+  * fixed missing server-jobs-directory in BAR server
+  * fixed wrong path to bar+bar.cfg binary when installing
+  * fix installation when barcontrol was not built
+
+2008-12-01 0.09c
+  * barcontrol: fixed #-parsing in archive name editor
+  * fixed missing barcontrol.in, barcontrol.bat.in, barcontrol.xml source
+  * fixed creation of scripts from *.in files
+  * completed bar-keygen
+  * no external SWT jar needed anymore to compile (but can still be used
+    optional)
+
+2008-11-27 0.09b
+  * fixed drag+drop in archive name editor
+  * added crypt public key field in storage tab
+  * added CRC to public/private-key to avoid SigSegV in gcrypt-library
+    when key is invalid. Sorry this also mean the key data format
+    changed, thus you have to generate a new public/private key pair.
+    Note: you cannot open old archives with the new keys!
+  * added option -h/--help to barcontrol
+  * barcontrol: read default server name/password/ports from
+    $HOME/.bar/barcontrol.cfg (if this file exists)
+  * renamed option --job-directory into --server-jobs-directory
+  * improved check of options: output error if temporary directory
+    cannot be written to
+  * barcontrol: add field for port to scp/sftp connections
+  * change format for archive-file names. Use now URL like names:
+    ftp://<name>@<host>/<filename>
+    scp://<name>@<host>:<port>/<filename>
+    sftp://<name>@<host>:<port>/<filename>
+    dvd://<device>/<filename>
+    device://<device>/<filename>
+    <filename>
+  * improved error messages
+  * fixed linker problem: link libdl, too
+
+2008-11-21 0.09a
+  * small fixes in make files
+  * fixes archive name generator: do not add part number of splitting
+    of archive is not enabled
+  * passwords can now also be read from a non-terminal input, e. g.
+    a redirected file
+  * fixed test
+
+2008-11-18 0.09
+  * implemented a Java front end! This replaces the TclTk front end -
+    please enjoy!
+  * fixed bug in server password authorization: password was not
+    checked until end
+
+2008-09-23 0.08a
+  * fixed double usage of va_args variable
+  * fixed problems with 64bit
+  * fixed typing error in bar.cfg (thanx to Matthias)
+
+2008-09-08 0.08
+  * added asymmetric encryption with public-key
+  * improved estimation of files/s, bytes/s, stored bytes/s and rest
+    time
+  * fixed input of password via SSH_ASKPASS
+  * fixed exit code on create archive
+
+2008-08-17 0.07b
+  * added option --long-format
+  * added date/time to -l
+  * fixed file filters "*" and "-! ..."
+
+2008-06-29 0.07a
+  * fixed executing of external programs: handle signals
+  * use /dev/dvd as default device for writing dvds
+  * added storage bytes/s value to barcontrol.tcl
+  * implemented rename job in barcontrol.tcl
+
+2008-05-24 0.07
+  * integrated scheduler in bar
+  * added pause/continue of jobs
+  * some internal bug fixes
+  * improved response time of barcontrol.tcl by read/write-locking
+    of shared data structures in server
+  * implemented archive name editor in barcontrol.tcl
+  * clean-up barcontrol.tcl
+  * added FTP protocol
+  * changed some option names for better consistency
+
+2008-03-08 0.06
+  * added option --debug to barcontrol.tcl; output debug info
+    in server
+  * fixed memory leak in server
+  * improved several error messages
+
+2008-01-21 0.05c
+  * fixed SigSegV when reading broken/wrong archive
+  * added retry (3) in storage via SSH
+
+2008-01-19 0.05b
+  * fixed static linkage
+  * support none bz2
+  * TclTk TLS package is now optional
+  * import support for non-ssh, non-crypt, non-bz2
+  * added option --no-bar-on-dvd; store by default a copy of BAR
+    executable on created DVDs
+  * fixed wrong string when creating DVD
+
+2008-01-18 0.05a
+  * improved checks in configure
+  * added configure option --disable-ssh
+  * fixed static linkage
+
+2007-12-31 0.05 (New Years Eve edition)
+  * added macros %type, %last to archive file name
+  * fixed path in bid-file name
+  * removed option create-list-file; option --full create a list
+    file, --incremental use the list and no option generate a
+    standard archive (without an incremental list)
+  * added options --full and --incremental to barcontrol.tcl.
+    With these options the settings in a configuration can be
+    overwritten, e. g. useful to make incremental backups
+    (define full-backup in configuration file; use --incremental
+    to create a incremental backup on-the-fly)
+  * do not write bid-file if archive cannot be stored
+  * added file name editor in barcontrol (check the "folder"-image
+    right to the file name!)
+  * fixed missing lock in debug-code of strings.c
+  * renamed option --priority -> --nice-level; set nice level
+    not thread priority
+  * added password input dialog in case password does not match
+    or no password is defined in the configuration files
+
+2007-12-18 0.04c
+  * fixed creating of directories on restore of single files
+  * fixed DVD burn commands (removed option "-dry-run" - sorry)
+
+2007-12-16 0.04b
+  * fixed typing error in secure password memory
+
+2007-12-16 0.04a
+  * fixed double free of a string
+  * added check in string library for duplicate free
+  * fixed abort
+  * use base name of archive file name for incremental list file
+
+2007-12-15 0.04
+  * added create-dialog to barcontrol.tcl
+  * added incremental backup
+  * fixed bug in --request-volume-command (wrong command string)
+  * fixed bug when executing external command (reading i/o)
+  * fixed messages printed on console
+  * replaced --enable-static-link by --enable-dynamic-link in
+    configure and made static linkage to the default
+  * added store/restore of special devices (character, block, fifo,
+    socket)
+  * fixed some small problems in restore
+  * by the way: by accident BAR got his crucial test! I crashed
+    my system partition and I could restore it with BAR!
+    Nevertheless there is still a lot of work to do...
+
+2007-12-01 0.03a
+  * fixed thread termination for "create" command
+
+2007-12-01 0.03
+  * added option/configure value 'priority'
+  * added log file support
+
+2007-11-28 0.02c
+  * improved handling of DVDs
+  * added configure to scanx TCL extension
+  * improved making of distribution
+  * added option --wait-first-volume
+
+2007-11-27 0.02b
+  * improved handling of DVDs
+  * started FAQ
+
+2007-11-26 0.02a
+  * bug fix
+
+2007-11-25 0.02
+  * implemented DVD support
+  * fixed ssh connections
+  * implemented more functions in barcontrol.tcl
+  * added install for scanx, mclistbox.tcl (needed for barcontrol.tcl)
+  * added config parser
+  * added multiple server/device sections in config file
+  * WARNING: changed usage of crypt password: encryption
+    key is not filled with password anymore. Thus password
+    "foo" is now different from "foofoo".
+    Before upgrading BAR restore all archives!
+  * added input of ssh/crypt password if not specified in config
+
+2007-11-01 0.01
+  * initial release
