@@ -1,0 +1,648 @@
+#!/bin/sh
+
+# ----------------------------------------------------------------------------
+#
+# $Source: /home/torsten/cvs/bar/bar/bar-keygen.in,v $
+# $Revision: 1.10 $
+# $Author: torsten $
+# Contents: generate BAR server keys (PEM files)
+# Systems: Unix
+#			   
+# ----------------------------------------------------------------------------
+
+# --------------------------------- constants --------------------------------
+# get program name
+PROGRAM_NAME=`basename $0`
+
+# supported key tools
+CERTTOOL="certtool"
+OPENSSL="openssl"
+KEYTOOL="keytool"
+
+# shell commands/tools
+CAT="cat"
+CD="cd"
+CHMOD="chmod"
+CP="cp"
+ECHO="echo"
+ECHO_NO_LF="echo"
+INSTALL="install -c"
+MKDIR="mkdir"
+MKTEMP="mktemp"
+MV="mv"
+PRINTF="printf --"
+RMF="rm -f"
+RMRF="rm -rf"
+SED="sed"
+
+# directories
+DEFAULT_CONFIG_DIR="@CONFIG_DIR@"
+DEFAULT_TLS_DIR="@TLS_DIR@"
+
+# exit codes
+EXITCODE_OK=0
+EXITCODE_FAILURE=1
+
+EXITCODE_INVALID_ARGUMENT=5
+EXITCODE_CREATE_TEMPORARY_DIRECTORY=6
+
+EXITCODE_CREATE_DIRECTORY_FAIL=10
+EXITCODE_CREATE_KEY_FAIL=11
+
+EXITCODE_INTERNAL_ERROR=126
+
+EXITCODE_UNKNOWN=127
+
+# --------------------------- environment variables --------------------------
+
+# --------------------------------- variables --------------------------------
+
+# directories
+tlsDir="$DEFAULT_TLS_DIR"
+privateDir=""
+certsDir=""
+javaPrivateDir="$DEFAULT_CONFIG_DIR"
+
+# flags
+certtoolFlag=0
+opensslFlag=0
+forceFlag=0
+quietFlag=0
+debugFlag=0
+
+# ---------------------------------- functions -------------------------------
+
+#***********************************************************************
+# Name       : print, println
+# Purpose    : print text to stdout
+# Input      : text - text
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+print()
+{
+  local text="$@"
+
+  if test $quietFlag -ne 1; then
+    $ECHO -n "$text"
+  fi
+}
+println()
+{
+  local text="$@"
+
+  if test $quietFlag -ne 1; then
+    $ECHO "$text"
+  fi
+}
+
+#***********************************************************************
+# Name       : printStderr
+# Purpose    : print text on stderr (with LF)
+# Input      : -
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+printStderr()
+{
+  local text="$@"
+
+  $ECHO >&2 "$text"
+}
+
+#***********************************************************************
+# Name       : printError
+# Purpose    : print error text with prefix "ERROR:" (with LF)
+# Input      : -
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+printError()
+{
+  local text="$@"
+
+  $ECHO >&2 "ERROR: $text"
+}
+
+#***********************************************************************
+# Name       : printWarning
+# Purpose    : print warning text with prefix "warning:" (with LF)
+# Input      : -
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+printWarning()
+{
+  local text="$@"
+
+  $ECHO >&2 "warning: $text"
+}
+
+#***********************************************************************
+# Name       : catStdout, catStderr
+# Purpose    : output file on stdout, stderr
+# Input      : fileName - file name
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+catStdout()
+{
+  local fileName="$1"; shift
+
+  $CAT "$fileName"
+}
+catStderr()
+{
+  local fileName="$1"; shift
+
+  $CAT 1>&2 "$fileName"
+}
+
+#***********************************************************************
+# Name       : internalError
+# Purpose    : print internal error text with prefix "INTERNAL ERROR:" and stop
+# Input      : -
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+internalError()
+{
+  local text="$@"
+
+  $ECHO >&2 "INTERNAL ERROR: $text"
+  exit $EXITCODE_INTERNAL_ERROR
+}
+
+#***********************************************************************
+# Name       : countLines
+# Purpose    : count number of lines in file
+# Input      : fileName - file name
+# Return     : number of lines in file
+# Notes      : -
+#***********************************************************************
+
+countLines()
+{
+  local fileName="$@"
+
+  $WC -l $fileName | $AWK '{print $1 }'
+}
+
+#***********************************************************************
+# Name       : catErrorlog
+# Purpose    : output shortend error-log (either complete log if not
+#              longer than MAX_ERROR_LINES or MAX_ERROR_LINES_HEAD
+#              from the start and MAX_ERROR_LINES_TAIL from end of the
+#              file)
+# Input      : fileName - log file name
+# Return     : -
+# Notes      : -
+#***********************************************************************
+
+catErrorlog()
+{
+  local fileName="$1"; shift
+
+  if test `countLines $fileName` -gt $MAX_ERROR_LINES; then
+    $HEAD -$MAX_ERROR_LINES_HEAD $fileName
+    $ECHO "[...]"
+    $TAIL -$MAX_ERROR_LINES_TAIL $fileName
+  else
+    $TAIL -$MAX_ERROR_LINES $fileName
+  fi
+}
+
+# ----------------------------------------------------------------------------
+
+# print usage-help
+printUsage()
+{
+  $CAT << EOT
+Usage: $PROGRAM_NAME [...] [--]...
+
+Options: -d|--tls-directory=<path>       - TLS directory (default: $DEFAULT_TLS_DIR)
+         --private-directory=<path>      - directory for private keys (default: <TLS directory>/private)
+         --certs-directory=<path>        - directory for certicates (default: <TLS directory>/certs)
+         --java-private-directory=<path> - directory for certicates (default: $DEFAULT_CONFIG_DIR)
+         -f|--force                      - force overwriting existing keys
+         --certtool                      - use certtool to generate keys
+         --openssl                       - use openssl to generate keys
+         -h|--help                       - print this help
+EOT
+}
+
+# ------------------------------------ main ----------------------------------
+
+# get arguments
+n=0
+while test $# != 0; do
+  case $1 in
+    -h | --help)
+      printUsage
+      exit $EXITCODE_OK
+      ;;
+    -d=* | --tls-directory=* |  --tls-dir=*)
+      tlsDir=`$ECHO "$1" | $SED 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    -d | --tls-directory | --tls-dir)
+      tlsDir=$2
+      shift
+      shift
+      ;;
+    --private-directory=* | --private-dir=*)
+      privateDir=`$ECHO "$1" | $SED 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    --private-directory | --private-dir)
+      privateDir=$2
+      shift
+      shift
+      ;;
+    --certs-directory=* | --certs-dir=*)
+      certsDir=`$ECHO "$1" | $SED 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    --certs-directory | --certs-dir)
+      certsDir=$2
+      shift
+      shift
+      ;;
+    --java-private-directory=* | --java-private-dir=*)
+      javaPrivateDir=`$ECHO "$1" | $SED 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    --java-private-directory | --java-private-dir)
+      javaPrivateDir=$2
+      shift
+      shift
+      ;;
+    --certtool=*)
+      certtoolFlag=`$ECHO "$1" | sed 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    --certtool)
+      certtoolFlag=1
+      shift
+      ;;
+    --openssl=*)
+      opensslFlag=`$ECHO "$1" | sed 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    --openssl)
+      opensslFlag=1
+      shift
+      ;;
+    -f=* | --force=*)
+      forceFlag=`$ECHO "$1" | sed 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    -f | --force)
+      forceFlag=1
+      shift
+      ;;
+    --quiet=*)
+      quietFlag=`$ECHO "$1" | sed 's/^[^=]*=\(.*\)$/\1/g'`
+      shift
+      ;;
+    --quiet)
+      quietFlag=1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      printError "unknown option '$1'"
+      printUsage
+      exit $EXITCODE_INVALID_ARGUMENT
+      ;;
+    *)
+      case $n in
+        0)
+          n=1
+          ;;
+        1)
+          n=2
+          ;;
+        *)
+          ;;
+      esac
+      shift
+      ;;
+  esac
+done
+while test $# != 0; do
+  case $n in
+    0)
+      n=1
+      ;;
+    1)
+      n=2
+      ;;
+    *)
+      ;;
+  esac
+  shift
+done
+
+# check arguments
+if test -z "$tlsDir"; then
+  printError "No TLS directory given!"
+  exit $EXITCODE_INVALID_ARGUMENT
+fi
+if test -z "$javaPrivateDir"; then
+  printError "No BAR Java private directory given!"
+  exit $EXITCODE_INVALID_ARGUMENT
+fi
+
+# check keytools
+$CERTTOOL --help 1>/dev/null 2>/dev/null
+if test $? -ne 127; then
+  CERTTOOL_OK=1
+else
+  CERTTOOL_OK=0
+fi
+$OPENSSL version 1>/dev/null 2>/dev/null
+if test $? -ne 127; then
+  OPENSSL_OK=1
+else
+  OPENSSL_OK=0
+fi
+if test $CERTTOOL_OK -ne 1 -a $OPENSSL_OK -ne 1; then
+  printError "'$CERTOOL' nor '$OPENSSL' found or not executable - cannot create keys!"
+  exit $EXITCODE_NO_KEYTOOLS
+fi
+if test $certtoolFlag -eq 1; then
+  if test $CERTTOOL_OK -eq 1; then
+    OPENSSL_OK=0
+  else
+    printError "'$CERTOOL' not found!"
+    exit $EXITCODE_NO_KEYTOOLS
+  fi
+fi
+if test $opensslFlag -eq 1; then
+  if test $OPENSSL_OK -eq 1; then
+    CERTTOOL_OK=0
+  else
+    printError "'$OPENSSL' not found!"
+    exit $EXITCODE_NO_KEYTOOLS
+  fi
+fi
+$KEYTOOL -help 1>/dev/null 2>/dev/null
+if test $? -ne 127; then
+  KEYTOOL_OK=1
+else
+  KEYTOOL_OK=0
+fi
+if test $KEYTOOL_OK -ne 1; then
+  printWarning "'$KEYTOOL' not found or not executable - cannot create Java key."
+fi
+
+# get directory names
+if test -z "$privateDir"; then
+  privateDir="$tlsDir/private"
+fi
+if test -z "$certsDir"; then
+  certsDir="$tlsDir/certs"
+fi
+
+# get key file names
+barKey="$privateDir/bar-key.pem"
+barCA="$certsDir/bar-ca.pem"
+barServerKey="$privateDir/bar-server-key.pem"
+barServerCert="$certsDir/bar-server-cert.pem"
+barJKS="$javaPrivateDir/bar.jks"
+
+# check if keys already exists
+if test $forceFlag -eq 0; then
+  if test -f "$barKey"; then
+    println "'$barKey' already exists! Use option --force to overwrite existing keys."
+    exit $EXITCODE_OK
+  fi
+  if test -f "$barCA"; then
+    println "'$barCA' already exists! Use option --force to overwrite existing keys."
+    exit $EXITCODE_OK
+  fi
+  if test -f "$barServerKey"; then
+    println "'$barServerKey' already exists! Use option --force to overwrite existing keys."
+    exit $EXITCODE_OK
+  fi
+  if test -f "$barServerCert"; then
+    println "'$barServerCert' already exists! Use option --force to overwrite existing keys."
+    exit $EXITCODE_OK
+  fi
+  if test -f "$barJKS"; then
+    println "'$barJKS' already exists! Use option --force to overwrite existing keys."
+    exit $EXITCODE_OK
+  fi
+fi
+
+# run main
+
+# create temporary directory
+tmpDir=`$MKTEMP -d /tmp/bar-keygen-XXXXXX`
+if test -z "$tmpDir"; then
+  printError "Cannot create temporary directory"
+  exit $EXITCODE_CREATE_TEMPORARY_DIRECTORY
+fi
+stdout=$tmpDir/stdout; $ECHO_NO_LF > $stdout
+stderr=$tmpDir/stderr; $ECHO_NO_LF > $stderr
+
+# create template files
+if   test $CERTTOOL_OK -eq 1; then
+  $CAT <<EOT > $tmpDir/ca.tmpl
+@CERTTOOL/CA.TEMPL@
+EOT
+  $CAT <<EOT > $tmpDir/server.tmpl
+@CERTTOOL/SERVER.TEMPL@
+EOT
+elif test $OPENSSL_OK -eq 1; then
+  $CAT <<EOT > $tmpDir/ca.tmpl
+@OPENSSL/CA.TEMPL@
+EOT
+  $CAT <<EOT > $tmpDir/server.tmpl
+@OPENSSL/SERVER.TEMPL@
+EOT
+fi
+
+# create directories
+if test -n "$tlsDir"; then
+  if test ! -d "$tlsDir"; then
+    $INSTALL -d "$tlsDir"
+    if test $? -ne 0; then
+      exit $EXITCODE_CREATE_DIRECTORY_FAIL
+    fi
+  fi
+  if test ! -d "$tlsDir/private"; then
+    $INSTALL -d "$tlsDir/private"
+    if test $? -ne 0; then
+      exit $EXITCODE_CREATE_DIRECTORY_FAIL
+    fi
+  fi
+  if test ! -d "$tlsDir/certs"; then
+    $INSTALL -d "$tlsDir/certs"
+    if test $? -ne 0; then
+      exit $EXITCODE_CREATE_DIRECTORY_FAIL
+    fi
+  fi
+fi
+if test ! -d "$privateDir"; then
+  $INSTALL -d "$privateDir"
+  if test $? -ne 0; then
+    exit $EXITCODE_CREATE_DIRECTORY_FAIL
+  fi
+fi
+if test ! -d "$certsDir"; then
+  $INSTALL -d "$certsDir"
+  if test $? -ne 0; then
+    exit $EXITCODE_CREATE_DIRECTORY_FAIL
+  fi
+fi
+
+# create bar-key.pem
+print "Create '$barKey'..."
+if   test $CERTTOOL_OK -eq 1; then
+  $CERTTOOL \
+    --generate-privkey \
+    --outfile "$barKey" \
+    1>$stdout 2>$stderr
+  rc=$?
+elif test $OPENSSL_OK -eq 1; then
+  $OPENSSL \
+    genrsa \
+    -out "$barKey" \
+    1024 \
+    1>$stdout 2>$stderr
+  rc=$?
+fi
+if test $rc -ne 0; then
+  println "FAIL"
+  printError "Cannot create BAR key '$barKey' (exitcode: $rc)"
+  catStderr $stderr
+  exit $EXITCODE_CREATE_KEY_FAIL
+fi
+println "OK"
+
+# create bar-ca.pem
+print "Create '$barCA'..."
+if   test $CERTTOOL_OK -eq 1; then
+  $CERTTOOL \
+    --generate-self-signed \
+    --template "$tmpDir/ca.tmpl" \
+    --load-privkey "$barKey" \
+    --outfile "$barCA" \
+    1>$stdout 2>$stderr
+  rc=$?
+elif test $OPENSSL_OK -eq 1; then
+  $OPENSSL \
+    req \
+    -new \
+    -config "$tmpDir/ca.tmpl" \
+    -key "$barKey" \
+    -x509 \
+    -nodes \
+    -out "$barCA" \
+    1>$stdout 2>$stderr
+  rc=$?
+fi
+if test $rc -ne 0; then
+  println "FAIL"
+  printError "Cannot create BAR authority certficate '$barCA' (exitcode: $rc)"
+  catStderr $stderr
+  exit $EXITCODE_CREATE_KEY_FAIL
+fi
+println "OK"
+
+# create bar-server-key.pem
+print "Create '$barServerKey'..."
+if   test $CERTTOOL_OK -eq 1; then
+  $CERTTOOL \
+    --generate-privkey \
+    --outfile "$barServerKey" \
+    1>$stdout 2>$stderr
+  rc=$?
+elif test $OPENSSL_OK -eq 1; then
+  $OPENSSL \
+    genrsa \
+    -out "$barServerKey" \
+    1024 \
+    1>$stdout 2>$stderr
+  rc=$?
+fi
+if test $rc -ne 0; then
+  println "FAIL"
+  printError "Cannot create BAR server key '$barServerKey' (exitcode: $rc)"
+  catStderr $stderr
+  exit $EXITCODE_CREATE_KEY_FAIL
+fi
+println "OK"
+
+# create bar-server-cert.pem
+print "Create '$barServerCert'..."
+if   test $CERTTOOL_OK -eq 1; then
+  $CERTTOOL \
+    --generate-certificate \
+    --template $tmpDir/server.tmpl \
+    --load-privkey "$barServerKey" \
+    --load-ca-certificate "$barCA" \
+    --load-ca-privkey "$barKey" \
+    --outfile "$barServerCert" \
+    1>$stdout 2>$stderr
+  rc=$?
+elif test $OPENSSL_OK -eq 1; then
+  $OPENSSL \
+    req \
+    -config $tmpDir/server.tmpl \
+    -new \
+    -key "$barServerKey" \
+    -x509 \
+    -nodes \
+    -days 365 \
+    -out "$barServerCert" \
+    1>$stdout 2>$stderr
+  rc=$?
+fi
+if test $rc -ne 0; then
+  println "FAIL"
+  printError "Cannot create BAR server certificate '$barServerCert' (exitcode: $rc)"
+  catStderr $stderr
+  exit $EXITCODE_CREATE_KEY_FAIL
+fi
+println "OK"
+
+# create Java key
+if test $KEYTOOL_OK -eq 1; then
+  print "Create '$barJKS'..."
+  $RMF $barJKS
+  $KEYTOOL \
+    -import \
+    -trustcacerts \
+    -keypass not_needed \
+    -storepass not_needed \
+    -noprompt \
+    -file "$barServerCert" \
+    -keystore "$barJKS" \
+    1>$stdout 2>$stderr
+  rc=$?
+  if test $rc -ne 0; then
+    println "FAIL"
+    printError "Cannot create BAR Java key '$barJKS' (exitcode: $rc)"
+    catStderr $stderr
+    exit $EXITCODE_CREATE_KEY_FAIL
+  fi
+  println "OK"
+fi
+
+# free resources
+$RMRF $tmpDir 2>/dev/null
+
+exit $EXITCODE_OK
+# end of file
