@@ -1,3 +1,11 @@
+2010-11-18 0.15c
+  * fixes for MacOSX:
+     - fix SWT start thread problem
+     - use "java" without any path
+     - fix out-dated JAR archives
+  * added missing documentation images to distribution
+  * fix creation of barcontrol/barcontrol*.jar
+
 2010-11-17 0.15b
   * barcontrol: fix sorting of columns
   * barcontrol: fix not working context menu "exclude", "none" in
