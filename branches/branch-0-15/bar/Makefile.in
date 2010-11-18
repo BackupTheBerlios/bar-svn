@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 #
 # $Source: /home/torsten/cvs/bar/Makefile.in,v $
-# $Revision: 1.73 $
+# $Revision: 1.73.2.1 $
 # $Author: torsten $
 # Contents: Makefile for bar
 # Systems: all
@@ -171,7 +171,7 @@ endif
 
 barcontrol/barcontrol%.jar:
 ifeq ($(ENABLE_GUI),yes)
-	$(MAKE) -C barcontrol barcontrol%.jar
+	$(MAKE) -C barcontrol barcontrol$*.jar
 else
 	@$(ECHO) "ERROR: GUI components not configured - cannot be build."
 endif
@@ -507,6 +507,10 @@ $(DISTRIBUTION_NAME).tar.bz2: \
                    doc/*.txt \
                    doc/bar.7 \
                    tmp/$(DISTRIBUTION_NAME)/doc
+	$(INSTALL) -d tmp/$(DISTRIBUTION_NAME)/doc/images
+	$(INSTALL) -m 664 \
+                   doc/images/*.png \
+                   tmp/$(DISTRIBUTION_NAME)/doc/images
 	#
 	($(CD) tmp; $(TAR) cjf ../$@ $(DISTRIBUTION_NAME))
 	$(RMRF) tmp/$(DISTRIBUTION_NAME)
