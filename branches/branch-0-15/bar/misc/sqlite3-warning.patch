@@ -1,0 +1,14 @@
+--- sqlite3.c.org	2010-07-31 16:53:08.000000000 +0900
++++ sqlite3.c	2010-07-31 16:54:05.000000000 +0900
+@@ -67526,7 +67526,10 @@
+       }else{
+         int nSize = exprStructSize(p);
+         memcpy(zAlloc, p, nSize);
+-        memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
++        /* avoid compiler warning, 2010-07-31 T. Rupp */
++        if ((EXPR_FULLSIZE-nSize) > 0){
++          memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
++        }
+       }
+ 
+       /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
