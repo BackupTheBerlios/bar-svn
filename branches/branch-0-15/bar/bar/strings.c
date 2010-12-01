@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/strings.c,v $
-* $Revision: 1.21 $
+* $Revision: 1.21.2.1 $
 * $Author: torsten $
 * Contents: dynamic string functions
 * Systems: all
@@ -1960,7 +1960,7 @@ void __String_delete(const char *fileName, ulong lineNb, String string)
     }
     if (debugStringNode != NULL)
     {
-      fprintf(stderr,"DEBUG WARNING: multiple free of string %p at %s, %ld and previoulsy at %s, %ld which was allocated at %s, %ld!\n",
+      fprintf(stderr,"DEBUG WARNING: multiple free of string %p at %s, %ld and previously at %s, %ld which was allocated at %s, %ld!\n",
               string,
               fileName,
               lineNb,
