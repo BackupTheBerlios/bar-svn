@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/barcontrol/src/TabRestore.java,v $
-* $Revision: 1.16.2.2 $
+* $Revision: 1.16.2.3 $
 * $Author: torsten $
 * Contents: restore tab
 * Systems: all
@@ -1240,13 +1240,13 @@ Dprintf.dprintf("r=%s",result);
       tableColumn = Widgets.addTableColumn(widgetStorageList,0,"Name",    SWT.LEFT, 450,true);
       tableColumn.addSelectionListener(storageListColumnSelectionListener);
       tableColumn.setToolTipText("Click to sort for name.");
-      tableColumn = Widgets.addTableColumn(widgetStorageList,1,"Size",    SWT.RIGHT,100,false);
+      tableColumn = Widgets.addTableColumn(widgetStorageList,1,"Size",    SWT.RIGHT,100,true);
       tableColumn.addSelectionListener(storageListColumnSelectionListener);
       tableColumn.setToolTipText("Click to sort for size.");
-      tableColumn = Widgets.addTableColumn(widgetStorageList,2,"Modified",SWT.LEFT, 150,false);
+      tableColumn = Widgets.addTableColumn(widgetStorageList,2,"Modified",SWT.LEFT, 150,true);
       tableColumn.addSelectionListener(storageListColumnSelectionListener);
       tableColumn.setToolTipText("Click to sort for modification date/time.");
-      tableColumn = Widgets.addTableColumn(widgetStorageList,3,"State",   SWT.LEFT,  30,false);
+      tableColumn = Widgets.addTableColumn(widgetStorageList,3,"State",   SWT.LEFT,  30,true);
       tableColumn.addSelectionListener(storageListColumnSelectionListener);
       tableColumn.setToolTipText("Click to sort for state.");
       widgetStorageList.addListener(SWT.MouseDoubleClick,new Listener()
