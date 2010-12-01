@@ -1,3 +1,19 @@
+2010-12-02 0.15e
+  * barcontrol: fix exception when running barcontrol under
+    Windows and connecting to a Linux server (file separator
+    is different on Windows and Linux; this is a temporary fix
+    which will be improved in version 0.16)
+  * barcontrol: made columns size, modified, state in restore
+    tab, storage list resizable, too
+  * fixed wrong bar binary path in SuSE, Redhat, Mandrake, Fedora
+    start scripts
+  * fixed wrong bar config path in SuSE, Redhat, Mandrake, Fedora
+    start scripts
+
+2010-11-29 0.15d
+  * fix SigSegV when deleting a storage archive from
+    the database via BARControl
+
 2010-11-18 0.15c
   * fixes for MacOSX:
      - fix SWT start thread problem
