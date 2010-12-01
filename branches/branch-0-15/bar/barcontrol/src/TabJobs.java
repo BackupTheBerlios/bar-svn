@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/barcontrol/src/TabJobs.java,v $
-* $Revision: 1.28.2.2 $
+* $Revision: 1.28.2.3 $
 * $Author: torsten $
 * Contents: jobs tab
 * Systems: all
@@ -94,6 +94,10 @@ import org.eclipse.swt.widgets.Widget;
  */
 class TabJobs
 {
+  // temporary fix: must be configured from server settings
+  final static String FILE_SEPARATOR      = "/";
+  final static char   FILE_SEPARATOR_CHAR = '/';
+
   /** entry types
    */
   enum EntryTypes
@@ -413,7 +417,7 @@ class TabJobs
       {
         this.name      = name;
         this.forceFlag = forceFlag;
-        this.depth     = name.split(File.separator).length;
+        this.depth     = name.split(FILE_SEPARATOR).length;
         this.timeout   = timeout;
         this.treeItem  = treeItem;
       }
@@ -4961,10 +4965,10 @@ throw new Error("NYI");
       TreeItem[] treeItems = widgetFileTree.getItems();
 
       StringBuffer name = new StringBuffer();
-      for (String part : entryData.pattern.split(File.separator))
+      for (String part : entryData.pattern.split(FILE_SEPARATOR))
       {
         // expand name
-        if ((name.length() == 0) || (name.charAt(name.length()-1) != File.separatorChar)) name.append(File.separatorChar);
+        if ((name.length() == 0) || (name.charAt(name.length()-1) != FILE_SEPARATOR_CHAR)) name.append(FILE_SEPARATOR_CHAR);
         name.append(part);
 
         TreeItem treeItem = findTreeItem(treeItems,name.toString());
