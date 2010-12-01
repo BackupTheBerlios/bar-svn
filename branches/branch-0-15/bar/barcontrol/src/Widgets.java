@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/barcontrol/src/Widgets.java,v $
-* $Revision: 1.20.2.2 $
+* $Revision: 1.20.2.3 $
 * $Author: torsten $
 * Contents: simple widgets functions
 * Systems: all
@@ -1457,9 +1457,21 @@ class Widgets
    * @param resizable TRUE iff resizable column
    * @return new table column
    */
+  static TableColumn addTableColumn(Table table, int columnNb, int style, int width, boolean resizable)
+  {
+    return addTableColumn(table,columnNb,"",style,width,resizable);
+  }
+
+  /** add column to table widget
+   * @param table table widget
+   * @param columnNb column number
+   * @param style style
+   * @param width width of column
+   * @return new table column
+   */
   static TableColumn addTableColumn(Table table, int columnNb, int style, int width)
   {
-    return addTableColumn(table,columnNb,"",style,width,false);
+    return addTableColumn(table,columnNb,style,width,false);
   }
 
   /** hide table column

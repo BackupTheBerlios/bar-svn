@@ -9,6 +9,9 @@
     start scripts
   * fixed wrong bar config path in SuSE, Redhat, Mandrake, Fedora
     start scripts
+  * barcontrol: fixed some table column widths (automatic setting
+    seems to be different on Windows)
+  * barcontrol: fix arguments in start script barcontrol.bat
 
 2010-11-29 0.15d
   * fix SigSegV when deleting a storage archive from
