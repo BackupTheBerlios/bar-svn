@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/barcontrol/src/TabJobs.java,v $
-* $Revision: 1.28.2.3 $
+* $Revision: 1.28.2.4 $
 * $Author: torsten $
 * Contents: jobs tab
 * Systems: all
@@ -1864,7 +1864,7 @@ class TabJobs
         widgetIncludeTable = Widgets.newTable(tab);
         widgetIncludeTable.setHeaderVisible(false);
         Widgets.addTableColumn(widgetIncludeTable,0,SWT.LEFT,20);
-        Widgets.addTableColumn(widgetIncludeTable,1,SWT.LEFT,0);
+        Widgets.addTableColumn(widgetIncludeTable,1,SWT.LEFT,1024,true);
         Widgets.layout(widgetIncludeTable,0,1,TableLayoutData.NSWE);
         widgetIncludeTable.setToolTipText("List of included entries.");
 
@@ -4218,9 +4218,9 @@ throw new Error("NYI");
         tableColumn.addSelectionListener(scheduleListColumnSelectionListener);
         tableColumn = Widgets.addTableColumn(widgetScheduleList,2,"Time",     SWT.LEFT,100,false);
         tableColumn.addSelectionListener(scheduleListColumnSelectionListener);
-        tableColumn = Widgets.addTableColumn(widgetScheduleList,3,"Enabled",  SWT.LEFT,  0,false);
+        tableColumn = Widgets.addTableColumn(widgetScheduleList,3,"Enabled",  SWT.LEFT, 60,false);
         tableColumn.addSelectionListener(scheduleListColumnSelectionListener);
-        tableColumn = Widgets.addTableColumn(widgetScheduleList,4,"Type",     SWT.LEFT,  0,true );
+        tableColumn = Widgets.addTableColumn(widgetScheduleList,4,"Type",     SWT.LEFT, 80,true );
         tableColumn.addSelectionListener(scheduleListColumnSelectionListener);
 
         menu = Widgets.newPopupMenu(shell);
