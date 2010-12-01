@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/barcontrol/src/TabRestore.java,v $
-* $Revision: 1.16.2.3 $
+* $Revision: 1.16.2.4 $
 * $Author: torsten $
 * Contents: restore tab
 * Systems: all
@@ -1410,7 +1410,7 @@ Dprintf.dprintf("r=%s",result);
           }
         });
 
-        menuItem = Widgets.addMenuItem(menu,"Remove");
+        menuItem = Widgets.addMenuItem(menu,"Remove...");
         menuItem.addSelectionListener(new SelectionListener()
         {
           public void widgetSelected(SelectionEvent selectionEvent)
@@ -1423,7 +1423,7 @@ Dprintf.dprintf("r=%s",result);
           }
         });
 
-        menuItem = Widgets.addMenuItem(menu,"Refresh");
+        menuItem = Widgets.addMenuItem(menu,"Refresh...");
         menuItem.addSelectionListener(new SelectionListener()
         {
           public void widgetSelected(SelectionEvent selectionEvent)
@@ -1436,7 +1436,7 @@ Dprintf.dprintf("r=%s",result);
           }
         });
 
-        menuItem = Widgets.addMenuItem(menu,"Refresh all with error");
+        menuItem = Widgets.addMenuItem(menu,"Refresh all with error...");
         menuItem.addSelectionListener(new SelectionListener()
         {
           public void widgetSelected(SelectionEvent selectionEvent)
