@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/server.c,v $
-* $Revision: 1.29 $
+* $Revision: 1.29.2.1 $
 * $Author: torsten $
 * Contents: Backup ARchiver server
 * Systems: all
@@ -5928,7 +5928,7 @@ LOCAL void serverCommand_indexStorageRemove(ClientInfo *clientInfo, uint id, con
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected name");
     return;
   }
-  name = arguments[1];
+  name = arguments[0];
 
   if (indexDatabaseHandle != NULL)
   {
