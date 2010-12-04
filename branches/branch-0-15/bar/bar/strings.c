@@ -1,7 +1,7 @@
 /***********************************************************************\
 *
 * $Source: /home/torsten/cvs/bar/bar/strings.c,v $
-* $Revision: 1.21.2.1 $
+* $Revision: 1.21.2.2 $
 * $Author: torsten $
 * Contents: dynamic string functions
 * Systems: all
@@ -787,7 +787,7 @@ LOCAL void formatString(struct __String *string,
             else
             {
               ensureStringLength(string,string->length+length);
-              snprintf(&string->data[string->length],length+1,formatToken.token,data.d);
+              snprintf(&string->data[string->length],length+1,formatToken.token,data.s);
               string->length += length; 
               UPDATE_VALID(string);
            }
