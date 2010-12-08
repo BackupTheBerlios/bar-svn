@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 #
 # $Source: /home/torsten/cvs/bar/bar/bar-keygen.in,v $
-# $Revision: 1.10.2.1 $
+# $Revision: 1.10.2.2 $
 # $Author: torsten $
 # Contents: generate BAR server keys (PEM files)
 # Systems: Unix
@@ -384,7 +384,7 @@ if test $certtoolFlag -eq 1; then
   if test $CERTTOOL_OK -eq 1; then
     OPENSSL_OK=0
   else
-    printError "'$CERTOOL' not found!"
+    printError "'$CERTTOOL' not found!"
     exit $EXITCODE_NO_KEYTOOLS
   fi
 fi
