@@ -1,3 +1,8 @@
+2010-12-19 0.16a
+  * fix wrong storage name in database
+  * fix start/abort button enable/disable for incremental/
+    differential/dry-run jobs
+
 2010-12-17 0.16
   * do not store content of directories and sub-directories
     when file .nobackup or .NOBACKUP exists
