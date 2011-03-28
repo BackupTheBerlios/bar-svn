@@ -3554,13 +3554,12 @@ Errors Archive_readFileEntry(ArchiveInfo        *archiveInfo,
   }
   foundFileEntryFlag = FALSE;
   foundFileDataFlag  = FALSE;
+  error              = ERROR_NONE;
   while (   !foundFileEntryFlag
          && !foundFileDataFlag
-         && ((archiveEntryInfo->cryptAlgorithm == CRYPT_ALGORITHM_NONE) || (password != NULL))
+         && (error == ERROR_NONE)
         )
   {
-    error = ERROR_NONE;
-
     /* reset chunk read position */
     Chunk_seek(&archiveEntryInfo->file.chunkFile.info,index);
 
@@ -3718,16 +3717,21 @@ Errors Archive_readFileEntry(ArchiveInfo        *archiveInfo,
       Crypt_done(&archiveEntryInfo->file.chunkFileData.cryptInfo);
       Crypt_done(&archiveEntryInfo->file.chunkFileEntry.cryptInfo);
 
-      if (archiveInfo->cryptType == CRYPT_TYPE_ASYMMETRIC)
+      if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
+          && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
+         )
       {
-        /* no more passwords when asymmetric encryption used */
-        password = NULL;
+        /* get next password */
+        password = getNextDecryptPassword(&passwordHandle);
+
+        /* reset error and try next password */
+        error = ERROR_NONE;
       }
       else
       {
-        /* next password */
-        password = getNextDecryptPassword(&passwordHandle);
-      }
+        /* no more passwords when no encryption or asymmetric encryption is used */
+        password = NULL;
+      }      
     }
   } /* while */
 
@@ -3915,9 +3919,10 @@ Errors Archive_readImageEntry(ArchiveInfo        *archiveInfo,
   }
   foundImageEntryFlag = FALSE;
   foundImageDataFlag  = FALSE;
+  error               = ERROR_NONE;
   while (   !foundImageEntryFlag
          && !foundImageDataFlag
-         && ((archiveEntryInfo->cryptAlgorithm == CRYPT_ALGORITHM_NONE) || (password != NULL))
+         && (error == ERROR_NONE)
         )
   {
     error = ERROR_NONE;
@@ -4073,16 +4078,21 @@ Errors Archive_readImageEntry(ArchiveInfo        *archiveInfo,
       Crypt_done(&archiveEntryInfo->image.chunkImageData.cryptInfo);
       Crypt_done(&archiveEntryInfo->image.chunkImageEntry.cryptInfo);
 
-      if (archiveInfo->cryptType == CRYPT_TYPE_ASYMMETRIC)
+      if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
+          && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
+         )
       {
-        /* no more passwords when asymmetric encryption used */
-        password = NULL;
+        /* get next password */
+        password = getNextDecryptPassword(&passwordHandle);
+
+        /* reset error and try next password */
+        error = ERROR_NONE;
       }
       else
       {
-        /* next password */
-        password = getNextDecryptPassword(&passwordHandle);
-      }
+        /* no more passwords when no encryption or asymmetric encryption is used */
+        password = NULL;
+      }      
     }
   } /* while */
 
@@ -4239,12 +4249,11 @@ Errors Archive_readDirectoryEntry(ArchiveInfo      *archiveInfo,
     decryptedFlag = TRUE;
   }
   foundDirectoryEntryFlag = FALSE;
+  error                   = ERROR_NONE;
   while (   !foundDirectoryEntryFlag
-         && ((archiveEntryInfo->cryptAlgorithm == CRYPT_ALGORITHM_NONE) || (password != NULL))
+         && (error == ERROR_NONE)
         )
   {
-    error = ERROR_NONE;
-
     /* reset chunk read position */
     Chunk_seek(&archiveEntryInfo->directory.chunkDirectory.info,index);
 
@@ -4335,16 +4344,21 @@ Errors Archive_readDirectoryEntry(ArchiveInfo      *archiveInfo,
       Crypt_done(&archiveEntryInfo->directory.chunkDirectoryEntry.cryptInfo);
       Chunk_done(&archiveEntryInfo->directory.chunkDirectory.info);
 
-      if (archiveInfo->cryptType == CRYPT_TYPE_ASYMMETRIC)
+      if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
+          && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
+         )
       {
-        /* no more passwords when asymmetric encryption used */
-        password = NULL;
+        /* get next password */
+        password = getNextDecryptPassword(&passwordHandle);
+
+        /* reset error and try next password */
+        error = ERROR_NONE;
       }
       else
       {
-        /* next password */
-        password = getNextDecryptPassword(&passwordHandle);
-      }
+        /* no more passwords when no encryption or asymmetric encryption is used */
+        password = NULL;
+      }      
     }
   } /* while */
 
@@ -4492,10 +4506,10 @@ Errors Archive_readLinkEntry(ArchiveInfo      *archiveInfo,
     passwordFlag  = FALSE;
     decryptedFlag = TRUE;
   }
-  decryptedFlag          = FALSE;
   foundLinkEntryFlag = FALSE;
+  error              = ERROR_NONE;
   while (   !foundLinkEntryFlag
-         && ((archiveEntryInfo->cryptAlgorithm == CRYPT_ALGORITHM_NONE) || (password != NULL))
+         && (error == ERROR_NONE)
         )
   {
     error = ERROR_NONE;
@@ -4591,16 +4605,21 @@ Errors Archive_readLinkEntry(ArchiveInfo      *archiveInfo,
       Chunk_done(&archiveEntryInfo->link.chunkLinkEntry.info);
       Crypt_done(&archiveEntryInfo->link.chunkLinkEntry.cryptInfo);
 
-      if (archiveInfo->cryptType == CRYPT_TYPE_ASYMMETRIC)
+      if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
+          && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
+         )
       {
-        /* no more passwords when asymmetric encryption used */
-        password = NULL;
+        /* get next password */
+        password = getNextDecryptPassword(&passwordHandle);
+
+        /* reset error and try next password */
+        error = ERROR_NONE;
       }
       else
       {
-        /* next password */
-        password = getNextDecryptPassword(&passwordHandle);
-      }
+        /* no more passwords when no encryption or asymmetric encryption is used */
+        password = NULL;
+      }      
     }
   } /* while */
 
@@ -4780,9 +4799,10 @@ Errors Archive_readHardLinkEntry(ArchiveInfo        *archiveInfo,
   }
   foundHardLinkEntryFlag = FALSE;
   foundHardLinkDataFlag  = FALSE;
+  error                  = ERROR_NONE;
   while (   !foundHardLinkEntryFlag
          && !foundHardLinkDataFlag
-         && ((archiveEntryInfo->cryptAlgorithm == CRYPT_ALGORITHM_NONE) || (password != NULL))
+         && (error == ERROR_NONE)
         )
   {
     error = ERROR_NONE;
@@ -5000,16 +5020,21 @@ Errors Archive_readHardLinkEntry(ArchiveInfo        *archiveInfo,
       Crypt_done(&archiveEntryInfo->hardLink.chunkHardLinkData.cryptInfo);
       Crypt_done(&archiveEntryInfo->hardLink.chunkHardLinkEntry.cryptInfo);
 
-      if (archiveInfo->cryptType == CRYPT_TYPE_ASYMMETRIC)
+      if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
+          && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
+         )
       {
-        /* no more passwords when asymmetric encryption used */
-        password = NULL;
+        /* get next password */
+        password = getNextDecryptPassword(&passwordHandle);
+
+        /* reset error and try next password */
+        error = ERROR_NONE;
       }
       else
       {
-        /* next password */
-        password = getNextDecryptPassword(&passwordHandle);
-      }
+        /* no more passwords when no encryption or asymmetric encryption is used */
+        password = NULL;
+      }      
     }
   } /* while */
 
@@ -5165,8 +5190,9 @@ Errors Archive_readSpecialEntry(ArchiveInfo      *archiveInfo,
     decryptedFlag = TRUE;
   }
   foundSpecialEntryFlag = FALSE;
+  error                 = ERROR_NONE;
   while (   !foundSpecialEntryFlag
-         && ((archiveEntryInfo->cryptAlgorithm == CRYPT_ALGORITHM_NONE) || (password != NULL))
+         && (error == ERROR_NONE)
         )
   {
     error = ERROR_NONE;
@@ -5264,16 +5290,21 @@ Errors Archive_readSpecialEntry(ArchiveInfo      *archiveInfo,
       Chunk_done(&archiveEntryInfo->special.chunkSpecialEntry.info);
       Crypt_done(&archiveEntryInfo->special.chunkSpecialEntry.cryptInfo);
 
-      if (archiveInfo->cryptType == CRYPT_TYPE_ASYMMETRIC)
+      if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
+          && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
+         )
       {
-        /* no more passwords when asymmetric encryption used */
-        password = NULL;
+        /* get next password */
+        password = getNextDecryptPassword(&passwordHandle);
+
+        /* reset error and try next password */
+        error = ERROR_NONE;
       }
       else
       {
-        /* next password */
-        password = getNextDecryptPassword(&passwordHandle);
-      }
+        /* no more passwords when no encryption or asymmetric encryption is used */
+        password = NULL;
+      }      
     }
   } /* while */
 
