@@ -389,6 +389,14 @@ class Command
   {
     BARServer.timeoutCommand(this);
   }
+
+  /** convert data to string
+   * @return string
+   */
+  public String toString()
+  {
+    return "Command {"+id+", errorCode="+errorCode+", "+errorText+" completedFlag="+completedFlag+"}";
+  }
 }
 
 /** server result read thread
