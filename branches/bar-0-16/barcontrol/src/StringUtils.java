@@ -114,6 +114,55 @@ public class StringUtils
     }
   }
 
+  /** map strings in string
+   * @param string string
+   * @param index start index for mapping
+   * @param from from string array
+   * @param to to string array
+   * @return mapped string
+   */
+  public static String map(String string, int index, String[] from, String[] to)
+  {
+    StringBuilder buffer = new StringBuilder();
+    int           z;
+    boolean       replaceFlag;
+
+    assert from.length == to.length;
+
+    while (index < string.length())
+    {
+      replaceFlag = false;
+      for (z = 0; z < from.length; z++)
+      {
+        if (string.startsWith(from[z],index))
+        {
+          buffer.append(to[z]);
+          index += from[z].length();
+          replaceFlag = true;
+          break;
+        }
+      }
+      if (!replaceFlag)
+      {
+        buffer.append(string.charAt(index));
+        index++;
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** map strings in string
+   * @param string string
+   * @param from from string array
+   * @param to to string array
+   * @return mapped string
+   */
+  public static String map(String string, String[] from, String[] to)
+  {
+    return map(string,0,from,to);
+  }
+
   /** join string array
    * @param objects objects to join (convert to string with toString())
    * @param joinString string used to join two strings
