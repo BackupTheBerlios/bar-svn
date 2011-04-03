@@ -2651,51 +2651,90 @@ class TabRestore
               busyDialog.updateText(0,"'"+storageName+"'");
             }
 
-            ArrayList<String> result = new ArrayList<String>();
-            String commandString = "RESTORE "+
-                                   StringUtils.escape(storageName)+" "+
-                                   StringUtils.escape(directory)+" "+
-                                   (overwriteEntries?"1":"0")
-                                   ;
-  //Dprintf.dprintf("command=%s",commandString);
-            Command command = BARServer.runCommand(commandString);
-
-            // read results, update/add data
-            String line;
-            Object data[] = new Object[5];
-            while (   !command.isCompleted()
-                   && !busyDialog.isAborted()
-                  )
+            Command command;
+            boolean retryFlag;
+            boolean passwordFlag = false;
+            do
             {
-              line = command.getNextResult(60*1000);
-              if (line != null)
-              {
-  //Dprintf.dprintf("line=%s",line);
-                if      (StringParser.parse(line,"%ld %ld %ld %ld %S",data,StringParser.QUOTE_CHARS))
-                {
-                  /* get data
-                     format:
-                       doneBytes
-                       totalBytes
-                       archiveDoneBytes
-                       archiveTotalBytes
-                       name
-                  */
-                  long   doneBytes         = (Long)data[0];
-                  long   totalBytes        = (Long)data[1];
-                  long   archiveDoneBytes  = (Long)data[2];
-                  long   archiveTotalBytes = (Long)data[3];
-                  String name              = (String)data[4];
+              retryFlag = false;
 
-                  busyDialog.updateText(1,name);
-                  busyDialog.updateProgressBar(1,(totalBytes > 0) ? ((double)doneBytes*100.0)/(double)totalBytes : 0.0);
+              ArrayList<String> result = new ArrayList<String>();
+              String commandString = "RESTORE "+
+                                     StringUtils.escape(storageName)+" "+
+                                     StringUtils.escape(directory)+" "+
+                                     (overwriteEntries?"1":"0")
+                                     ;
+//Dprintf.dprintf("command=%s",commandString);
+              command = BARServer.runCommand(commandString);
+
+              // read results, update/add data
+              String line;
+              Object data[] = new Object[5];
+              while (   !command.isCompleted()
+                     && !busyDialog.isAborted()
+                    )
+              {
+                line = command.getNextResult(60*1000);
+                if (line != null)
+                {
+//Dprintf.dprintf("line=%s",line);
+                  if      (StringParser.parse(line,"%ld %ld %ld %ld %S",data,StringParser.QUOTE_CHARS))
+                  {
+                    /* get data
+                       format:
+                         doneBytes
+                         totalBytes
+                         archiveDoneBytes
+                         archiveTotalBytes
+                         name
+                    */
+                    long   doneBytes         = (Long)data[0];
+                    long   totalBytes        = (Long)data[1];
+                    long   archiveDoneBytes  = (Long)data[2];
+                    long   archiveTotalBytes = (Long)data[3];
+                    String name              = (String)data[4];
+
+                    busyDialog.updateText(1,name);
+                    busyDialog.updateProgressBar(1,(totalBytes > 0) ? ((double)doneBytes*100.0)/(double)totalBytes : 0.0);
+                  }
+                }
+                else
+                {
+                  busyDialog.update();
                 }
               }
-              else
+//Dprintf.dprintf("command=%s",command);
+
+              if (   (   (command.getErrorCode() == Errors.NO_CRYPT_PASSWORD)
+                      || (command.getErrorCode() == Errors.INVALID_PASSWORD)
+                      || (command.getErrorCode() == Errors.CORRUPT_DATA)
+                     )
+                  && !passwordFlag
+                  && !busyDialog.isAborted()
+                 )
               {
-                busyDialog.update();
+                // get crypt password
+                display.syncExec(new Runnable()
+                {
+                  public void run()
+                  {
+                    String password = Dialogs.password(shell,
+                                                       "Decrypt password",
+                                                       "Password:"
+                                                      );
+                    if (password != null)
+                    {
+                      BARServer.executeCommand("DECRYPT_PASSWORD_ADD "+StringUtils.escape(password));
+                    }
+                  }
+                });
+                passwordFlag = true;
+
+                // retry
+                retryFlag = true;
               }
             }
+            while (retryFlag && !busyDialog.isAborted());
 
             // abort command if requested
             if (!busyDialog.isAborted())
