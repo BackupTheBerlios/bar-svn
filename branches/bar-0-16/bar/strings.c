@@ -2643,6 +2643,92 @@ String String_replaceBuffer(String string, ulong index, ulong length, const char
   return string;
 }
 
+String String_map(String string, ulong index, const String from[], const String to[], uint count)
+{
+  uint  z;
+  ulong l0,l1;
+  bool  replaceFlag;
+
+  CHECK_VALID(string);
+
+  while (index < String_length(string))
+  {
+    replaceFlag = FALSE;
+    for (z = 0; z < count; z++)
+    {
+      l0 = String_length(from[z]);
+      l1 = String_length(to[z]);
+
+      if (String_subEquals(string,from[z],index,l0))
+      {
+        String_replace(string,index,l0,to[z]);
+        index += l1;
+        replaceFlag = TRUE;
+        break;
+      }
+    }
+    if (!replaceFlag) index++;
+  }
+
+  return string;
+}
+
+String String_mapCString(String string, ulong index, const char* from[], const char* to[], uint count)
+{
+  uint  z;
+  ulong l0,l1;
+  bool  replaceFlag;
+
+  CHECK_VALID(string);
+
+  while (index < String_length(string))
+  {
+    replaceFlag = FALSE;
+    for (z = 0; z < count; z++)
+    {
+      l0 = strlen(from[z]);
+      l1 = strlen(to[z]);
+
+      if (String_subEqualsCString(string,from[z],index,l0))
+      {
+        String_replaceCString(string,index,l0,to[z]);
+        index += l1;
+        replaceFlag = TRUE;
+        break;
+      }
+    }
+    if (!replaceFlag) index++;
+  }
+
+  return string;
+}
+
+String String_mapChar(String string, ulong index, char from[], char to[], uint count)
+{
+  uint z;
+  bool replaceFlag;
+
+  CHECK_VALID(string);
+
+  while (index < String_length(string))
+  {
+    replaceFlag = FALSE;
+    for (z = 0; z < count; z++)
+    {
+      if (String_subEqualsChar(string,from[z],index))
+      {
+        String_replaceChar(string,index,1,to[z]);
+        index += 1;
+        replaceFlag = TRUE;
+        break;
+      }
+    }
+    if (!replaceFlag) index++;
+  }
+
+  return string;
+}
+
 String String_join(String string, const String joinString, char joinChar)
 {
   CHECK_VALID(string);
