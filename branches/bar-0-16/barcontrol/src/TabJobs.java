@@ -2278,7 +2278,7 @@ class TabJobs
 
         // compress
         label = Widgets.newLabel(tab,"Compress:");
-        Widgets.layout(label,1,0,TableLayoutData.NW);
+        Widgets.layout(label,1,0,TableLayoutData.W);
         composite = Widgets.newComposite(tab);
         composite.setLayout(new TableLayout(new double[]{0.0,1.0},1.0));
         Widgets.layout(composite,1,1,TableLayoutData.NSWE);
@@ -2443,6 +2443,7 @@ class TabJobs
         Widgets.layout(composite,4,1,TableLayoutData.WE);
         {
           button = Widgets.newRadio(composite,"symmetric");
+          button.setSelection(true);
           Widgets.layout(button,0,0,TableLayoutData.W);
           Widgets.addModifyListener(new WidgetModifyListener(button,cryptAlgorithm)
           {
@@ -5214,9 +5215,13 @@ throw new Error("NYI");
     int errorCode = BARServer.executeCommand("FILE_LIST file://"+StringUtils.escape(fileTreeData.name),fileListResult);
     if (errorCode == Errors.NONE)
     {
+      final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
+      final String[] FILENAME_MAP_TO   = new String[]{"\n","\r","\\"};
+
       for (String line : fileListResult)
       {
         Object data[] = new Object[10];
+//Dprintf.dprintf("line_%s",line);
         if      (StringParser.parse(line,"FILE %ld %ld %S",data,StringParser.QUOTE_CHARS))
         {
           /* get data
@@ -5227,7 +5232,7 @@ throw new Error("NYI");
           */
           long   size     = (Long  )data[0];
           long   datetime = (Long  )data[1];
-          String name     = (String)data[2];
+          String name     = StringUtils.map((String)data[2],0,FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
           // create file tree data
           fileTreeData = new FileTreeData(name,FileTypes.FILE,size,datetime,new File(name).getName());
@@ -6543,7 +6548,14 @@ throw new Error("NYI");
                 }
 
                 // replace/insert part
-                addPart(index,(String)dropTargetEvent.data);
+                if      (dropTargetEvent.data instanceof StorageNamePart)
+                {
+                  addPart(index,((StorageNamePart)dropTargetEvent.data).string);
+                }
+                else if (dropTargetEvent.data instanceof String)
+                {
+                  addPart(index,(String)dropTargetEvent.data);
+                }
               }
             }
             else
