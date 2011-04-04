@@ -3296,6 +3296,9 @@ LOCAL void serverCommand_deviceList(ClientInfo *clientInfo, uint id, const Strin
 
 LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
+  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
+  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+
   Errors                     error;
   StorageDirectoryListHandle storageDirectoryListHandle;
   String                     fileName;
@@ -3329,6 +3332,7 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
     error = Storage_readDirectoryList(&storageDirectoryListHandle,fileName,&fileInfo);
     if (error == ERROR_NONE)
     {
+      String_mapCString(fileName,STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
       switch (fileInfo.type)
       {
         case FILE_TYPE_FILE:
@@ -7166,7 +7170,7 @@ SERVER_COMMANDS[] =
   { "OPTION_SET",                   "s S",  serverCommand_optionSet,                 AUTHORIZATION_STATE_OK      },
   { "OPTION_DELETE",                "s S",  serverCommand_optionDelete,              AUTHORIZATION_STATE_OK      },
   { "DECRYPT_PASSWORD_CLEAR",       "",     serverCommand_decryptPasswordsClear,     AUTHORIZATION_STATE_OK      },
-  { "DECRYPT_PASSWORD_ADD",         "i S",  serverCommand_decryptPasswordAdd,        AUTHORIZATION_STATE_OK      },
+  { "DECRYPT_PASSWORD_ADD",         "S",    serverCommand_decryptPasswordAdd,        AUTHORIZATION_STATE_OK      },
   { "FTP_PASSWORD",                 "i S",  serverCommand_ftpPassword,               AUTHORIZATION_STATE_OK      },
   { "SSH_PASSWORD",                 "i S",  serverCommand_sshPassword,               AUTHORIZATION_STATE_OK      },
   { "CRYPT_PASSWORD",               "S",    serverCommand_cryptPassword,             AUTHORIZATION_STATE_OK      },
@@ -7735,6 +7739,29 @@ Errors Server_run(uint             port,
   pauseFlags.indexUpdate  = FALSE;
   pauseEndTimestamp       = 0LL;
   quitFlag                = FALSE;
+
+  /* create jobs directory if necessary */
+  if (!File_existsCString(serverJobsDirectory))
+  {
+    error = File_makeDirectoryCString(serverJobsDirectory,
+                                      FILE_DEFAULT_USER_ID,
+                                      FILE_DEFAULT_GROUP_ID,
+                                      FILE_DEFAULT_PERMISSION
+                                     );                              
+    if (error != ERROR_NONE)
+    {
+      printError("Cannot create directory '%s' (error: %s)\n",
+                 serverJobsDirectory,
+                 Errors_getText(error)
+                );
+      return error;
+    }
+  }
+  if (!File_isDirectoryCString(serverJobsDirectory))
+  {
+    printError("'%s' is not a directory!\n",serverJobsDirectory);
+    return ERROR_NOT_A_DIRECTORY;
+  }
 
   /* init server sockets */
   serverFlag    = FALSE;
