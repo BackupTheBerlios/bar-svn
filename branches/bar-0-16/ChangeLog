@@ -1,3 +1,12 @@
+2011-03-30 0.16b
+  * fix error handling when password is wrong
+  * create jobs directory if it does not exists
+  * barcontrol: fix file name editor drag+drop
+  * barcontrol: ask for password on restore
+  * fix memory leak when reading archive directory entries
+  * fixed deinit error when password is wrong
+  * fixed reading file names which contain \ or LF/CR
+
 2010-12-30 0.16a
   * fix wrong storage name in database
   * barcontrol: fix start/abort button enable/disable for
