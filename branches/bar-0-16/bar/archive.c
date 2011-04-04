@@ -3725,7 +3725,10 @@ Errors Archive_readFileEntry(ArchiveInfo        *archiveInfo,
         password = getNextDecryptPassword(&passwordHandle);
 
         /* reset error and try next password */
-        error = ERROR_NONE;
+        if (password != NULL)
+        {
+          error = ERROR_NONE;
+        }
       }
       else
       {
@@ -4067,17 +4070,18 @@ Errors Archive_readImageEntry(ArchiveInfo        *archiveInfo,
             break;
         }
       }
+      if (error != ERROR_NONE)
+      {
+        Chunk_done(&archiveEntryInfo->image.chunkImageData.info);
+        Chunk_done(&archiveEntryInfo->image.chunkImageEntry.info);
+        Crypt_done(&archiveEntryInfo->image.cryptInfoData);
+        Crypt_done(&archiveEntryInfo->image.chunkImageData.cryptInfo);
+        Crypt_done(&archiveEntryInfo->image.chunkImageEntry.cryptInfo);
+      }
     }
 
     if (error != ERROR_NONE)
     {
-      /* free resources */
-      Chunk_done(&archiveEntryInfo->image.chunkImageData.info);
-      Chunk_done(&archiveEntryInfo->image.chunkImageEntry.info);
-      Crypt_done(&archiveEntryInfo->image.cryptInfoData);
-      Crypt_done(&archiveEntryInfo->image.chunkImageData.cryptInfo);
-      Crypt_done(&archiveEntryInfo->image.chunkImageEntry.cryptInfo);
-
       if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
           && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
          )
@@ -4086,7 +4090,10 @@ Errors Archive_readImageEntry(ArchiveInfo        *archiveInfo,
         password = getNextDecryptPassword(&passwordHandle);
 
         /* reset error and try next password */
-        error = ERROR_NONE;
+        if (password != NULL)
+        {
+          error = ERROR_NONE;
+        }
       }
       else
       {
@@ -4336,14 +4343,15 @@ Errors Archive_readDirectoryEntry(ArchiveInfo      *archiveInfo,
             break;
         }
       }
+      if (error != ERROR_NONE)
+      {
+        Chunk_done(&archiveEntryInfo->directory.chunkDirectoryEntry.info);
+        Crypt_done(&archiveEntryInfo->directory.chunkDirectoryEntry.cryptInfo);
+      }
     }
 
     if (error != ERROR_NONE)
     {
-      /* free resources */
-      Crypt_done(&archiveEntryInfo->directory.chunkDirectoryEntry.cryptInfo);
-      Chunk_done(&archiveEntryInfo->directory.chunkDirectory.info);
-
       if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
           && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
          )
@@ -4352,7 +4360,10 @@ Errors Archive_readDirectoryEntry(ArchiveInfo      *archiveInfo,
         password = getNextDecryptPassword(&passwordHandle);
 
         /* reset error and try next password */
-        error = ERROR_NONE;
+        if (password != NULL)
+        {
+          error = ERROR_NONE;
+        }
       }
       else
       {
@@ -4597,14 +4608,15 @@ Errors Archive_readLinkEntry(ArchiveInfo      *archiveInfo,
             break;
         }
       }
+      if (error != ERROR_NONE)
+      {
+        Chunk_done(&archiveEntryInfo->link.chunkLinkEntry.info);
+        Crypt_done(&archiveEntryInfo->link.chunkLinkEntry.cryptInfo);
+      }
     }
 
     if (error != ERROR_NONE)
     {
-      /* free resources */
-      Chunk_done(&archiveEntryInfo->link.chunkLinkEntry.info);
-      Crypt_done(&archiveEntryInfo->link.chunkLinkEntry.cryptInfo);
-
       if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
           && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
          )
@@ -4613,7 +4625,10 @@ Errors Archive_readLinkEntry(ArchiveInfo      *archiveInfo,
         password = getNextDecryptPassword(&passwordHandle);
 
         /* reset error and try next password */
-        error = ERROR_NONE;
+        if (password != NULL)
+        {
+          error = ERROR_NONE;
+        }
       }
       else
       {
@@ -5004,22 +5019,24 @@ Errors Archive_readHardLinkEntry(ArchiveInfo        *archiveInfo,
             break;
         }
       }
+      if (error != ERROR_NONE)
+      {
+        /* free resources */
+        Chunk_done(&archiveEntryInfo->hardLink.chunkHardLinkData.info);
+        LIST_DONE(&archiveEntryInfo->hardLink.chunkHardLinkNameList,chunkHardLinkName)
+        {
+          Crypt_done(&chunkHardLinkName->cryptInfo);
+          Chunk_done(&chunkHardLinkName->info);
+        }
+        Chunk_done(&archiveEntryInfo->hardLink.chunkHardLinkEntry.info);
+        Crypt_done(&archiveEntryInfo->hardLink.cryptInfoData);
+        Crypt_done(&archiveEntryInfo->hardLink.chunkHardLinkData.cryptInfo);
+        Crypt_done(&archiveEntryInfo->hardLink.chunkHardLinkEntry.cryptInfo);
+      }
     }
 
     if (error != ERROR_NONE)
     {
-      /* free resources */
-      Chunk_done(&archiveEntryInfo->hardLink.chunkHardLinkData.info);
-      LIST_DONE(&archiveEntryInfo->hardLink.chunkHardLinkNameList,chunkHardLinkName)
-      {
-        Crypt_done(&chunkHardLinkName->cryptInfo);
-        Chunk_done(&chunkHardLinkName->info);
-      }
-      Chunk_done(&archiveEntryInfo->hardLink.chunkHardLinkEntry.info);
-      Crypt_done(&archiveEntryInfo->hardLink.cryptInfoData);
-      Crypt_done(&archiveEntryInfo->hardLink.chunkHardLinkData.cryptInfo);
-      Crypt_done(&archiveEntryInfo->hardLink.chunkHardLinkEntry.cryptInfo);
-
       if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
           && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
          )
@@ -5028,7 +5045,10 @@ Errors Archive_readHardLinkEntry(ArchiveInfo        *archiveInfo,
         password = getNextDecryptPassword(&passwordHandle);
 
         /* reset error and try next password */
-        error = ERROR_NONE;
+        if (password != NULL)
+        {
+          error = ERROR_NONE;
+        }
       }
       else
       {
@@ -5282,14 +5302,15 @@ Errors Archive_readSpecialEntry(ArchiveInfo      *archiveInfo,
             break;
         }
       }
+      if (error != ERROR_NONE)
+      {
+        Chunk_done(&archiveEntryInfo->special.chunkSpecialEntry.info);
+        Crypt_done(&archiveEntryInfo->special.chunkSpecialEntry.cryptInfo);
+      }
     }
 
     if (error != ERROR_NONE)
     {
-      /* free resources */
-      Chunk_done(&archiveEntryInfo->special.chunkSpecialEntry.info);
-      Crypt_done(&archiveEntryInfo->special.chunkSpecialEntry.cryptInfo);
-
       if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
           && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
          )
@@ -5298,7 +5319,10 @@ Errors Archive_readSpecialEntry(ArchiveInfo      *archiveInfo,
         password = getNextDecryptPassword(&passwordHandle);
 
         /* reset error and try next password */
-        error = ERROR_NONE;
+        if (password != NULL)
+        {
+          error = ERROR_NONE;
+        }
       }
       else
       {
