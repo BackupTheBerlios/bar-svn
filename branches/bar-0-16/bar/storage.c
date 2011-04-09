@@ -2173,7 +2173,6 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
         String    imageFileName;
         TextMacro textMacros[5];
         String    fileName;
-        Errors    error;
         FileInfo  fileInfo;
 
         if (!storageFileHandle->jobOptions->dryRunFlag)
@@ -2358,7 +2357,6 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
         String    imageFileName;
         TextMacro textMacros[4];
         String    fileName;
-        Errors    error;
 
         if (!storageFileHandle->jobOptions->dryRunFlag)
         {
