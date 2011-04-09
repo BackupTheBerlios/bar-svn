@@ -2355,7 +2355,11 @@ bool configValueFormatOwner(void **formatUserData, void *userData, String line)
 
 LOCAL bool configValueParseEntry(EntryTypes entryType, void *userData, void *variable, const char *name, const char *value)
 {
+  const char* FILENAME_MAP_FROM[] = {"\\n","\\r","\\\\"};
+  const char* FILENAME_MAP_TO[]   = {"\n","\r","\\"};
+
   PatternTypes patternType;
+  String       pattern;
 
   assert(variable != NULL);
   assert(value != NULL);
@@ -2371,11 +2375,14 @@ LOCAL bool configValueParseEntry(EntryTypes entryType, void *userData, void *var
   else                                 { patternType = PATTERN_TYPE_GLOB;                       }
 
   /* append to list */
-  if (EntryList_appendCString((EntryList*)variable,entryType,value,patternType) != ERROR_NONE)
+  pattern = String_mapCString(String_newCString(value),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
+  if (EntryList_append((EntryList*)variable,entryType,pattern,patternType) != ERROR_NONE)
   {
-    fprintf(stderr,"Cannot parse varlue '%s' of option '%s'!\n",value,name);
+    fprintf(stderr,"Cannot parse varlue '%s' of option '%s'!\n",String_cString(pattern),name);
+    String_delete(pattern);
     return FALSE;
   }
+  String_delete(pattern);
 
   return TRUE;
 }
@@ -2407,7 +2414,11 @@ void configValueFormatDoneEntry(void **formatUserData, void *userData)
 
 bool configValueFormatFileEntry(void **formatUserData, void *userData, String line)
 {
+  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
+  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+
   EntryNode *entryNode;
+  String    fileName;
 
   assert(formatUserData != NULL);
 
@@ -2420,16 +2431,17 @@ bool configValueFormatFileEntry(void **formatUserData, void *userData, String li
   }
   if (entryNode != NULL)
   {
+    fileName = String_mapCString(String_duplicate(entryNode->string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
     switch (entryNode->pattern.type)
     {
       case PATTERN_TYPE_GLOB:
-        String_format(line,"%'S",entryNode->string);
+        String_format(line,"%'S",fileName);
         break;
       case PATTERN_TYPE_REGEX:
-        String_format(line,"r:%'S",entryNode->string);
+        String_format(line,"r:%'S",fileName);
         break;
       case PATTERN_TYPE_EXTENDED_REGEX:
-        String_format(line,"x:%'S",entryNode->string);
+        String_format(line,"x:%'S",fileName);
         break;
       #ifndef NDEBUG
         default:
@@ -2437,6 +2449,7 @@ bool configValueFormatFileEntry(void **formatUserData, void *userData, String li
           break;
       #endif /* NDEBUG */
     }
+    String_delete(fileName);
 
     (*formatUserData) = entryNode->next;
 
