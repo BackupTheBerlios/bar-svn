@@ -3303,6 +3303,7 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
   StorageDirectoryListHandle storageDirectoryListHandle;
   String                     fileName;
   FileInfo                   fileInfo;
+  String                     string;
 
   assert(clientInfo != NULL);
   assert(arguments != NULL);
@@ -3327,12 +3328,13 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
 
   /* read directory entries */
   fileName = String_new();
+  string = String_new();
   while (!Storage_endOfDirectoryList(&storageDirectoryListHandle))
   {
     error = Storage_readDirectoryList(&storageDirectoryListHandle,fileName,&fileInfo);
     if (error == ERROR_NONE)
     {
-      String_mapCString(fileName,STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
+      String_mapCString(String_set(string,fileName),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
       switch (fileInfo.type)
       {
         case FILE_TYPE_FILE:
@@ -3340,28 +3342,28 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
                            "FILE %llu %llu %'S",
                            fileInfo.size,
                            fileInfo.timeModified,
-                           fileName
+                           string
                           );
           break;
         case FILE_TYPE_DIRECTORY:
           sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                            "DIRECTORY %llu %'S",
                            fileInfo.timeModified,
-                           fileName
+                           string
                           );
           break;
         case FILE_TYPE_LINK:
           sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                            "LINK %llu %'S",
                            fileInfo.timeModified,
-                           fileName
+                           string
                           );
           break;
         case FILE_TYPE_HARDLINK:
           sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                            "HARDLINK %llu %'S",
                            fileInfo.timeModified,
-                           fileName
+                           string
                           );
           break;
         case FILE_TYPE_SPECIAL:
@@ -3371,7 +3373,7 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
               sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                                "DEVICE CHARACTER %llu %'S",
                                fileInfo.timeModified,
-                               fileName
+                               string
                               );
               break;
             case FILE_SPECIAL_TYPE_BLOCK_DEVICE:
@@ -3379,28 +3381,28 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
                                "DEVICE BLOCK %lld %llu %'S",
                                fileInfo.size,
                                fileInfo.timeModified,
-                               fileName
+                               string
                               );
               break;
             case FILE_SPECIAL_TYPE_FIFO:
               sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                                "FIFO %llu %'S",
                                fileInfo.timeModified,
-                               fileName
+                               string
                               );
               break;
             case FILE_SPECIAL_TYPE_SOCKET:
               sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                                "SOCKET %llu %'S",
                                fileInfo.timeModified,
-                               fileName
+                               string
                               );
               break;
             default:
               sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                                "SPECIAL %llu %'S",
                                fileInfo.timeModified,
-                               fileName
+                               string
                               );
               break;
           }
@@ -3413,10 +3415,11 @@ LOCAL void serverCommand_fileList(ClientInfo *clientInfo, uint id, const String 
     {
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                        "UNKNOWN %'S",
-                       fileName
+                       string
                       );
     }
   }
+  String_delete(string);
   String_delete(fileName);
 
   /* close directory */
@@ -4358,8 +4361,12 @@ LOCAL void serverCommand_jobFlush(ClientInfo *clientInfo, uint id, const String 
 
 LOCAL void serverCommand_includeList(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
+  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
+  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+
   uint       jobId;
   JobNode    *jobNode;
+  String     string;
   EntryNode  *entryNode;
   const char *entryType,*patternType;
 
@@ -4386,6 +4393,7 @@ LOCAL void serverCommand_includeList(ClientInfo *clientInfo, uint id, const Stri
     }
 
     /* send include list */
+    string = String_new();
     LIST_ITERATE(&jobNode->includeEntryList,entryNode)
     {
       entryType   = NULL;
@@ -4411,13 +4419,15 @@ LOCAL void serverCommand_includeList(ClientInfo *clientInfo, uint id, const Stri
             break;
         #endif /* NDEBUG */
       }
+      String_mapCString(String_set(string,entryNode->string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                        "%s %s %'S",
                        entryType,
                        patternType,
-                       entryNode->string
+                       string
                       );
     }
+    String_delete(string);
   }
   Semaphore_unlock(&jobList.lock);
 
@@ -4490,9 +4500,13 @@ LOCAL void serverCommand_includeClear(ClientInfo *clientInfo, uint id, const Str
 
 LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
+  const char* FILENAME_MAP_FROM[] = {"\\n","\\r","\\\\"};
+  const char* FILENAME_MAP_TO[]   = {"\n","\r","\\"};
+
   uint          jobId;
   EntryTypes    entryType;
   PatternTypes  patternType;
+  String        string;
   String        pattern;
   SemaphoreLock semaphoreLock;
   JobNode       *jobNode;
@@ -4552,8 +4566,9 @@ LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const Strin
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected pattern");
     return;
   }
-  pattern = arguments[3];
+  string = arguments[3];
 
+  pattern = String_mapCString(String_duplicate(string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
   SEMAPHORE_LOCKED_DO(semaphoreLock,&jobList.lock,SEMAPHORE_LOCK_TYPE_READ_WRITE)
   {
     /* find job */
@@ -4562,6 +4577,7 @@ LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const Strin
     {
       sendClientResult(clientInfo,id,TRUE,ERROR_JOB_NOT_FOUND,"job #%d not found",jobId);
       Semaphore_unlock(&jobList.lock);
+      String_delete(pattern);
       return;
     }
 
@@ -4569,6 +4585,7 @@ LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const Strin
     EntryList_append(&jobNode->includeEntryList,entryType,pattern,patternType);
     jobNode->modifiedFlag = TRUE;
   }
+  String_delete(pattern);
 
   sendClientResult(clientInfo,id,TRUE,ERROR_NONE,"");
 }
@@ -4588,8 +4605,12 @@ LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const Strin
 
 LOCAL void serverCommand_excludeList(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
+  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
+  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+
   uint        jobId;
   JobNode     *jobNode;
+  String      string;
   PatternNode *patternNode;
   const char  *type;
 
@@ -4616,6 +4637,7 @@ LOCAL void serverCommand_excludeList(ClientInfo *clientInfo, uint id, const Stri
     }
 
     /* send exclude list */
+    string = String_new();
     LIST_ITERATE(&jobNode->excludePatternList,patternNode)
     {
       type = NULL;
@@ -4630,12 +4652,14 @@ LOCAL void serverCommand_excludeList(ClientInfo *clientInfo, uint id, const Stri
             break;
         #endif /* NDEBUG */
       }
+      String_mapCString(String_set(string,patternNode->string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                        "%s %'S",
                        type,
-                       patternNode->string
+                       string
                       );
     }
+    String_delete(string);
   }
   Semaphore_unlock(&jobList.lock);
 
@@ -4709,8 +4733,12 @@ LOCAL void serverCommand_excludeClear(ClientInfo *clientInfo, uint id, const Str
 
 LOCAL void serverCommand_excludeAdd(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
+  const char* FILENAME_MAP_FROM[] = {"\\n","\\r","\\\\"};
+  const char* FILENAME_MAP_TO[]   = {"\n","\r","\\"};
+
   uint          jobId;
   PatternTypes  patternType;
+  String        string;
   String        pattern;
   SemaphoreLock semaphoreLock;
   JobNode       *jobNode;
@@ -4752,8 +4780,9 @@ LOCAL void serverCommand_excludeAdd(ClientInfo *clientInfo, uint id, const Strin
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected pattern");
     return;
   }
-  pattern = arguments[2];
+  string = arguments[2];
 
+  pattern = String_mapCString(String_duplicate(string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
   SEMAPHORE_LOCKED_DO(semaphoreLock,&jobList.lock,SEMAPHORE_LOCK_TYPE_READ_WRITE)
   {
     /* find job */
@@ -4762,6 +4791,7 @@ LOCAL void serverCommand_excludeAdd(ClientInfo *clientInfo, uint id, const Strin
     {
       sendClientResult(clientInfo,id,TRUE,ERROR_JOB_NOT_FOUND,"job #%d not found",jobId);
       Semaphore_unlock(&jobList.lock);
+      String_delete(pattern);
       return;
     }
 
@@ -4769,6 +4799,7 @@ LOCAL void serverCommand_excludeAdd(ClientInfo *clientInfo, uint id, const Strin
     PatternList_append(&jobNode->excludePatternList,pattern,patternType);
     jobNode->modifiedFlag = TRUE;
   }
+  String_delete(pattern);
 
   sendClientResult(clientInfo,id,TRUE,ERROR_NONE,"");
 }
