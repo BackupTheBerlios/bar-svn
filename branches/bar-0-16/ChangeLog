@@ -1,4 +1,4 @@
-2011-03-30 0.16b
+2011-04-07 0.16b
   * fix error handling when password is wrong
   * create jobs directory if it does not exists
   * barcontrol: fix file name editor drag+drop
@@ -6,6 +6,9 @@
   * fix memory leak when reading archive directory entries
   * fixed deinit error when password is wrong
   * fixed reading file names which contain \ or LF/CR
+  * barcontrol: fix discarding first character for archive target cd:, bd:
+  * barcontrol: fixed file listing
+  * fix error handling when calling external tool for CD/DVD/BD
 
 2010-12-30 0.16a
   * fix wrong storage name in database
