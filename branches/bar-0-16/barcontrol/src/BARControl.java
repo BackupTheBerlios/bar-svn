@@ -318,7 +318,7 @@ class ArchiveNameParts
       // cd
       type = StorageTypes.CD;
 
-      String specifier = archiveName.substring(6);
+      String specifier = archiveName.substring(5);
       Object[] data = new Object[2];
       if (StringParser.parse(specifier,"%S:%S",data,StringParser.QUOTE_CHARS))
       {
@@ -352,7 +352,7 @@ class ArchiveNameParts
       // bd
       type = StorageTypes.BD;
 
-      String specifier = archiveName.substring(6);
+      String specifier = archiveName.substring(5);
       Object[] data = new Object[2];
       if (StringParser.parse(specifier,"%S:%S",data,StringParser.QUOTE_CHARS))
       {
