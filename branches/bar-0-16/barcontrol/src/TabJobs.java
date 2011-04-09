@@ -1182,7 +1182,7 @@ class TabJobs
   private WidgetVariable  compressAlgorithm       = new WidgetVariable(new String[]{"none","zip0","zip1","zip2","zip3","zip4","zip5","zip6","zip7","zip8","zip9","bzip1","bzip2","bzip3","bzip4","bzip5","bzip6","bzip7","bzip8","bzip9","lzma1","lzma2","lzma3","lzma4","lzma5","lzma6","lzma7","lzma8","lzma9"});
   private WidgetVariable  compressMinSize         = new WidgetVariable(0);
   private WidgetVariable  cryptAlgorithm          = new WidgetVariable(new String[]{"none","3DES","CAST5","BLOWFISH","AES128","AES192","AES256","TWOFISH128","TWOFISH256"});
-  private WidgetVariable  cryptType               = new WidgetVariable(new String[]{"none","symmetric","asymmetric"});
+  private WidgetVariable  cryptType               = new WidgetVariable(new String[]{"symmetric","asymmetric"});
   private WidgetVariable  cryptPublicKeyFileName  = new WidgetVariable("");
   private WidgetVariable  cryptPasswordMode       = new WidgetVariable(new String[]{"default","ask","config"});
   private WidgetVariable  cryptPassword           = new WidgetVariable("");
@@ -2474,6 +2474,7 @@ class TabJobs
           button.setToolTipText("Use symmetric encryption with pass-phrase.");
 
           button = Widgets.newRadio(composite,"asymmetric");
+          button.setSelection(false);          
           Widgets.layout(button,0,1,TableLayoutData.W);
           Widgets.addModifyListener(new WidgetModifyListener(button,cryptAlgorithm)
           {
@@ -5212,7 +5213,7 @@ throw new Error("NYI");
     treeItem.removeAll();
 
     ArrayList<String> fileListResult = new ArrayList<String>();
-    int errorCode = BARServer.executeCommand("FILE_LIST file://"+StringUtils.escape(fileTreeData.name),fileListResult);
+    int errorCode = BARServer.executeCommand("FILE_LIST "+StringUtils.escape("file://"+fileTreeData.name),fileListResult);
     if (errorCode == Errors.NONE)
     {
       final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
@@ -5639,6 +5640,9 @@ throw new Error("NYI");
    */
   private void updateIncludeList()
   {
+    final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
+    final String[] FILENAME_MAP_TO   = new String[]{"\n","\r","\\"};
+
     assert selectedJobId != 0;
 
     ArrayList<String> result = new ArrayList<String>();
@@ -5654,7 +5658,7 @@ throw new Error("NYI");
         // get data
         EntryTypes   entryType   = (EntryTypes)data[0];
         PatternTypes patternType = (PatternTypes)data[1];
-        String       pattern     = (String)data[2];
+        String       pattern     = StringUtils.map((String)data[2],0,FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
         if (!pattern.equals(""))
         {
@@ -5688,6 +5692,9 @@ Dprintf.dprintf("name=%s %s",name,includeHashMap.containsKey(name));
    */
   private void updateExcludeList()
   {
+    final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
+    final String[] FILENAME_MAP_TO   = new String[]{"\n","\r","\\"};
+
     assert selectedJobId != 0;
 
     ArrayList<String> result = new ArrayList<String>();
@@ -5703,12 +5710,12 @@ Dprintf.dprintf("name=%s %s",name,includeHashMap.containsKey(name));
       {
         // get data
         String type    = (String)data[0];
-        String pattern = (String)data[1];
+        String pattern = StringUtils.map((String)data[1],0,FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
         if (!pattern.equals(""))
         {
-           excludeHashSet.add(pattern);
-           widgetExcludeList.add(pattern,findListIndex(widgetExcludeList,pattern));
+          excludeHashSet.add(pattern);
+          widgetExcludeList.add(pattern,findListIndex(widgetExcludeList,pattern));
         }
       }
     }
