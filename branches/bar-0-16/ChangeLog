@@ -1,4 +1,4 @@
-2011-04-07 0.16b
+2011-04-09 0.16b
   * fix error handling when password is wrong
   * create jobs directory if it does not exists
   * barcontrol: fix file name editor drag+drop
