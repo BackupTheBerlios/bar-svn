@@ -1,6 +1,7 @@
 2011-04-09 0.16b
   * fix error handling when password is wrong
   * create jobs directory if it does not exists
+  * enable creaeting index database by default
   * barcontrol: fix file name editor drag+drop
   * barcontrol: ask for password on restore
   * fix memory leak when reading archive directory entries
@@ -9,6 +10,10 @@
   * barcontrol: fix discarding first character for archive target cd:, bd:
   * barcontrol: fixed file listing
   * fix error handling when calling external tool for CD/DVD/BD
+  * barcontrol: add year two digits in archive file name editor, fixed
+    century
+  * improved documentation: added archive file name macros, add more
+    entries to faq, small fixes
 
 2010-12-30 0.16a
   * fix wrong storage name in database
