@@ -768,6 +768,11 @@ class TabRestore
      */
     public void run()
     {
+      final String[] PATTERN_MAP_FROM  = new String[]{"\n","\r","\\"};
+      final String[] PATTERN_MAP_TO    = new String[]{"\\n","\\r","\\\\"};
+      final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
+      final String[] FILENAME_MAP_TO   = new String[]{"\n","\r","\\"};
+
       int    entryMaxCount = 100;
       String entryPattern  = null;
       for (;;)
@@ -796,7 +801,7 @@ class TabRestore
             String commandString = "INDEX_ENTRIES_LIST "+
                                    entryMaxCount+" "+
                                    (newestEntriesOnlyFlag ? "1" : "0")+" "+
-                                   StringUtils.escape(entryPattern);
+                                   StringUtils.escape(StringUtils.map(entryPattern,PATTERN_MAP_FROM,PATTERN_MAP_TO));
 //Dprintf.dprintf("commandString=%s",commandString);
             if (BARServer.executeCommand(commandString,result) == Errors.NONE)
             {
@@ -825,7 +830,7 @@ class TabRestore
                   long   fragmentOffset  = (Long  )data[6];
                   long   fragmentSize    = (Long  )data[7];
                   String storageName     = (String)data[8];
-                  String fileName        = (String)data[9];
+                  String fileName        = StringUtils.map((String)data[9],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
                   EntryData entryData = entryDataMap.get(storageName,fileName,EntryTypes.FILE);
                   if (entryData != null)
@@ -855,7 +860,7 @@ class TabRestore
                   long   blockOffset     = (Long  )data[2];
                   long   blockCount      = (Long  )data[3];
                   String storageName     = (String)data[4];
-                  String imageName       = (String)data[5];
+                  String imageName       = StringUtils.map((String)data[5],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
                   EntryData entryData = entryDataMap.get(storageName,imageName,EntryTypes.IMAGE);
                   if (entryData != null)
@@ -883,7 +888,7 @@ class TabRestore
                   long   storageDateTime = (Long  )data[0];
                   long   datetime        = (Long  )data[1];
                   String storageName     = (String)data[5];
-                  String directoryName   = (String)data[6];
+                  String directoryName   = StringUtils.map((String)data[6],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
                   EntryData entryData = entryDataMap.get(storageName,directoryName,EntryTypes.DIRECTORY);
                   if (entryData != null)
@@ -911,8 +916,8 @@ class TabRestore
                   */
                   long   storageDateTime = (Long  )data[0];
                   long   datetime        = (Long  )data[1];
-                  String storageName     = (String)data[5];
-                  String linkName        = (String)data[6];
+                  String storageName     = StringUtils.map((String)data[5],FILENAME_MAP_FROM,FILENAME_MAP_TO);
+                  String linkName        = StringUtils.map((String)data[6],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
                   EntryData entryData = entryDataMap.get(storageName,linkName,EntryTypes.LINK);
                   if (entryData != null)
@@ -939,8 +944,8 @@ class TabRestore
                   */
                   long   storageDateTime = (Long  )data[0];
                   long   datetime        = (Long  )data[1];
-                  String storageName     = (String)data[5];
-                  String name            = (String)data[6];
+                  String storageName     = StringUtils.map((String)data[5],FILENAME_MAP_FROM,FILENAME_MAP_TO);
+                  String name            = StringUtils.map((String)data[6],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
                   EntryData entryData = entryDataMap.get(storageName,name,EntryTypes.SPECIAL);
                   if (entryData != null)
@@ -2796,6 +2801,9 @@ class TabRestore
     for (TableItem tableItem : widgetEntryList.getItems())
     {
       tableItem.setChecked(tagged);
+
+      EntryData entryData = (EntryData)tableItem.getData();
+      entryData.setTagged(tagged);
     }
 
     boolean entriesTagged = checkEntriesTagged();
@@ -2992,6 +3000,9 @@ class TabRestore
     {
       public void run(final BusyDialog busyDialog, Object userData)
       {
+        final String[] FILENAME_MAP_FROM = new String[]{"\n","\r","\\"};
+        final String[] FILENAME_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
         final EntryData[] entryData_       = (EntryData[])((Object[])userData)[0];
         final String      directory        = (String     )((Object[])userData)[1];
         final boolean     overwriteEntries = (Boolean    )((Object[])userData)[2];
@@ -3017,7 +3028,7 @@ class TabRestore
                                    StringUtils.escape(entryData.storageName)+" "+
                                    StringUtils.escape(directory)+" "+
                                    (overwriteEntries?"1":"0")+" "+
-                                   StringUtils.escape(entryData.name)
+                                   StringUtils.escape(StringUtils.map(entryData.name,FILENAME_MAP_FROM,FILENAME_MAP_TO))
                                    ;
   //Dprintf.dprintf("command=%s",commandString);
             Command command = BARServer.runCommand(commandString);
@@ -3047,7 +3058,7 @@ class TabRestore
                   long   totalBytes        = (Long)data[1];
                   long   archiveDoneBytes  = (Long)data[2];
                   long   archiveTotalBytes = (Long)data[3];
-                  String name              = (String)data[4];
+                  String name              = StringUtils.map((String)data[4],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
                   busyDialog.updateText(1,name);
                   busyDialog.updateProgressBar(1,(totalBytes > 0) ? ((double)doneBytes*100.0)/(double)totalBytes : 0.0);
