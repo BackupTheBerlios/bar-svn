@@ -3778,9 +3778,14 @@ LOCAL void serverCommand_jobList(ClientInfo *clientInfo, uint id, const String a
 
 LOCAL void serverCommand_jobInfo(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
+  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
+  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+
   uint       jobId;
+  
   JobNode    *jobNode;
   const char *message;
+  String     string;
 
   assert(clientInfo != NULL);
   assert(arguments != NULL);
@@ -3792,6 +3797,7 @@ LOCAL void serverCommand_jobInfo(ClientInfo *clientInfo, uint id, const String a
     return;
   }
   jobId = String_toInteger(arguments[0],0,NULL,NULL,0);
+
 
   Semaphore_lock(&jobList.lock,SEMAPHORE_LOCK_TYPE_READ);
   {
@@ -3817,6 +3823,7 @@ LOCAL void serverCommand_jobInfo(ClientInfo *clientInfo, uint id, const String a
     {
       message = "";
     }
+    string = String_mapCString(String_duplicate(jobNode->runningInfo.name),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
     sendClientResult(clientInfo,id,TRUE,ERROR_NONE,
                      "%'s %'s %lu %llu %lu %llu %lu %llu %lu %llu %f %f %f %llu %f %'S %llu %llu %'S %llu %llu %d %f %d",
                      getJobStateText(&jobNode->jobOptions,jobNode->state),
@@ -3834,7 +3841,7 @@ LOCAL void serverCommand_jobInfo(ClientInfo *clientInfo, uint id, const String a
                      Misc_performanceFilterGetValue(&jobNode->runningInfo.storageBytesPerSecond,60),
                      jobNode->runningInfo.archiveBytes,
                      jobNode->runningInfo.compressionRatio,
-                     jobNode->runningInfo.name,
+                     string,
                      jobNode->runningInfo.entryDoneBytes,
                      jobNode->runningInfo.entryTotalBytes,
                      jobNode->runningInfo.storageName,
@@ -3844,6 +3851,7 @@ LOCAL void serverCommand_jobInfo(ClientInfo *clientInfo, uint id, const String a
                      jobNode->runningInfo.volumeProgress,
                      jobNode->requestedVolumeNumber
                     );
+    String_delete(string);
   }
   Semaphore_unlock(&jobList.lock);
 }
@@ -4361,8 +4369,8 @@ LOCAL void serverCommand_jobFlush(ClientInfo *clientInfo, uint id, const String 
 
 LOCAL void serverCommand_includeList(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
-  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+  const char* PATTERN_MAP_FROM[] = {"\n","\r","\\"};
+  const char* PATTERN_MAP_TO[]   = {"\\n","\\r","\\\\"};
 
   uint       jobId;
   JobNode    *jobNode;
@@ -4419,7 +4427,7 @@ LOCAL void serverCommand_includeList(ClientInfo *clientInfo, uint id, const Stri
             break;
         #endif /* NDEBUG */
       }
-      String_mapCString(String_set(string,entryNode->string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
+      String_mapCString(String_set(string,entryNode->string),STRING_BEGIN,PATTERN_MAP_FROM,PATTERN_MAP_TO,SIZE_OF_ARRAY(PATTERN_MAP_FROM));
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                        "%s %s %'S",
                        entryType,
@@ -4500,8 +4508,8 @@ LOCAL void serverCommand_includeClear(ClientInfo *clientInfo, uint id, const Str
 
 LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  const char* FILENAME_MAP_FROM[] = {"\\n","\\r","\\\\"};
-  const char* FILENAME_MAP_TO[]   = {"\n","\r","\\"};
+  const char* PATTERN_MAP_FROM[] = {"\\n","\\r","\\\\"};
+  const char* PATTERN_MAP_TO[]   = {"\n","\r","\\"};
 
   uint          jobId;
   EntryTypes    entryType;
@@ -4568,7 +4576,7 @@ LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const Strin
   }
   string = arguments[3];
 
-  pattern = String_mapCString(String_duplicate(string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
+  pattern = String_mapCString(String_duplicate(string),STRING_BEGIN,PATTERN_MAP_FROM,PATTERN_MAP_TO,SIZE_OF_ARRAY(PATTERN_MAP_FROM));
   SEMAPHORE_LOCKED_DO(semaphoreLock,&jobList.lock,SEMAPHORE_LOCK_TYPE_READ_WRITE)
   {
     /* find job */
@@ -4605,8 +4613,8 @@ LOCAL void serverCommand_includeAdd(ClientInfo *clientInfo, uint id, const Strin
 
 LOCAL void serverCommand_excludeList(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  const char* FILENAME_MAP_FROM[] = {"\n","\r","\\"};
-  const char* FILENAME_MAP_TO[]   = {"\\n","\\r","\\\\"};
+  const char* PATTERN_MAP_FROM[] = {"\n","\r","\\"};
+  const char* PATTERN_MAP_TO[]   = {"\\n","\\r","\\\\"};
 
   uint        jobId;
   JobNode     *jobNode;
@@ -4652,7 +4660,7 @@ LOCAL void serverCommand_excludeList(ClientInfo *clientInfo, uint id, const Stri
             break;
         #endif /* NDEBUG */
       }
-      String_mapCString(String_set(string,patternNode->string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
+      String_mapCString(String_set(string,patternNode->string),STRING_BEGIN,PATTERN_MAP_FROM,PATTERN_MAP_TO,SIZE_OF_ARRAY(PATTERN_MAP_FROM));
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                        "%s %'S",
                        type,
@@ -4733,8 +4741,8 @@ LOCAL void serverCommand_excludeClear(ClientInfo *clientInfo, uint id, const Str
 
 LOCAL void serverCommand_excludeAdd(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  const char* FILENAME_MAP_FROM[] = {"\\n","\\r","\\\\"};
-  const char* FILENAME_MAP_TO[]   = {"\n","\r","\\"};
+  const char* PATTERN_MAP_FROM[] = {"\\n","\\r","\\\\"};
+  const char* PATTERN_MAP_TO[]   = {"\n","\r","\\"};
 
   uint          jobId;
   PatternTypes  patternType;
@@ -4782,7 +4790,7 @@ LOCAL void serverCommand_excludeAdd(ClientInfo *clientInfo, uint id, const Strin
   }
   string = arguments[2];
 
-  pattern = String_mapCString(String_duplicate(string),STRING_BEGIN,FILENAME_MAP_FROM,FILENAME_MAP_TO,SIZE_OF_ARRAY(FILENAME_MAP_FROM));
+  pattern = String_mapCString(String_duplicate(string),STRING_BEGIN,PATTERN_MAP_FROM,PATTERN_MAP_TO,SIZE_OF_ARRAY(PATTERN_MAP_FROM));
   SEMAPHORE_LOCKED_DO(semaphoreLock,&jobList.lock,SEMAPHORE_LOCK_TYPE_READ_WRITE)
   {
     /* find job */
