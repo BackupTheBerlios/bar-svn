@@ -1,4 +1,4 @@
-2011-04-09 0.16b
+2011-04-10 0.16b
   * fix error handling when password is wrong
   * create jobs directory if it does not exists
   * enable creaeting index database by default
@@ -12,6 +12,7 @@
   * fix error handling when calling external tool for CD/DVD/BD
   * barcontrol: add year two digits in archive file name editor, fixed
     century
+  * barcontrol: fix enabling restore-button
   * improved documentation: added archive file name macros, add more
     entries to faq, small fixes
 
