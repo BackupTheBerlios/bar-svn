@@ -4030,8 +4030,20 @@ bool String_getNextToken(StringTokenizer *stringTokenizer, String *const token, 
                && (stringTokenizer->data[stringTokenizer->index] != (*s))
               )
         {
-          String_appendChar(stringTokenizer->token,stringTokenizer->data[stringTokenizer->index]);
-          stringTokenizer->index++;
+          if (   ((stringTokenizer->index+1) < stringTokenizer->length)
+              && (   (stringTokenizer->data[stringTokenizer->index] == '\\')
+                  || (stringTokenizer->data[stringTokenizer->index] == (*s))
+                 )
+             )
+          {
+            String_appendChar(stringTokenizer->token,stringTokenizer->data[stringTokenizer->index+1]);
+            stringTokenizer->index += 2;
+          }
+          else
+          {
+            String_appendChar(stringTokenizer->token,stringTokenizer->data[stringTokenizer->index]);
+            stringTokenizer->index++;
+          }
         }
         if (stringTokenizer->index < stringTokenizer->length) stringTokenizer->index++;
       }
