@@ -5233,7 +5233,7 @@ throw new Error("NYI");
           */
           long   size     = (Long  )data[0];
           long   datetime = (Long  )data[1];
-          String name     = StringUtils.map((String)data[2],0,FILENAME_MAP_FROM,FILENAME_MAP_TO);
+          String name     = StringUtils.map((String)data[2],FILENAME_MAP_FROM,FILENAME_MAP_TO);
 
           // create file tree data
           fileTreeData = new FileTreeData(name,FileTypes.FILE,size,datetime,new File(name).getName());
@@ -5640,8 +5640,8 @@ throw new Error("NYI");
    */
   private void updateIncludeList()
   {
-    final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
-    final String[] FILENAME_MAP_TO   = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\n","\r","\\"};
 
     assert selectedJobId != 0;
 
@@ -5653,12 +5653,12 @@ throw new Error("NYI");
     for (String line : result)
     {
       Object[] data = new Object[3];
-      if (StringParser.parse(line,"%{TabJobs.EntryTypes}s %{TabJobs.PatternTypes}s %S",data,StringParser.QUOTE_CHARS))
+      if (StringParser.parse(line,"%{TabJobs.EntryTypes}s %{TabJobs.PatternTypes}s %'S",data,StringParser.QUOTE_CHARS))
       {
         // get data
         EntryTypes   entryType   = (EntryTypes)data[0];
         PatternTypes patternType = (PatternTypes)data[1];
-        String       pattern     = StringUtils.map((String)data[2],0,FILENAME_MAP_FROM,FILENAME_MAP_TO);
+        String       pattern     = StringUtils.map((String)data[2],PATTERN_MAP_FROM,PATTERN_MAP_TO);
 
         if (!pattern.equals(""))
         {
@@ -5692,8 +5692,8 @@ Dprintf.dprintf("name=%s %s",name,includeHashMap.containsKey(name));
    */
   private void updateExcludeList()
   {
-    final String[] FILENAME_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
-    final String[] FILENAME_MAP_TO   = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_FROM = new String[]{"\\n","\\r","\\\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\n","\r","\\"};
 
     assert selectedJobId != 0;
 
@@ -5710,7 +5710,7 @@ Dprintf.dprintf("name=%s %s",name,includeHashMap.containsKey(name));
       {
         // get data
         String type    = (String)data[0];
-        String pattern = StringUtils.map((String)data[1],0,FILENAME_MAP_FROM,FILENAME_MAP_TO);
+        String pattern = StringUtils.map((String)data[1],PATTERN_MAP_FROM,PATTERN_MAP_TO);
 
         if (!pattern.equals(""))
         {
@@ -6038,12 +6038,15 @@ throw new Error("NYI");
    */
   private void includeAdd(EntryTypes entryType, String pattern)
   {
+    final String[] PATTERN_MAP_FROM = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
     assert selectedJobId != 0;
 
     EntryData entryData = new EntryData(entryType,pattern);
 
     String[] result = new String[1];
-    if (BARServer.executeCommand("INCLUDE_ADD "+selectedJobId+" "+entryType.toString()+" GLOB "+StringUtils.escape(entryData.pattern),result) != Errors.NONE)
+    if (BARServer.executeCommand("INCLUDE_ADD "+selectedJobId+" "+entryType.toString()+" GLOB "+StringUtils.escape(StringUtils.map(entryData.pattern,PATTERN_MAP_FROM,PATTERN_MAP_TO)),result) != Errors.NONE)
     {
       Dialogs.error(shell,"Cannot add include entry:\n\n"+result[0]);
       return;
@@ -6066,10 +6069,13 @@ throw new Error("NYI");
    */
   private void excludeAdd(String pattern)
   {
+    final String[] PATTERN_MAP_FROM = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
     assert selectedJobId != 0;
 
     String[] result = new String[1];
-    if (BARServer.executeCommand("EXCLUDE_ADD "+selectedJobId+" GLOB "+StringUtils.escape(pattern),result) != Errors.NONE)
+    if (BARServer.executeCommand("EXCLUDE_ADD "+selectedJobId+" GLOB "+StringUtils.escape(StringUtils.map(pattern,PATTERN_MAP_FROM,PATTERN_MAP_TO)),result) != Errors.NONE)
     {
       Dialogs.error(shell,"Cannot add exclude entry:\n\n"+result[0]);
       return;
@@ -6148,6 +6154,9 @@ throw new Error("NYI");
    */
   private void includeRemove(String pattern)
   {
+    final String[] PATTERN_MAP_FROM = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
     assert selectedJobId != 0;
 
     includeHashMap.remove(pattern);
@@ -6156,7 +6165,7 @@ throw new Error("NYI");
     widgetIncludeTable.removeAll();
     for (EntryData entryData : includeHashMap.values())
     {
-      BARServer.executeCommand("INCLUDE_ADD "+selectedJobId+" "+entryData.entryType.toString()+" GLOB "+StringUtils.escape(entryData.pattern));
+      BARServer.executeCommand("INCLUDE_ADD "+selectedJobId+" "+entryData.entryType.toString()+" GLOB "+StringUtils.escape(StringUtils.map(entryData.pattern,PATTERN_MAP_FROM,PATTERN_MAP_TO)));
       Widgets.insertTableEntry(widgetIncludeTable,
                                findTableIndex(widgetIncludeTable,entryData.pattern),
                                (Object)entryData,
@@ -6174,6 +6183,9 @@ throw new Error("NYI");
    */
   private void excludeRemove(String pattern)
   {
+    final String[] PATTERN_MAP_FROM = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
     assert selectedJobId != 0;
 
     excludeHashSet.remove(pattern);
@@ -6182,7 +6194,7 @@ throw new Error("NYI");
     widgetExcludeList.removeAll();
     for (String s : excludeHashSet)
     {
-      BARServer.executeCommand("EXCLUDE_ADD "+selectedJobId+" GLOB "+StringUtils.escape(s));
+      BARServer.executeCommand("EXCLUDE_ADD "+selectedJobId+" GLOB "+StringUtils.escape(StringUtils.map(s,PATTERN_MAP_FROM,PATTERN_MAP_TO)));
       widgetExcludeList.add(s,findListIndex(widgetExcludeList,s));
     }
 
@@ -6195,6 +6207,9 @@ throw new Error("NYI");
    */
   private void compressExcludeRemove(String pattern)
   {
+    final String[] PATTERN_MAP_FROM = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
     assert selectedJobId != 0;
 
     compressExcludeHashSet.remove(pattern);
@@ -6203,7 +6218,7 @@ throw new Error("NYI");
     widgetCompressExcludeList.removeAll();
     for (String s : compressExcludeHashSet)
     {
-      BARServer.executeCommand("EXCLUDE_COMPRESS_ADD "+selectedJobId+" GLOB "+StringUtils.escape(s));
+      BARServer.executeCommand("EXCLUDE_COMPRESS_ADD "+selectedJobId+" GLOB "+StringUtils.escape(StringUtils.map(s,PATTERN_MAP_FROM,PATTERN_MAP_TO)));
       widgetCompressExcludeList.add(s,findListIndex(widgetCompressExcludeList,s));
     }
 
@@ -6659,9 +6674,10 @@ throw new Error("NYI");
         addDragAndDrop(composite,"%w","day of week 0..6",                              13,1);
         addDragAndDrop(composite,"%U","week number 1..52",                             14,1);
         addDragAndDrop(composite,"%C","century two digits",                            15,1);
-        addDragAndDrop(composite,"%Y","year four digits",                              16,1);
-        addDragAndDrop(composite,"%S","seconds since 1.1.1970 00:00",                  17,1);
-        addDragAndDrop(composite,"%Z","time-zone abbreviation",                        18,1);
+        addDragAndDrop(composite,"%y","year two digits",                               16,1);
+        addDragAndDrop(composite,"%Y","year four digits",                              17,1);
+        addDragAndDrop(composite,"%S","seconds since 1.1.1970 00:00",                  18,1);
+        addDragAndDrop(composite,"%Z","time-zone abbreviation",                        19,1);
 
         // column 3
         addDragAndDrop(composite,"%%","%",                                             0, 2);
@@ -7014,6 +7030,8 @@ throw new Error("NYI");
             else if (storageNamePart.string.equals("%U"))
               exampleName.append("51");
             else if (storageNamePart.string.equals("%C"))
+              exampleName.append("20");
+            else if (storageNamePart.string.equals("%y"))
               exampleName.append("07");
             else if (storageNamePart.string.equals("%Y"))
               exampleName.append("2007");
