@@ -1597,7 +1597,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
       if (error != ERROR_NONE)
       {
         printInfo(2,"Cannot access '%s' (error: %s) - skipped\n",String_cString(name),Errors_getText(error));
-        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(name));
+        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(name));
         createInfo->statusInfo.errorEntries++;
         abortFlag |= !updateStatusInfo(createInfo);
         continue;
@@ -1679,7 +1679,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
                   if (error != ERROR_NONE)
                   {
                     printInfo(2,"Cannot read directory '%s' (error: %s) - skipped\n",String_cString(name),Errors_getText(error));
-                    logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(name));
+                    logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(name));
                     createInfo->statusInfo.errorEntries++;
                     createInfo->statusInfo.errorBytes += (uint64)fileInfo.size;
                     abortFlag |= !updateStatusInfo(createInfo);
@@ -1695,7 +1695,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
                     if (error != ERROR_NONE)
                     {
                       printInfo(2,"Cannot access '%s' (error: %s) - skipped\n",String_cString(fileName),Errors_getText(error));
-                      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(fileName));
+                      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(fileName));
                       createInfo->statusInfo.errorEntries++;
                       abortFlag |= !updateStatusInfo(createInfo);
                       continue;
@@ -1840,7 +1840,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
                         break;
                       default:
                         printInfo(2,"Unknown type of file '%s' - skipped\n",String_cString(fileName));
-                        logMessage(LOG_TYPE_ENTRY_TYPE_UNKNOWN,"unknown type '%s'",String_cString(fileName));
+                        logMessage(LOG_TYPE_ENTRY_TYPE_UNKNOWN,"unknown type '%s'\n",String_cString(fileName));
                         createInfo->statusInfo.errorEntries++;
                         createInfo->statusInfo.errorBytes += (uint64)fileInfo.size;
                         abortFlag |= !updateStatusInfo(createInfo);
@@ -1861,7 +1861,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
               else
               {
                 printInfo(2,"Cannot open directory '%s' (error: %s) - skipped\n",String_cString(name),Errors_getText(error));
-                logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(name));
+                logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(name));
                 createInfo->statusInfo.errorEntries++;
                 abortFlag |= !updateStatusInfo(createInfo);
               }
@@ -1977,7 +1977,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
                   if (error != ERROR_NONE)
                   {
                     printInfo(2,"Cannot access '%s' (error: %s) - skipped\n",String_cString(name),Errors_getText(error));
-                    logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(name));
+                    logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(name));
                     createInfo->statusInfo.errorEntries++;
                     abortFlag |= !updateStatusInfo(createInfo);
                     continue;
@@ -1995,7 +1995,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
             break;
           default:
             printInfo(2,"Unknown type of file '%s' - skipped\n",String_cString(name));
-            logMessage(LOG_TYPE_ENTRY_TYPE_UNKNOWN,"unknown type '%s'",String_cString(name));
+            logMessage(LOG_TYPE_ENTRY_TYPE_UNKNOWN,"unknown type '%s'\n",String_cString(name));
             createInfo->statusInfo.errorEntries++;
             createInfo->statusInfo.errorBytes += (uint64)fileInfo.size;
             abortFlag |= !updateStatusInfo(createInfo);
@@ -2004,7 +2004,7 @@ LOCAL void collectorThreadCode(CreateInfo *createInfo)
       }
       else
       {
-        logMessage(LOG_TYPE_ENTRY_EXCLUDED,"excluded '%s'",String_cString(name));
+        logMessage(LOG_TYPE_ENTRY_EXCLUDED,"excluded '%s'\n",String_cString(name));
         createInfo->statusInfo.skippedEntries++;
         createInfo->statusInfo.skippedBytes += fileInfo.size;
         abortFlag |= !updateStatusInfo(createInfo);
@@ -2248,7 +2248,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
       }
 
       /* initial pre-process */
-      error = Storage_preProcess(&createInfo->storageFileHandle);
+      error = Storage_preProcess(&createInfo->storageFileHandle,TRUE);
       if (error != ERROR_NONE)
       {
         printError("Cannot pre-process storage (error: %s)!\n",
@@ -2276,7 +2276,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
         }
 
         /* pre-process */
-        error = Storage_preProcess(&createInfo->storageFileHandle);
+        error = Storage_preProcess(&createInfo->storageFileHandle,FALSE);
         if (error != ERROR_NONE)
         {
           printError("Cannot pre-process file '%s' (error: %s)!\n",
@@ -2471,7 +2471,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
         if (createInfo->failError == ERROR_NONE)
         {
           printInfo(0,"ok\n");
-          logMessage(LOG_TYPE_STORAGE,"stored '%s'",String_cString(storageName));
+          logMessage(LOG_TYPE_STORAGE,"stored '%s'\n",String_cString(storageName));
         }
 
         /* update database index and set state */
@@ -2733,7 +2733,7 @@ LOCAL Errors storeFileEntry(ArchiveInfo       *archiveInfo,
     if (jobOptions->skipUnreadableFlag)
     {
       printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(fileName));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(fileName));
       createInfo->statusInfo.errorEntries++;
       return ERROR_NONE;
     }
@@ -2757,7 +2757,7 @@ LOCAL Errors storeFileEntry(ArchiveInfo       *archiveInfo,
       if (jobOptions->skipUnreadableFlag)
       {
         printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open file failed '%s'",String_cString(fileName));
+        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open file failed '%s'\n",String_cString(fileName));
         createInfo->statusInfo.errorEntries++;
         createInfo->statusInfo.errorBytes += (uint64)fileInfo.size;
         return ERROR_NONE;
@@ -2871,7 +2871,7 @@ LOCAL Errors storeFileEntry(ArchiveInfo       *archiveInfo,
     if (!jobOptions->dryRunFlag)
     {
       printInfo(1,"ok (%llu bytes, ratio %.1f%%)\n",fileInfo.size,ratio);
-      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'",String_cString(fileName));
+      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'\n",String_cString(fileName));
     }
     else
     {
@@ -2949,7 +2949,7 @@ LOCAL Errors storeImageEntry(ArchiveInfo       *archiveInfo,
       if (jobOptions->skipUnreadableFlag)
       {
         printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(deviceName));
+        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(deviceName));
         createInfo->statusInfo.errorEntries++;
         return ERROR_NONE;
       }
@@ -2985,7 +2985,7 @@ LOCAL Errors storeImageEntry(ArchiveInfo       *archiveInfo,
       if (jobOptions->skipUnreadableFlag)
       {
         printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open device failed '%s'",String_cString(deviceName));
+        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open device failed '%s'\n",String_cString(deviceName));
         createInfo->statusInfo.errorEntries++;
         createInfo->statusInfo.errorBytes += (uint64)deviceInfo.size;
         return ERROR_NONE;
@@ -3137,7 +3137,7 @@ LOCAL Errors storeImageEntry(ArchiveInfo       *archiveInfo,
     if (!jobOptions->dryRunFlag)
     {
       printInfo(1,"ok (%llu bytes, ratio %.1f%%)\n",deviceInfo.size,ratio);
-      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'",String_cString(deviceName));
+      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'\n",String_cString(deviceName));
     }
     else
     {
@@ -3201,7 +3201,7 @@ LOCAL Errors storeDirectoryEntry(ArchiveInfo  *archiveInfo,
     if (jobOptions->skipUnreadableFlag)
     {
       printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(directoryName));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(directoryName));
       createInfo->statusInfo.errorEntries++;
       return ERROR_NONE;
     }
@@ -3231,7 +3231,7 @@ LOCAL Errors storeDirectoryEntry(ArchiveInfo  *archiveInfo,
                  String_cString(directoryName),
                  Errors_getText(error)
                 );
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open failed '%s'",String_cString(directoryName));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open failed '%s'\n",String_cString(directoryName));
       return error;
     }
 
@@ -3249,7 +3249,7 @@ LOCAL Errors storeDirectoryEntry(ArchiveInfo  *archiveInfo,
     if (!jobOptions->dryRunFlag)
     {
       printInfo(1,"ok\n");
-      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'",String_cString(directoryName));
+      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'\n",String_cString(directoryName));
     }
     else
     {
@@ -3320,7 +3320,7 @@ LOCAL Errors storeLinkEntry(ArchiveInfo  *archiveInfo,
     if (jobOptions->skipUnreadableFlag)
     {
       printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(linkName));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(linkName));
       createInfo->statusInfo.errorEntries++;
       return ERROR_NONE;
     }
@@ -3345,7 +3345,7 @@ LOCAL Errors storeLinkEntry(ArchiveInfo  *archiveInfo,
       if (jobOptions->skipUnreadableFlag)
       {
         printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open failed '%s'",String_cString(linkName));
+        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open failed '%s'\n",String_cString(linkName));
         createInfo->statusInfo.errorEntries++;
         createInfo->statusInfo.errorBytes += (uint64)fileInfo.size;
         String_delete(fileName);
@@ -3396,7 +3396,7 @@ LOCAL Errors storeLinkEntry(ArchiveInfo  *archiveInfo,
     if (!jobOptions->dryRunFlag)
     {
       printInfo(1,"ok\n");
-      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'",String_cString(linkName));
+      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'\n",String_cString(linkName));
     }
     else
     {
@@ -3479,7 +3479,7 @@ LOCAL Errors storeHardLinkEntry(ArchiveInfo       *archiveInfo,
     if (jobOptions->skipUnreadableFlag)
     {
       printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(nameList->head->string));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(nameList->head->string));
       createInfo->statusInfo.errorEntries += StringList_count(nameList);
       return ERROR_NONE;
     }
@@ -3503,7 +3503,7 @@ LOCAL Errors storeHardLinkEntry(ArchiveInfo       *archiveInfo,
       if (jobOptions->skipUnreadableFlag)
       {
         printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open file failed '%s'",String_cString(nameList->head->string));
+        logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"open file failed '%s'\n",String_cString(nameList->head->string));
         createInfo->statusInfo.errorEntries += StringList_count(nameList);
         createInfo->statusInfo.errorBytes += (uint64)StringList_count(nameList)*(uint64)fileInfo.size;
         return ERROR_NONE;
@@ -3617,7 +3617,7 @@ LOCAL Errors storeHardLinkEntry(ArchiveInfo       *archiveInfo,
     if (!jobOptions->dryRunFlag)
     {
       printInfo(1,"ok (%llu bytes, ratio %.1f%%)\n",fileInfo.size,ratio);
-      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'",String_cString(nameList->head->string));
+      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'\n",String_cString(nameList->head->string));
     }
     else
     {
@@ -3690,7 +3690,7 @@ LOCAL Errors storeSpecialEntry(ArchiveInfo  *archiveInfo,
     if (jobOptions->skipUnreadableFlag)
     {
       printInfo(1,"skipped (reason: %s)\n",Errors_getText(error));
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'",String_cString(fileName));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"access denied '%s'\n",String_cString(fileName));
       createInfo->statusInfo.errorEntries++;
       return ERROR_NONE;
     }
@@ -3737,7 +3737,7 @@ LOCAL Errors storeSpecialEntry(ArchiveInfo  *archiveInfo,
     if (!jobOptions->dryRunFlag)
     {
       printInfo(1,"ok\n");
-      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'",String_cString(fileName));
+      logMessage(LOG_TYPE_ENTRY_OK,"added '%s'\n",String_cString(fileName));
     }
     else
     {
@@ -4176,7 +4176,7 @@ Errors Command_create(const char                      *storageName,
     else
     {
       printInfo(1,"skipped (reason: own created file)\n");
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"skipped '%s'",String_cString(entryMsg.name));
+      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"skipped '%s'\n",String_cString(entryMsg.name));
       createInfo.statusInfo.skippedEntries++;
       abortFlag |= !updateStatusInfo(&createInfo);
     }
@@ -4246,7 +4246,7 @@ Errors Command_create(const char                      *storageName,
     }
 
     printInfo(1,"ok\n");
-    logMessage(LOG_TYPE_ALWAYS,"create incremental file '%s'",String_cString(incrementalListFileName));
+    logMessage(LOG_TYPE_ALWAYS,"create incremental file '%s'\n",String_cString(incrementalListFileName));
   }
 
   /* output statics */
