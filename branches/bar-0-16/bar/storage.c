@@ -1590,9 +1590,28 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
           String_delete(storageSpecifier);
           return ERROR_INVALID_DEVICE_SPECIFIER;
         }
-        if (String_empty(deviceName)) String_set(deviceName,globalOptions.defaultDeviceName);
+        if (String_empty(deviceName))
+        {
+          switch (storageType)
+          {
+            case STORAGE_TYPE_CD:
+              String_set(deviceName,globalOptions.cd.defaultDeviceName);
+              break;
+            case STORAGE_TYPE_DVD:
+              String_set(deviceName,globalOptions.dvd.defaultDeviceName);
+              break;
+            case STORAGE_TYPE_BD:
+              String_set(deviceName,globalOptions.bd.defaultDeviceName);
+              break;
+            default:
+              #ifndef NDEBUG
+                HALT_INTERNAL_ERROR_UNHANDLED_SWITCH_CASE();
+               #endif /* NDEBUG */
+              break;
+          }
+        }
 
-        /* get DVD settings */
+        /* get CD/DVD/BD settings */
         switch (storageType)
         {
           case STORAGE_TYPE_CD:
@@ -2045,7 +2064,9 @@ String Storage_getHandleName(String                  storageName,
   return storageName;
 }
 
-Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
+Errors Storage_preProcess(StorageFileHandle *storageFileHandle,
+                          bool              initialFlag
+                         )
 {
   Errors error;
 
@@ -2055,9 +2076,64 @@ Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
   switch (storageFileHandle->type)
   {
     case STORAGE_TYPE_FILESYSTEM:
+      {
+        TextMacro textMacros[2];
+
+        if (!storageFileHandle->jobOptions->dryRunFlag)
+        {
+          if (!initialFlag)
+          {
+            /* init macros */
+            TEXT_MACRO_N_STRING (textMacros[0],"%file",  storageFileHandle->fileSystem.fileHandle.name);
+            TEXT_MACRO_N_INTEGER(textMacros[1],"%number",storageFileHandle->volumeNumber              );
+
+            if (globalOptions.file.writePreProcessCommand != NULL)
+            {
+              /* write pre-processing */
+              if (error == ERROR_NONE)
+              {
+                printInfo(0,"Write pre-processing...");
+                error = Misc_executeCommand(String_cString(globalOptions.file.writePreProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+              }
+            }
+            if (error != ERROR_NONE)
+            {
+              break;
+            }
+          }
+        }
+      }
       break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
+        {
+          TextMacro textMacros[1];
+
+          if (!storageFileHandle->jobOptions->dryRunFlag)
+          {
+            if (!initialFlag)
+            {
+              /* init macros */
+              TEXT_MACRO_N_INTEGER(textMacros[0],"%number",storageFileHandle->volumeNumber              );
+
+              if (globalOptions.ftp.writePreProcessCommand != NULL)
+              {
+                /* write pre-processing */
+                if (error == ERROR_NONE)
+                {
+                  printInfo(0,"Write pre-processing...");
+                  error = Misc_executeCommand(String_cString(globalOptions.ftp.writePreProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                  printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+                }
+              }
+              if (error != ERROR_NONE)
+              {
+                break;
+              }
+            }
+          }
+        }
       #else /* not HAVE_FTP */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_FTP */
@@ -2066,12 +2142,66 @@ Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
+        {
+          TextMacro textMacros[1];
+
+          if (!storageFileHandle->jobOptions->dryRunFlag)
+          {
+            if (!initialFlag)
+            {
+              /* init macros */
+              TEXT_MACRO_N_INTEGER(textMacros[0],"%number",storageFileHandle->volumeNumber              );
+
+              if (globalOptions.scp.writePreProcessCommand != NULL)
+              {
+                /* write pre-processing */
+                if (error == ERROR_NONE)
+                {
+                  printInfo(0,"Write pre-processing...");
+                  error = Misc_executeCommand(String_cString(globalOptions.scp.writePreProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                  printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+                }
+              }
+              if (error != ERROR_NONE)
+              {
+                break;
+              }
+            }
+          }
+        }
       #else /* not HAVE_SSH2 */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_SSH2 */
       break;
     case STORAGE_TYPE_SFTP:
       #ifdef HAVE_SSH2
+        {
+          TextMacro textMacros[1];
+
+          if (!storageFileHandle->jobOptions->dryRunFlag)
+          {
+            if (!initialFlag)
+            {
+              /* init macros */
+              TEXT_MACRO_N_INTEGER(textMacros[0],"%number",storageFileHandle->volumeNumber              );
+
+              if (globalOptions.sftp.writePreProcessCommand != NULL)
+              {
+                /* write pre-processing */
+                if (error == ERROR_NONE)
+                {
+                  printInfo(0,"Write pre-processing...");
+                  error = Misc_executeCommand(String_cString(globalOptions.sftp.writePreProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                  printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+                }
+              }
+              if (error != ERROR_NONE)
+              {
+                break;
+              }
+            }
+          }
+        }
       #else /* not HAVE_SSH2 */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_SSH2 */
@@ -2079,9 +2209,9 @@ Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
     case STORAGE_TYPE_CD:
     case STORAGE_TYPE_DVD:
     case STORAGE_TYPE_BD:
-      /* request next medium */
       if (!storageFileHandle->jobOptions->dryRunFlag)
       {
+        /* request next medium */
         if (storageFileHandle->opticalDisk.newFlag)
         {
           storageFileHandle->opticalDisk.number++;
@@ -2089,11 +2219,8 @@ Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
 
           storageFileHandle->requestedVolumeNumber = storageFileHandle->opticalDisk.number;
         }
-      }
 
-      /* check if new medium is required */
-      if (!storageFileHandle->jobOptions->dryRunFlag)
-      {
+        /* check if new medium is required */
         if (storageFileHandle->volumeNumber != storageFileHandle->requestedVolumeNumber)
         {
           /* request load new medium */
@@ -2102,9 +2229,9 @@ Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
       }
       break;
     case STORAGE_TYPE_DEVICE:
-      /* request next volume */
       if (!storageFileHandle->jobOptions->dryRunFlag)
       {
+        /* request next volume */
         if (storageFileHandle->device.newFlag)
         {
           storageFileHandle->device.number++;
@@ -2112,11 +2239,8 @@ Errors Storage_preProcess(StorageFileHandle *storageFileHandle)
 
           storageFileHandle->requestedVolumeNumber = storageFileHandle->device.number;
         }
-      }
 
-      /* check if new volume is required */
-      if (!storageFileHandle->jobOptions->dryRunFlag)
-      {
+        /* check if new volume is required */
         if (storageFileHandle->volumeNumber != storageFileHandle->requestedVolumeNumber)
         {
           error = requestNewVolume(storageFileHandle,FALSE);
@@ -2145,9 +2269,64 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
   switch (storageFileHandle->type)
   {
     case STORAGE_TYPE_FILESYSTEM:
+      {
+        TextMacro textMacros[2];
+
+        if (!storageFileHandle->jobOptions->dryRunFlag)
+        {
+          if (!finalFlag)
+          {
+            /* init macros */
+            TEXT_MACRO_N_STRING (textMacros[0],"%file",  storageFileHandle->fileSystem.fileHandle.name);
+            TEXT_MACRO_N_INTEGER(textMacros[1],"%number",storageFileHandle->volumeNumber              );
+
+            if (globalOptions.file.writePostProcessCommand != NULL)
+            {
+              /* write post-process */
+              if (error == ERROR_NONE)
+              {
+                printInfo(0,"Write post-processing...");
+                error = Misc_executeCommand(String_cString(globalOptions.file.writePostProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+              }
+            }
+            if (error != ERROR_NONE)
+            {
+              break;
+            }
+          }
+        }
+      }
       break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
+        {
+          TextMacro textMacros[1];
+
+          if (!storageFileHandle->jobOptions->dryRunFlag)
+          {
+            if (!finalFlag)
+            {
+              /* init macros */
+              TEXT_MACRO_N_INTEGER(textMacros[0],"%number",storageFileHandle->volumeNumber              );
+
+              if (globalOptions.ftp.writePostProcessCommand != NULL)
+              {
+                /* write post-process */
+                if (error == ERROR_NONE)
+                {
+                  printInfo(0,"Write post-processing...");
+                  error = Misc_executeCommand(String_cString(globalOptions.ftp.writePostProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                  printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+                }
+              }
+              if (error != ERROR_NONE)
+              {
+                break;
+              }
+            }
+          }
+        }
       #else /* not HAVE_FTP */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_FTP */
@@ -2156,12 +2335,66 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
+        {
+          TextMacro textMacros[1];
+
+          if (!storageFileHandle->jobOptions->dryRunFlag)
+          {
+            if (!finalFlag)
+            {
+              /* init macros */
+              TEXT_MACRO_N_INTEGER(textMacros[0],"%number",storageFileHandle->volumeNumber              );
+
+              if (globalOptions.scp.writePostProcessCommand != NULL)
+              {
+                /* write post-process */
+                if (error == ERROR_NONE)
+                {
+                  printInfo(0,"Write post-processing...");
+                  error = Misc_executeCommand(String_cString(globalOptions.scp.writePostProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                  printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+                }
+              }
+              if (error != ERROR_NONE)
+              {
+                break;
+              }
+            }
+          }
+        }
       #else /* not HAVE_SSH2 */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_SSH2 */
       break;
     case STORAGE_TYPE_SFTP:
       #ifdef HAVE_SSH2
+        {
+          TextMacro textMacros[1];
+
+          if (!storageFileHandle->jobOptions->dryRunFlag)
+          {
+            if (!finalFlag)
+            {
+              /* init macros */
+              TEXT_MACRO_N_INTEGER(textMacros[0],"%number",storageFileHandle->volumeNumber              );
+
+              if (globalOptions.sftp.writePostProcessCommand != NULL)
+              {
+                /* write post-process */
+                if (error == ERROR_NONE)
+                {
+                  printInfo(0,"Write post-processing...");
+                  error = Misc_executeCommand(String_cString(globalOptions.sftp.writePostProcessCommand),textMacros,SIZE_OF_ARRAY(textMacros),NULL,NULL,NULL);
+                  printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
+                }
+              }
+              if (error != ERROR_NONE)
+              {
+                break;
+              }
+            }
+          }
+        }
       #else /* not HAVE_SSH2 */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_SSH2 */
@@ -2194,13 +2427,13 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
             }
 
             /* init macros */
-            TEXT_MACRO_N_STRING (textMacros[0],"%device", storageFileHandle->opticalDisk.name     );
-            TEXT_MACRO_N_STRING (textMacros[1],"%file",   storageFileHandle->opticalDisk.directory);
-            TEXT_MACRO_N_STRING (textMacros[2],"%image",  imageFileName                           );
-            TEXT_MACRO_N_INTEGER(textMacros[3],"%sectors",0                                       );
-            TEXT_MACRO_N_INTEGER(textMacros[4],"%number", storageFileHandle->volumeNumber         );
+            TEXT_MACRO_N_STRING (textMacros[0],"%device",   storageFileHandle->opticalDisk.name     );
+            TEXT_MACRO_N_STRING (textMacros[1],"%directory",storageFileHandle->opticalDisk.directory);
+            TEXT_MACRO_N_STRING (textMacros[2],"%image",    imageFileName                           );
+            TEXT_MACRO_N_INTEGER(textMacros[3],"%sectors",  0                                       );
+            TEXT_MACRO_N_INTEGER(textMacros[4],"%number",   storageFileHandle->volumeNumber         );
 
-            if (storageFileHandle->jobOptions->errorCorrectionCodesFlag)
+            if (storageFileHandle->jobOptions->alwaysCreateImageFlag || storageFileHandle->jobOptions->errorCorrectionCodesFlag)
             {
               /* create medium image */
               printInfo(0,"Make medium image #%d with %d file(s)...",storageFileHandle->opticalDisk.number,StringList_count(&storageFileHandle->opticalDisk.fileNameList));
@@ -2221,24 +2454,27 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
               File_getFileInfo(&fileInfo,imageFileName);
               printInfo(0,"ok (%llu bytes)\n",fileInfo.size);
 
-              /* add error-correction codes to medium image */
-              printInfo(0,"Add ECC to image #%d...",storageFileHandle->opticalDisk.number);
-              storageFileHandle->opticalDisk.step = 1;
-              error = Misc_executeCommand(String_cString(storageFileHandle->opticalDisk.eccCommand),
-                                          textMacros,SIZE_OF_ARRAY(textMacros),
-                                          (ExecuteIOFunction)processIOdvdisaster,
-                                          (ExecuteIOFunction)processIOdvdisaster,
-                                          storageFileHandle
-                                         );
-              if (error != ERROR_NONE)
+              if (storageFileHandle->jobOptions->errorCorrectionCodesFlag)
               {
-                printInfo(0,"FAIL\n");
-                File_delete(imageFileName,FALSE);
-                String_delete(imageFileName);
-                break;
+                /* add error-correction codes to medium image */
+                printInfo(0,"Add ECC to image #%d...",storageFileHandle->opticalDisk.number);
+                storageFileHandle->opticalDisk.step = 1;
+                error = Misc_executeCommand(String_cString(storageFileHandle->opticalDisk.eccCommand),
+                                            textMacros,SIZE_OF_ARRAY(textMacros),
+                                            (ExecuteIOFunction)processIOdvdisaster,
+                                            (ExecuteIOFunction)processIOdvdisaster,
+                                            storageFileHandle
+                                           );
+                if (error != ERROR_NONE)
+                {
+                  printInfo(0,"FAIL\n");
+                  File_delete(imageFileName,FALSE);
+                  String_delete(imageFileName);
+                  break;
+                }
+                File_getFileInfo(&fileInfo,imageFileName);
+                printInfo(0,"ok (%llu bytes)\n",fileInfo.size);
               }
-              File_getFileInfo(&fileInfo,imageFileName);
-              printInfo(0,"ok (%llu bytes)\n",fileInfo.size);
 
               /* get number of image sectors */
               if (File_getFileInfo(&fileInfo,imageFileName) == ERROR_NONE)
@@ -2358,6 +2594,11 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
         TextMacro textMacros[4];
         String    fileName;
 
+        if (storageFileHandle->device.volumeSize == 0LL)
+        {
+          printWarning("Device volume size is 0 bytes!\n");
+        }
+
         if (!storageFileHandle->jobOptions->dryRunFlag)
         {
           if (finalFlag || (storageFileHandle->device.totalSize > storageFileHandle->device.volumeSize))
@@ -2384,10 +2625,10 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
             }
 
             /* init macros */
-            TEXT_MACRO_N_STRING (textMacros[0],"%device",storageFileHandle->device.name     );
-            TEXT_MACRO_N_STRING (textMacros[1],"%file",  storageFileHandle->device.directory);
-            TEXT_MACRO_N_STRING (textMacros[2],"%image", imageFileName                      );
-            TEXT_MACRO_N_INTEGER(textMacros[3],"%number",storageFileHandle->volumeNumber    );
+            TEXT_MACRO_N_STRING (textMacros[0],"%device",   storageFileHandle->device.name     );
+            TEXT_MACRO_N_STRING (textMacros[1],"%directory",storageFileHandle->device.directory);
+            TEXT_MACRO_N_STRING (textMacros[2],"%image",    imageFileName                      );
+            TEXT_MACRO_N_INTEGER(textMacros[3],"%number",   storageFileHandle->volumeNumber    );
 
             /* create image */
             if (error == ERROR_NONE)
@@ -3411,7 +3652,7 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
           (*bytesRead) = FtpRead(buffer,size,storageFileHandle->ftp.data);
         }
       #else /* not HAVE_FTP */
-        error = ERROR_NOT_SUPPORTED;
+        error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_FTP */
       break;
     case STORAGE_TYPE_SSH:
