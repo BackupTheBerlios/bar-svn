@@ -76,28 +76,31 @@
   #define DEFAULT_TLS_SERVER_KEY_FILE         ""
 #endif /* HAVE_GNU_TLS */
 #define DEFAULT_JOBS_DIRECTORY                CONFIG_DIR "/jobs"
-#define DEFAULT_DEVICE_NAME                   "/dev/dvd"
+#define DEFAULT_CD_DEVICE_NAME                "/dev/cdrw"
+#define DEFAULT_DVD_DEVICE_NAME               "/dev/dvd"
+#define DEFAULT_BD_DEVICE_NAME                "/dev/bd"
+#define DEFAULT_DEVICE_NAME                   "/dev/raw"
 
 #define DEFAULT_DATABASE_INDEX_FILE           "/var/lib/bar/index.db"
 
 #define CD_UNLOAD_VOLUME_COMMAND              "eject -r %device"
 #define CD_LOAD_VOLUME_COMMAND                "eject -t %device"
-#define CD_IMAGE_COMMAND                      "nice mkisofs -V Backup -volset %number -r -o %image %file"
-#define CD_ECC_COMMAND                        "nice dvdisaster -mRS02 -n dvd -c -i %image -v"
-#define CD_WRITE_COMMAND                      "nice growisofs -Z %device -A BAR -V Backup -volset %number -r %file"
-#define CD_WRITE_IMAGE_COMMAND                "nice growisofs -Z %device=%image -use-the-force-luke=dao:%sectors -use-the-force-luke=noload"
+#define CD_IMAGE_COMMAND                      "nice mkisofs -V Backup -volset %number -r -o %image %directory"
+#define CD_ECC_COMMAND                        "nice dvdisaster -mRS02 -n cd -c -i %image -v"
+#define CD_WRITE_COMMAND                      "nice sh -c 'mkisofs -V Backup -volset %number -r -o %image %directory && cdrecord -dummy dev=%device %image'"
+#define CD_WRITE_IMAGE_COMMAND                "nice cdrecord -dummy dev=%device %image"
 
 #define DVD_UNLOAD_VOLUME_COMMAND             "eject -r %device"
 #define DVD_LOAD_VOLUME_COMMAND               "eject -t %device"
-#define DVD_IMAGE_COMMAND                     "nice mkisofs -V Backup -volset %number -r -o %image %file"
+#define DVD_IMAGE_COMMAND                     "nice mkisofs -V Backup -volset %number -r -o %image %directory"
 #define DVD_ECC_COMMAND                       "nice dvdisaster -mRS02 -n dvd -c -i %image -v"
 #define DVD_WRITE_COMMAND                     "nice growisofs -Z %device -A BAR -V Backup -volset %number -r %file"
 #define DVD_WRITE_IMAGE_COMMAND               "nice growisofs -Z %device=%image -use-the-force-luke=dao:%sectors -use-the-force-luke=noload"
 
 #define BD_UNLOAD_VOLUME_COMMAND              "eject -r %device"
 #define BD_LOAD_VOLUME_COMMAND                "eject -t %device"
-#define BD_IMAGE_COMMAND                      "nice mkisofs -V Backup -volset %number -r -o %image %file"
-#define BD_ECC_COMMAND                        "nice dvdisaster -mRS02 -n dvd -c -i %image -v"
+#define BD_IMAGE_COMMAND                      "nice mkisofs -V Backup -volset %number -r -o %image %directory"
+#define BD_ECC_COMMAND                        "nice dvdisaster -mRS02 -n bd -c -i %image -v"
 #define BD_WRITE_COMMAND                      "nice growisofs -Z %device -A BAR -V Backup -volset %number -r %file"
 #define BD_WRITE_IMAGE_COMMAND                "nice growisofs -Z %device=%image -use-the-force-luke=dao:%sectors -use-the-force-luke=noload"
 
@@ -374,7 +377,7 @@ LOCAL CommandLineOption COMMAND_LINE_OPTIONS[] =
   CMD_OPTION_CSTRING      ("server-cert-file",             0,  1,0,serverCertFileName,                                                                               "TLS (SSL) server certificate file","file name"                            ),
   CMD_OPTION_CSTRING      ("server-key-file",              0,  1,0,serverKeyFileName,                                                                                "TLS (SSL) server key file","file name"                                    ),
   CMD_OPTION_SPECIAL      ("server-password",              0,  1,0,&serverPassword,                           cmdOptionParsePassword,NULL,                           "server password (use with care!)","password"                              ),
-  CMD_OPTION_CSTRING      ("server-jobs-directory",        0,  1,0,serverJobsDirectory,                                                                              "server job directory","path name"                                        ),
+  CMD_OPTION_CSTRING      ("server-jobs-directory",        0,  1,0,serverJobsDirectory,                                                                              "server job directory","path name"                                         ),
 
   CMD_OPTION_INTEGER      ("nice-level",                   0,  1,0,globalOptions.niceLevel,                   0,19,NULL,                                             "general nice level of processes/threads"                                  ),
 
@@ -383,10 +386,23 @@ LOCAL CommandLineOption COMMAND_LINE_OPTIONS[] =
   CMD_OPTION_BOOLEAN      ("batch",                        0,  2,0,batchFlag,                                                                                        "run in batch mode"                                                        ),
   CMD_OPTION_SPECIAL      ("remote-bar-executable",        0,  1,0,&globalOptions.remoteBARExecutable,        cmdOptionParseString,NULL,                             "remote BAR executable","file name"                                        ),
 
+  CMD_OPTION_STRING       ("file-write-pre-command",       0,  1,0,globalOptions.file.writePreProcessCommand,                                                        "write file pre-process command","command"                                 ),
+  CMD_OPTION_STRING       ("file-write-post-command",      0,  1,0,globalOptions.file.writePostProcessCommand,                                                       "write file post-process command","command"                                ),
+
+  CMD_OPTION_STRING       ("ftp-write-pre-command",        0,  1,0,globalOptions.ftp.writePreProcessCommand,                                                         "write FTP pre-process command","command"                                  ),
+  CMD_OPTION_STRING       ("ftp-write-post-command",       0,  1,0,globalOptions.ftp.writePostProcessCommand,                                                        "write FTP post-process command","command"                                 ),
+
+  CMD_OPTION_STRING       ("scp-write-pre-command",        0,  1,0,globalOptions.scp.writePreProcessCommand,                                                         "write SCP pre-process command","command"                                  ),
+  CMD_OPTION_STRING       ("scp-write-post-command",       0,  1,0,globalOptions.scp.writePostProcessCommand,                                                        "write SCP post-process command","command"                                 ),
+
+  CMD_OPTION_STRING       ("sftp-write-pre-command",       0,  1,0,globalOptions.sftp.writePreProcessCommand,                                                        "write SFTP pre-process command","command"                                 ),
+  CMD_OPTION_STRING       ("sftp-write-post-command",      0,  1,0,globalOptions.sftp.writePostProcessCommand,                                                       "write SFTP post-process command","command"                                ),
+
+  CMD_OPTION_STRING       ("cd-device",                    0,  1,0,globalOptions.cd.defaultDeviceName,                                                               "default CD device","device name"                                          ),
   CMD_OPTION_STRING       ("cd-request-volume-command",    0,  1,0,globalOptions.cd.requestVolumeCommand,                                                            "request new CD volume command","command"                                  ),
   CMD_OPTION_STRING       ("cd-unload-volume-command",     0,  1,0,globalOptions.cd.unloadVolumeCommand,                                                             "unload CD volume command","command"                                       ),
   CMD_OPTION_STRING       ("cd-load-volume-command",       0,  1,0,globalOptions.cd.loadVolumeCommand,                                                               "load CD volume command","command"                                         ),
-  CMD_OPTION_INTEGER64    ("cd-volume-size",               0,  1,0,globalOptions.cd.volumeSize,              0LL,MAX_LONG_LONG,COMMAND_LINE_BYTES_UNITS,             "CD volume size"                                                           ),
+  CMD_OPTION_INTEGER64    ("cd-volume-size",               0,  1,0,globalOptions.cd.volumeSize,               0LL,MAX_LONG_LONG,COMMAND_LINE_BYTES_UNITS,            "CD volume size"                                                           ),
   CMD_OPTION_STRING       ("cd-image-pre-command",         0,  1,0,globalOptions.cd.imagePreProcessCommand,                                                          "make CD image pre-process command","command"                              ),
   CMD_OPTION_STRING       ("cd-image-post-command",        0,  1,0,globalOptions.cd.imagePostProcessCommand,                                                         "make CD image post-process command","command"                             ),
   CMD_OPTION_STRING       ("cd-image-command",             0,  1,0,globalOptions.cd.imageCommand,                                                                    "make CD image command","command"                                          ),
@@ -398,6 +414,7 @@ LOCAL CommandLineOption COMMAND_LINE_OPTIONS[] =
   CMD_OPTION_STRING       ("cd-write-command",             0,  1,0,globalOptions.cd.writeCommand,                                                                    "write CD command","command"                                               ),
   CMD_OPTION_STRING       ("cd-write-image-command",       0,  1,0,globalOptions.cd.writeImageCommand,                                                               "write CD image command","command"                                         ),
 
+  CMD_OPTION_STRING       ("dvd-device",                   0,  1,0,globalOptions.dvd.defaultDeviceName,                                                              "default DVD device","device name"                                          ),
   CMD_OPTION_STRING       ("dvd-request-volume-command",   0,  1,0,globalOptions.dvd.requestVolumeCommand,                                                           "request new DVD volume command","command"                                 ),
   CMD_OPTION_STRING       ("dvd-unload-volume-command",    0,  1,0,globalOptions.dvd.unloadVolumeCommand,                                                            "unload DVD volume command","command"                                      ),
   CMD_OPTION_STRING       ("dvd-load-volume-command",      0,  1,0,globalOptions.dvd.loadVolumeCommand,                                                              "load DVD volume command","command"                                        ),
@@ -413,10 +430,11 @@ LOCAL CommandLineOption COMMAND_LINE_OPTIONS[] =
   CMD_OPTION_STRING       ("dvd-write-command",            0,  1,0,globalOptions.dvd.writeCommand,                                                                   "write DVD command","command"                                              ),
   CMD_OPTION_STRING       ("dvd-write-image-command",      0,  1,0,globalOptions.dvd.writeImageCommand,                                                              "write DVD image command","command"                                        ),
 
+  CMD_OPTION_STRING       ("bd-device",                    0,  1,0,globalOptions.bd.defaultDeviceName,                                                               "default BD device","device name"                                          ),
   CMD_OPTION_STRING       ("bd-request-volume-command",    0,  1,0,globalOptions.bd.requestVolumeCommand,                                                            "request new BD volume command","command"                                  ),
   CMD_OPTION_STRING       ("bd-unload-volume-command",     0,  1,0,globalOptions.bd.unloadVolumeCommand,                                                             "unload BD volume command","command"                                       ),
   CMD_OPTION_STRING       ("bd-load-volume-command",       0,  1,0,globalOptions.bd.loadVolumeCommand,                                                               "load BD volume command","command"                                         ),
-  CMD_OPTION_INTEGER64    ("bd-volume-size",               0,  1,0,globalOptions.bd.volumeSize,              0LL,MAX_LONG_LONG,COMMAND_LINE_BYTES_UNITS,             "BD volume size"                                                           ),
+  CMD_OPTION_INTEGER64    ("bd-volume-size",               0,  1,0,globalOptions.bd.volumeSize,               0LL,MAX_LONG_LONG,COMMAND_LINE_BYTES_UNITS,            "BD volume size"                                                           ),
   CMD_OPTION_STRING       ("bd-image-pre-command",         0,  1,0,globalOptions.bd.imagePreProcessCommand,                                                          "make BD image pre-process command","command"                              ),
   CMD_OPTION_STRING       ("bd-image-post-command",        0,  1,0,globalOptions.bd.imagePostProcessCommand,                                                         "make BD image post-process command","command"                             ),
   CMD_OPTION_STRING       ("bd-image-command",             0,  1,0,globalOptions.bd.imageCommand,                                                                    "make BD image command","command"                                          ),
@@ -428,7 +446,7 @@ LOCAL CommandLineOption COMMAND_LINE_OPTIONS[] =
   CMD_OPTION_STRING       ("bd-write-command",             0,  1,0,globalOptions.bd.writeCommand,                                                                    "write BD command","command"                                               ),
   CMD_OPTION_STRING       ("bd-write-image-command",       0,  1,0,globalOptions.bd.writeImageCommand,                                                               "write BD image command","command"                                         ),
 
-  CMD_OPTION_STRING       ("device",                       0,  1,0,globalOptions.defaultDeviceName,                                                                  "default device","device name"                                             ),
+  CMD_OPTION_STRING       ("device",                       0,  1,0,defaultDevice.defaultDeviceName,                                                                  "default device","device name"                                             ),
   CMD_OPTION_STRING       ("device-request-volume-command",0,  1,0,defaultDevice.requestVolumeCommand,                                                               "request new volume command","command"                                     ),
   CMD_OPTION_STRING       ("device-load-volume-command",   0,  1,0,defaultDevice.loadVolumeCommand,                                                                  "load volume command","command"                                            ),
   CMD_OPTION_STRING       ("device-unload-volume-command", 0,  1,0,defaultDevice.unloadVolumeCommand,                                                                "unload volume command","command"                                          ),
@@ -444,6 +462,7 @@ LOCAL CommandLineOption COMMAND_LINE_OPTIONS[] =
   CMD_OPTION_STRING       ("device-write-command",         0,  1,0,defaultDevice.writeCommand,                                                                       "write device command","command"                                           ),
 
   CMD_OPTION_BOOLEAN      ("ecc",                          0,  1,1,jobOptions.errorCorrectionCodesFlag,                                                              "add error-correction codes with 'dvdisaster' tool"                        ),
+  CMD_OPTION_BOOLEAN      ("always-create-image",          0,  1,1,jobOptions.alwaysCreateImageFlag,                                                                 "always create image for CD/DVD/BD/device"                                 ),
 
   CMD_OPTION_CSTRING      ("database-file",                0,  1,0,indexDatabaseFileName,                                                                            "index database file name","file name"                                     ),
   CMD_OPTION_BOOLEAN      ("no-auto-update-database-index",0,  1,0,globalOptions.noAutoUpdateDatabaseIndexFlag,                                                      "disabled automatic update database index"                                 ),
@@ -649,7 +668,8 @@ LOCAL const ConfigValue CONFIG_VALUES[] =
 
   CONFIG_VALUE_INTEGER64("volume-size",                  &jobOptions.volumeSize,-1,                               0LL,MAX_LONG_LONG,CONFIG_VALUE_BYTES_UNITS),
   CONFIG_VALUE_BOOLEAN  ("ecc",                          &jobOptions.errorCorrectionCodesFlag,-1                  ),
- 
+  CONFIG_VALUE_BOOLEAN  ("always-create-image",          &jobOptions.alwaysCreateImageFlag,-1                     ),
+
   CONFIG_VALUE_BOOLEAN  ("skip-unreadable",              &jobOptions.skipUnreadableFlag,-1                        ),
   CONFIG_VALUE_BOOLEAN  ("raw-images",                   &jobOptions.rawImagesFlag,-1                             ),
   CONFIG_VALUE_BOOLEAN  ("overwrite-archive-files",      &jobOptions.overwriteArchiveFilesFlag,-1                 ),
@@ -665,6 +685,19 @@ LOCAL const ConfigValue CONFIG_VALUES[] =
 
   /* commands */
 
+  CONFIG_VALUE_STRING   ("file-write-pre-command",       &globalOptions.file.writePreProcessCommand,-1            ),
+  CONFIG_VALUE_STRING   ("file-write-post-command",      &globalOptions.file.writePostProcessCommand,-1           ),
+
+  CONFIG_VALUE_STRING   ("ftp-write-pre-command",        &globalOptions.ftp.writePreProcessCommand,-1             ),
+  CONFIG_VALUE_STRING   ("ftp-write-post-command",       &globalOptions.ftp.writePostProcessCommand,-1            ),
+
+  CONFIG_VALUE_STRING   ("scp-write-pre-command",        &globalOptions.scp.writePreProcessCommand,-1             ),
+  CONFIG_VALUE_STRING   ("scp-write-post-command",       &globalOptions.scp.writePostProcessCommand,-1            ),
+
+  CONFIG_VALUE_STRING   ("sftp-write-pre-command",       &globalOptions.sftp.writePreProcessCommand,-1            ),
+  CONFIG_VALUE_STRING   ("sftp-write-post-command",      &globalOptions.sftp.writePostProcessCommand,-1           ),
+
+  CONFIG_VALUE_STRING   ("cd-device",                    &globalOptions.bd.defaultDeviceName,-1                   ),
   CONFIG_VALUE_STRING   ("cd-request-volume-command",    &globalOptions.cd.requestVolumeCommand,-1                ),
   CONFIG_VALUE_STRING   ("cd-unload-volume-command",     &globalOptions.cd.unloadVolumeCommand,-1                 ),
   CONFIG_VALUE_STRING   ("cd-load-volume-command",       &globalOptions.cd.loadVolumeCommand,-1                   ),
@@ -680,6 +713,7 @@ LOCAL const ConfigValue CONFIG_VALUES[] =
   CONFIG_VALUE_STRING   ("cd-write-command",             &globalOptions.cd.writeCommand,-1                        ),
   CONFIG_VALUE_STRING   ("cd-write-image-command",       &globalOptions.cd.writeImageCommand,-1                   ),
 
+  CONFIG_VALUE_STRING   ("dvd-device",                   &globalOptions.bd.defaultDeviceName,-1                   ),
   CONFIG_VALUE_STRING   ("dvd-request-volume-command",   &globalOptions.dvd.requestVolumeCommand,-1               ),
   CONFIG_VALUE_STRING   ("dvd-unload-volume-command",    &globalOptions.dvd.unloadVolumeCommand,-1                ),
   CONFIG_VALUE_STRING   ("dvd-load-volume-command",      &globalOptions.dvd.loadVolumeCommand,-1                  ),
@@ -695,6 +729,7 @@ LOCAL const ConfigValue CONFIG_VALUES[] =
   CONFIG_VALUE_STRING   ("dvd-write-command",            &globalOptions.dvd.writeCommand,-1                       ),
   CONFIG_VALUE_STRING   ("dvd-write-image-command",      &globalOptions.dvd.writeImageCommand,-1                  ),
 
+  CONFIG_VALUE_STRING   ("bd-device",                    &globalOptions.bd.defaultDeviceName,-1                   ),
   CONFIG_VALUE_STRING   ("bd-request-volume-command",    &globalOptions.bd.requestVolumeCommand,-1                ),
   CONFIG_VALUE_STRING   ("bd-unload-volume-command",     &globalOptions.bd.unloadVolumeCommand,-1                 ),
   CONFIG_VALUE_STRING   ("bd-load-volume-command",       &globalOptions.bd.loadVolumeCommand,-1                   ),
@@ -710,7 +745,7 @@ LOCAL const ConfigValue CONFIG_VALUES[] =
   CONFIG_VALUE_STRING   ("bd-write-command",             &globalOptions.bd.writeCommand,-1                        ),
   CONFIG_VALUE_STRING   ("bd-write-image-command",       &globalOptions.bd.writeImageCommand,-1                   ),
 
-  CONFIG_VALUE_STRING   ("device",                       &globalOptions.defaultDeviceName,-1                      ),
+  CONFIG_VALUE_STRING   ("device",                       &currentDevice,offsetof(Device,defaultDeviceName)        ),
   CONFIG_VALUE_STRING   ("device-request-volume-command",&currentDevice,offsetof(Device,requestVolumeCommand)     ),
   CONFIG_VALUE_STRING   ("device-unload-volume-command", &currentDevice,offsetof(Device,unloadVolumeCommand)      ),
   CONFIG_VALUE_STRING   ("device-load-volume-command",   &currentDevice,offsetof(Device,loadVolumeCommand)        ),
@@ -1273,79 +1308,93 @@ LOCAL void initGlobalOptions(void)
 {
   memset(&globalOptions,0,sizeof(GlobalOptions));
 
-  globalOptions.runMode                     = RUN_MODE_INTERACTIVE;;
-  globalOptions.barExecutable               = NULL;
-  globalOptions.niceLevel                   = 0;
-  globalOptions.tmpDirectory                = String_newCString(DEFAULT_TMP_DIRECTORY);
-  globalOptions.maxTmpSize                  = 0LL;
-  globalOptions.maxBandWidth                = 0;
-  globalOptions.compressMinFileSize         = DEFAULT_COMPRESS_MIN_FILE_SIZE;
-  globalOptions.cryptPassword               = NULL;
-  globalOptions.ftpServer                   = globalOptions.defaultFTPServer;
-  globalOptions.ftpServerList               = &ftpServerList;
-  globalOptions.defaultFTPServer            = &defaultFTPServer;
-  globalOptions.sshServer                   = globalOptions.defaultSSHServer;
-  globalOptions.sshServerList               = &sshServerList;
-  globalOptions.defaultSSHServer            = &defaultSSHServer;
-  globalOptions.remoteBARExecutable         = NULL;
+  globalOptions.runMode                      = RUN_MODE_INTERACTIVE;;
+  globalOptions.barExecutable                = NULL;
+  globalOptions.niceLevel                    = 0;
+  globalOptions.tmpDirectory                 = String_newCString(DEFAULT_TMP_DIRECTORY);
+  globalOptions.maxTmpSize                   = 0LL;
+  globalOptions.maxBandWidth                 = 0;
+  globalOptions.compressMinFileSize          = DEFAULT_COMPRESS_MIN_FILE_SIZE;
+  globalOptions.cryptPassword                = NULL;
+  globalOptions.ftpServer                    = globalOptions.defaultFTPServer;
+  globalOptions.ftpServerList                = &ftpServerList;
+  globalOptions.defaultFTPServer             = &defaultFTPServer;
+  globalOptions.sshServer                    = globalOptions.defaultSSHServer;
+  globalOptions.sshServerList                = &sshServerList;
+  globalOptions.defaultSSHServer             = &defaultSSHServer;
+  globalOptions.remoteBARExecutable          = NULL;
 
-  globalOptions.cd.requestVolumeCommand     = NULL;
-  globalOptions.cd.unloadVolumeCommand      = String_newCString(CD_UNLOAD_VOLUME_COMMAND);
-  globalOptions.cd.loadVolumeCommand        = String_newCString(CD_LOAD_VOLUME_COMMAND);
-  globalOptions.cd.volumeSize               = 0;
-  globalOptions.cd.imagePreProcessCommand   = NULL;
-  globalOptions.cd.imagePostProcessCommand  = NULL;
-  globalOptions.cd.imageCommand             = String_newCString(CD_IMAGE_COMMAND);
-  globalOptions.cd.eccPreProcessCommand     = NULL;
-  globalOptions.cd.eccPostProcessCommand    = NULL;
-  globalOptions.cd.eccCommand               = String_newCString(CD_ECC_COMMAND);
-  globalOptions.cd.writePreProcessCommand   = NULL;
-  globalOptions.cd.writePostProcessCommand  = NULL;
-  globalOptions.cd.writeCommand             = String_newCString(CD_WRITE_COMMAND);
-  globalOptions.cd.writeImageCommand        = String_newCString(CD_WRITE_IMAGE_COMMAND);
+  globalOptions.file.writePreProcessCommand  = NULL;
+  globalOptions.file.writePostProcessCommand = NULL;
 
-  globalOptions.dvd.requestVolumeCommand    = NULL;
-  globalOptions.dvd.unloadVolumeCommand     = String_newCString(DVD_UNLOAD_VOLUME_COMMAND);
-  globalOptions.dvd.loadVolumeCommand       = String_newCString(DVD_LOAD_VOLUME_COMMAND);
-  globalOptions.dvd.volumeSize              = 0;
-  globalOptions.dvd.imagePreProcessCommand  = NULL;
-  globalOptions.dvd.imagePostProcessCommand = NULL;
-  globalOptions.dvd.imageCommand            = String_newCString(DVD_IMAGE_COMMAND);
-  globalOptions.dvd.eccPreProcessCommand    = NULL;
-  globalOptions.dvd.eccPostProcessCommand   = NULL;
-  globalOptions.dvd.eccCommand              = String_newCString(DVD_ECC_COMMAND);
-  globalOptions.dvd.writePreProcessCommand  = NULL;
-  globalOptions.dvd.writePostProcessCommand = NULL;
-  globalOptions.dvd.writeCommand            = String_newCString(DVD_WRITE_COMMAND);
-  globalOptions.dvd.writeImageCommand       = String_newCString(DVD_WRITE_IMAGE_COMMAND);
+  globalOptions.ftp.writePreProcessCommand   = NULL;
+  globalOptions.ftp.writePostProcessCommand  = NULL;
 
-  globalOptions.bd.requestVolumeCommand     = NULL;
-  globalOptions.bd.unloadVolumeCommand      = String_newCString(BD_UNLOAD_VOLUME_COMMAND);
-  globalOptions.bd.loadVolumeCommand        = String_newCString(BD_LOAD_VOLUME_COMMAND);
-  globalOptions.bd.volumeSize               = 0;
-  globalOptions.bd.imagePreProcessCommand   = NULL;
-  globalOptions.bd.imagePostProcessCommand  = NULL;
-  globalOptions.bd.imageCommand             = String_newCString(BD_IMAGE_COMMAND);
-  globalOptions.bd.eccPreProcessCommand     = NULL;
-  globalOptions.bd.eccPostProcessCommand    = NULL;
-  globalOptions.bd.eccCommand               = String_newCString(BD_ECC_COMMAND);
-  globalOptions.bd.writePreProcessCommand   = NULL;
-  globalOptions.bd.writePostProcessCommand  = NULL;
-  globalOptions.bd.writeCommand             = String_newCString(BD_WRITE_COMMAND);
-  globalOptions.bd.writeImageCommand        = String_newCString(BD_WRITE_IMAGE_COMMAND);
+  globalOptions.scp.writePreProcessCommand   = NULL;
+  globalOptions.scp.writePostProcessCommand  = NULL;
 
-  globalOptions.defaultDeviceName           = String_newCString(DEFAULT_DEVICE_NAME);
-  globalOptions.device                      = globalOptions.defaultDevice;
-  globalOptions.deviceList                  = &deviceList;
-  globalOptions.defaultDevice               = &defaultDevice;
-  globalOptions.groupFlag                   = FALSE;
-  globalOptions.allFlag                     = FALSE;
-  globalOptions.longFormatFlag              = FALSE;
-  globalOptions.noHeaderFooterFlag          = FALSE;
-  globalOptions.deleteOldArchiveFilesFlag   = FALSE;
-  globalOptions.noDefaultConfigFlag         = FALSE;
-  globalOptions.quietFlag                   = FALSE;
-  globalOptions.verboseLevel                = 1;
+  globalOptions.sftp.writePreProcessCommand  = NULL;
+  globalOptions.sftp.writePostProcessCommand = NULL;
+
+  globalOptions.cd.defaultDeviceName         = String_newCString(DEFAULT_CD_DEVICE_NAME);
+  globalOptions.cd.requestVolumeCommand      = NULL;
+  globalOptions.cd.unloadVolumeCommand       = String_newCString(CD_UNLOAD_VOLUME_COMMAND);
+  globalOptions.cd.loadVolumeCommand         = String_newCString(CD_LOAD_VOLUME_COMMAND);
+  globalOptions.cd.volumeSize                = 0;
+  globalOptions.cd.imagePreProcessCommand    = NULL;
+  globalOptions.cd.imagePostProcessCommand   = NULL;
+  globalOptions.cd.imageCommand              = String_newCString(CD_IMAGE_COMMAND);
+  globalOptions.cd.eccPreProcessCommand      = NULL;
+  globalOptions.cd.eccPostProcessCommand     = NULL;
+  globalOptions.cd.eccCommand                = String_newCString(CD_ECC_COMMAND);
+  globalOptions.cd.writePreProcessCommand    = NULL;
+  globalOptions.cd.writePostProcessCommand   = NULL;
+  globalOptions.cd.writeCommand              = String_newCString(CD_WRITE_COMMAND);
+  globalOptions.cd.writeImageCommand         = String_newCString(CD_WRITE_IMAGE_COMMAND);
+
+  globalOptions.dvd.defaultDeviceName        = String_newCString(DEFAULT_DVD_DEVICE_NAME);
+  globalOptions.dvd.requestVolumeCommand     = NULL;
+  globalOptions.dvd.unloadVolumeCommand      = String_newCString(DVD_UNLOAD_VOLUME_COMMAND);
+  globalOptions.dvd.loadVolumeCommand        = String_newCString(DVD_LOAD_VOLUME_COMMAND);
+  globalOptions.dvd.volumeSize               = 0;
+  globalOptions.dvd.imagePreProcessCommand   = NULL;
+  globalOptions.dvd.imagePostProcessCommand  = NULL;
+  globalOptions.dvd.imageCommand             = String_newCString(DVD_IMAGE_COMMAND);
+  globalOptions.dvd.eccPreProcessCommand     = NULL;
+  globalOptions.dvd.eccPostProcessCommand    = NULL;
+  globalOptions.dvd.eccCommand               = String_newCString(DVD_ECC_COMMAND);
+  globalOptions.dvd.writePreProcessCommand   = NULL;
+  globalOptions.dvd.writePostProcessCommand  = NULL;
+  globalOptions.dvd.writeCommand             = String_newCString(DVD_WRITE_COMMAND);
+  globalOptions.dvd.writeImageCommand        = String_newCString(DVD_WRITE_IMAGE_COMMAND);
+
+  globalOptions.bd.defaultDeviceName         = String_newCString(DEFAULT_BD_DEVICE_NAME);
+  globalOptions.bd.requestVolumeCommand      = NULL;
+  globalOptions.bd.unloadVolumeCommand       = String_newCString(BD_UNLOAD_VOLUME_COMMAND);
+  globalOptions.bd.loadVolumeCommand         = String_newCString(BD_LOAD_VOLUME_COMMAND);
+  globalOptions.bd.volumeSize                = 0;
+  globalOptions.bd.imagePreProcessCommand    = NULL;
+  globalOptions.bd.imagePostProcessCommand   = NULL;
+  globalOptions.bd.imageCommand              = String_newCString(BD_IMAGE_COMMAND);
+  globalOptions.bd.eccPreProcessCommand      = NULL;
+  globalOptions.bd.eccPostProcessCommand     = NULL;
+  globalOptions.bd.eccCommand                = String_newCString(BD_ECC_COMMAND);
+  globalOptions.bd.writePreProcessCommand    = NULL;
+  globalOptions.bd.writePostProcessCommand   = NULL;
+  globalOptions.bd.writeCommand              = String_newCString(BD_WRITE_COMMAND);
+  globalOptions.bd.writeImageCommand         = String_newCString(BD_WRITE_IMAGE_COMMAND);
+
+  globalOptions.device                       = globalOptions.defaultDevice;
+  globalOptions.deviceList                   = &deviceList;
+  globalOptions.defaultDevice                = &defaultDevice;
+  globalOptions.groupFlag                    = FALSE;
+  globalOptions.allFlag                      = FALSE;
+  globalOptions.longFormatFlag               = FALSE;
+  globalOptions.noHeaderFooterFlag           = FALSE;
+  globalOptions.deleteOldArchiveFilesFlag    = FALSE;
+  globalOptions.noDefaultConfigFlag          = FALSE;
+  globalOptions.quietFlag                    = FALSE;
+  globalOptions.verboseLevel                 = 1;
 }
 
 /***********************************************************************\
@@ -1358,9 +1407,7 @@ LOCAL void initGlobalOptions(void)
 \***********************************************************************/
 
 LOCAL void doneGlobalOptions(void)
-{
-  String_delete(globalOptions.defaultDeviceName);
-  
+{ 
   String_delete(globalOptions.bd.writeImageCommand);
   String_delete(globalOptions.bd.writeCommand);
   String_delete(globalOptions.bd.writePostProcessCommand);
@@ -1374,6 +1421,7 @@ LOCAL void doneGlobalOptions(void)
   String_delete(globalOptions.bd.loadVolumeCommand);
   String_delete(globalOptions.bd.unloadVolumeCommand);
   String_delete(globalOptions.bd.requestVolumeCommand);
+  String_delete(globalOptions.bd.defaultDeviceName);
 
   String_delete(globalOptions.dvd.writeImageCommand);
   String_delete(globalOptions.dvd.writeCommand);
@@ -1388,6 +1436,7 @@ LOCAL void doneGlobalOptions(void)
   String_delete(globalOptions.dvd.loadVolumeCommand);
   String_delete(globalOptions.dvd.unloadVolumeCommand);
   String_delete(globalOptions.dvd.requestVolumeCommand);
+  String_delete(globalOptions.dvd.defaultDeviceName);
 
   String_delete(globalOptions.cd.writeImageCommand);
   String_delete(globalOptions.cd.writeCommand);
@@ -1402,6 +1451,19 @@ LOCAL void doneGlobalOptions(void)
   String_delete(globalOptions.cd.loadVolumeCommand);
   String_delete(globalOptions.cd.unloadVolumeCommand);
   String_delete(globalOptions.cd.requestVolumeCommand);
+  String_delete(globalOptions.cd.defaultDeviceName);
+
+  String_delete(globalOptions.sftp.writePostProcessCommand);
+  String_delete(globalOptions.sftp.writePreProcessCommand);
+
+  String_delete(globalOptions.scp.writePostProcessCommand);
+  String_delete(globalOptions.scp.writePreProcessCommand);
+
+  String_delete(globalOptions.ftp.writePostProcessCommand);
+  String_delete(globalOptions.ftp.writePreProcessCommand);
+
+  String_delete(globalOptions.file.writePostProcessCommand);
+  String_delete(globalOptions.file.writePreProcessCommand);
 
   String_delete(globalOptions.remoteBARExecutable);
   String_delete(globalOptions.tmpDirectory);
@@ -1479,6 +1541,7 @@ LOCAL void freeDeviceNode(DeviceNode *deviceNode, void *userData)
   String_delete(deviceNode->device.loadVolumeCommand      );
   String_delete(deviceNode->device.unloadVolumeCommand    );
   String_delete(deviceNode->device.requestVolumeCommand   );
+  String_delete(deviceNode->device.defaultDeviceName      );
   String_delete(deviceNode->name);
 }
 
@@ -1794,7 +1857,6 @@ void vlogMessage(ulong logType, const char *prefix, const char *text, va_list ar
         va_copy(tmpArguments,arguments);
         vfprintf(tmpLogFile,text,tmpArguments);
         va_end(tmpArguments);
-        fprintf(tmpLogFile,"\n");
       }
 
       if (logFile != NULL)
@@ -1805,7 +1867,6 @@ void vlogMessage(ulong logType, const char *prefix, const char *text, va_list ar
         va_copy(tmpArguments,arguments);
         vfprintf(logFile,text,tmpArguments);
         va_end(tmpArguments);
-        fprintf(logFile,"\n");
       }
 
       String_delete(dateTime);
@@ -2105,6 +2166,7 @@ void getCDSettings(const JobOptions *jobOptions,
   assert(jobOptions != NULL);
   assert(opticalDisk != NULL);
 
+  opticalDisk->defaultDeviceName       = (jobOptions->opticalDisk.defaultDeviceName       != NULL)?jobOptions->opticalDisk.defaultDeviceName      :globalOptions.cd.defaultDeviceName;
   opticalDisk->requestVolumeCommand    = (jobOptions->opticalDisk.requestVolumeCommand    != NULL)?jobOptions->opticalDisk.requestVolumeCommand   :globalOptions.cd.requestVolumeCommand;
   opticalDisk->unloadVolumeCommand     = (jobOptions->opticalDisk.unloadVolumeCommand     != NULL)?jobOptions->opticalDisk.unloadVolumeCommand    :globalOptions.cd.unloadVolumeCommand;
   opticalDisk->loadVolumeCommand       = (jobOptions->opticalDisk.loadVolumeCommand       != NULL)?jobOptions->opticalDisk.loadVolumeCommand      :globalOptions.cd.loadVolumeCommand;
@@ -2128,6 +2190,7 @@ void getDVDSettings(const JobOptions *jobOptions,
   assert(jobOptions != NULL);
   assert(opticalDisk != NULL);
 
+  opticalDisk->defaultDeviceName       = (jobOptions->opticalDisk.defaultDeviceName       != NULL)?jobOptions->opticalDisk.defaultDeviceName      :globalOptions.dvd.defaultDeviceName;
   opticalDisk->requestVolumeCommand    = (jobOptions->opticalDisk.requestVolumeCommand    != NULL)?jobOptions->opticalDisk.requestVolumeCommand   :globalOptions.dvd.requestVolumeCommand;
   opticalDisk->unloadVolumeCommand     = (jobOptions->opticalDisk.unloadVolumeCommand     != NULL)?jobOptions->opticalDisk.unloadVolumeCommand    :globalOptions.dvd.unloadVolumeCommand;
   opticalDisk->loadVolumeCommand       = (jobOptions->opticalDisk.loadVolumeCommand       != NULL)?jobOptions->opticalDisk.loadVolumeCommand      :globalOptions.dvd.loadVolumeCommand;
@@ -2151,6 +2214,7 @@ void getBDSettings(const JobOptions *jobOptions,
   assert(jobOptions != NULL);
   assert(opticalDisk != NULL);
 
+  opticalDisk->defaultDeviceName       = (jobOptions->opticalDisk.defaultDeviceName       != NULL)?jobOptions->opticalDisk.defaultDeviceName      :globalOptions.bd.defaultDeviceName;
   opticalDisk->requestVolumeCommand    = (jobOptions->opticalDisk.requestVolumeCommand    != NULL)?jobOptions->opticalDisk.requestVolumeCommand   :globalOptions.bd.requestVolumeCommand;
   opticalDisk->unloadVolumeCommand     = (jobOptions->opticalDisk.unloadVolumeCommand     != NULL)?jobOptions->opticalDisk.unloadVolumeCommand    :globalOptions.bd.unloadVolumeCommand;
   opticalDisk->loadVolumeCommand       = (jobOptions->opticalDisk.loadVolumeCommand       != NULL)?jobOptions->opticalDisk.loadVolumeCommand      :globalOptions.bd.loadVolumeCommand;
@@ -2183,6 +2247,7 @@ void getDeviceSettings(const String     name,
   {
     deviceNode = deviceNode->next;
   }
+  device->defaultDeviceName       = (jobOptions->device.defaultDeviceName       != NULL)?jobOptions->device.defaultDeviceName      :((deviceNode != NULL)?deviceNode->device.defaultDeviceName      :globalOptions.defaultDevice->defaultDeviceName      );
   device->requestVolumeCommand    = (jobOptions->device.requestVolumeCommand    != NULL)?jobOptions->device.requestVolumeCommand   :((deviceNode != NULL)?deviceNode->device.requestVolumeCommand   :globalOptions.defaultDevice->requestVolumeCommand   );
   device->unloadVolumeCommand     = (jobOptions->device.unloadVolumeCommand     != NULL)?jobOptions->device.unloadVolumeCommand    :((deviceNode != NULL)?deviceNode->device.unloadVolumeCommand    :globalOptions.defaultDevice->unloadVolumeCommand    );
   device->loadVolumeCommand       = (jobOptions->device.loadVolumeCommand       != NULL)?jobOptions->device.loadVolumeCommand      :((deviceNode != NULL)?deviceNode->device.loadVolumeCommand      :globalOptions.defaultDevice->loadVolumeCommand      );
@@ -3565,21 +3630,21 @@ int main(int argc, const char *argv[])
     return EXITCODE_FAIL;
   }
 
-  /* create session log file */
-  File_setFileName(tmpLogFileName,tmpDirectory);
-  File_appendFileNameCString(tmpLogFileName,"log.txt");
-  tmpLogFile = fopen(String_cString(tmpLogFileName),"w");
-
-  /* open log files */
-  if (logFileName != NULL)
-  {
-    logFile = fopen(logFileName,"a");
-    if (logFile == NULL) printWarning("Cannot open log file '%s' (error: %s)!\n",logFileName,strerror(errno));
-  }
-
   error = ERROR_NONE;
   if      (daemonFlag)
-  {    
+  {
+    /* create session log file */
+    File_setFileName(tmpLogFileName,tmpDirectory);
+    File_appendFileNameCString(tmpLogFileName,"log.txt");
+    tmpLogFile = fopen(String_cString(tmpLogFileName),"w");
+
+    /* open log files */
+    if (logFileName != NULL)
+    {
+      logFile = fopen(logFileName,"a");
+      if (logFile == NULL) printWarning("Cannot open log file '%s' (error: %s)!\n",logFileName,strerror(errno));
+    }
+
     /* daemon mode -> run server with network */
     globalOptions.runMode = RUN_MODE_SERVER;
 
@@ -3685,9 +3750,15 @@ int main(int argc, const char *argv[])
         deletePIDFile();
       }
     }
+
+    /* close log files */
+    if (logFile != NULL) fclose(logFile);
+    fclose(tmpLogFile);
+    unlink(String_cString(tmpLogFileName));
   }
   else if (batchFlag)
   {
+    /* batch mode */
     globalOptions.runMode = RUN_MODE_BATCH;
 
     /* batch mode -> run server with standard i/o */
@@ -3697,6 +3768,7 @@ int main(int argc, const char *argv[])
   }
   else if (jobName != NULL)
   {
+    /* start job execution */
     globalOptions.runMode = RUN_MODE_INTERACTIVE;
 
     /* create archive */
@@ -3720,6 +3792,7 @@ int main(int argc, const char *argv[])
   }
   else
   {
+    /* interactive mode */
     globalOptions.runMode = RUN_MODE_INTERACTIVE;
 
     switch (command)
@@ -3960,11 +4033,6 @@ fprintf(stderr,"%s,%d: t=%s\n",__FILE__,__LINE__,t);
         break;
     }
   }
-
-  /* close log files */
-  if (logFile != NULL) fclose(logFile);
-  fclose(tmpLogFile);
-  unlink(String_cString(tmpLogFileName));
 
   /* delete temporary directory */
   File_delete(tmpDirectory,TRUE);
