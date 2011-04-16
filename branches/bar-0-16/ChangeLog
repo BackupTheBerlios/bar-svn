@@ -1,3 +1,17 @@
+2011-04-17 0.16c
+  * renamed macro %file -> %directory for cd/dvd/bd/device-commands
+  * fixed typing error in code when FTP is not available
+  * added options --file-write-pre|post-command,
+    --ftp-write-pre|post-command, --scp-write-pre|post-command,
+    --sftp-write-pre|post-command
+  * added option --always-create-image
+  * fixed creating CDs: use mkisofs+cdrecord
+  * removed double linefeed for log entries
+  * fized log entries when creating database index: avoid
+    creating huge log files
+  * only write log file in daemon/server mode
+  * renewed man page, improved manual
+
 2011-04-10 0.16b
   * fix error handling when password is wrong
   * create jobs directory if it does not exists
