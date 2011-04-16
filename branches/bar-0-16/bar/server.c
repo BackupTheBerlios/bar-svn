@@ -1789,12 +1789,12 @@ LOCAL void jobThreadCode(void)
 }
 #else
     /* run job */
-    logMessage(LOG_TYPE_ALWAYS,"------------------------------------------------------------");
+    logMessage(LOG_TYPE_ALWAYS,"------------------------------------------------------------\n");
     switch (jobNode->jobType)
     {
       case JOB_TYPE_CREATE:
         /* create archive */
-        logMessage(LOG_TYPE_ALWAYS,"start create archive '%s'",String_cString(archiveName));
+        logMessage(LOG_TYPE_ALWAYS,"start create archive '%s'\n",String_cString(archiveName));
         jobNode->runningInfo.error = Command_create(String_cString(archiveName),
                                                     &includeEntryList,
                                                     &excludePatternList,
@@ -1811,10 +1811,10 @@ LOCAL void jobThreadCode(void)
                                                     &pauseFlags.storage,
                                                     &jobNode->requestedAbortFlag
                                                    );
-        logMessage(LOG_TYPE_ALWAYS,"done create archive '%s' (error: %s)",String_cString(archiveName),Errors_getText(jobNode->runningInfo.error));
+        logMessage(LOG_TYPE_ALWAYS,"done create archive '%s' (error: %s)\n",String_cString(archiveName),Errors_getText(jobNode->runningInfo.error));
         break;
       case JOB_TYPE_RESTORE:
-        logMessage(LOG_TYPE_ALWAYS,"start restore archive '%s'",String_cString(archiveName));
+        logMessage(LOG_TYPE_ALWAYS,"start restore archive '%s'\n",String_cString(archiveName));
         StringList_init(&archiveFileNameList);
         StringList_append(&archiveFileNameList,archiveName);
         jobNode->runningInfo.error = Command_restore(&archiveFileNameList,
@@ -1829,7 +1829,7 @@ LOCAL void jobThreadCode(void)
                                                      &jobNode->requestedAbortFlag
                                                     );
         StringList_done(&archiveFileNameList);
-        logMessage(LOG_TYPE_ALWAYS,"done restore archive '%s' (error: %s)",String_cString(archiveName),Errors_getText(jobNode->runningInfo.error));
+        logMessage(LOG_TYPE_ALWAYS,"done restore archive '%s' (error: %s)\n",String_cString(archiveName),Errors_getText(jobNode->runningInfo.error));
         break;
       #ifndef NDEBUG
         default:
@@ -2231,7 +2231,7 @@ LOCAL void indexThreadCode(void)
     if (!quitFlag && (error != ERROR_NONE))
     {
       logMessage(LOG_TYPE_ERROR,
-                 "cannot create storage index '%s' (error: %s)",
+                 "cannot create storage index '%s' (error: %s)\n",
                  String_cString(storageName),
                  Errors_getText(error)
                 );
