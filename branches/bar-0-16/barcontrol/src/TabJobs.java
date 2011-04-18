@@ -6093,10 +6093,13 @@ throw new Error("NYI");
    */
   private void compressExcludeAdd(String pattern)
   {
+    final String[] PATTERN_MAP_FROM = new String[]{"\n","\r","\\"};
+    final String[] PATTERN_MAP_TO   = new String[]{"\\n","\\r","\\\\"};
+
     assert selectedJobId != 0;
 
     String[] result = new String[1];
-    if (BARServer.executeCommand("EXCLUDE_COMPRESS_ADD "+selectedJobId+" GLOB "+StringUtils.escape(pattern),result) != Errors.NONE)
+    if (BARServer.executeCommand("EXCLUDE_COMPRESS_ADD "+selectedJobId+" GLOB "+StringUtils.escape(StringUtils.map(pattern,PATTERN_MAP_FROM,PATTERN_MAP_TO)),result) != Errors.NONE)
     {
       Dialogs.error(shell,"Cannot add compress exclude entry:\n\n"+result[0]);
       return;
