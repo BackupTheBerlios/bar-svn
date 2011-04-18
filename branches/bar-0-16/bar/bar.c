@@ -87,8 +87,8 @@
 #define CD_LOAD_VOLUME_COMMAND                "eject -t %device"
 #define CD_IMAGE_COMMAND                      "nice mkisofs -V Backup -volset %number -r -o %image %directory"
 #define CD_ECC_COMMAND                        "nice dvdisaster -mRS02 -n cd -c -i %image -v"
-#define CD_WRITE_COMMAND                      "nice sh -c 'mkisofs -V Backup -volset %number -r -o %image %directory && cdrecord -dummy dev=%device %image'"
-#define CD_WRITE_IMAGE_COMMAND                "nice cdrecord -dummy dev=%device %image"
+#define CD_WRITE_COMMAND                      "nice sh -c 'mkisofs -V Backup -volset %number -r -o %image %directory && cdrecord dev=%device %image'"
+#define CD_WRITE_IMAGE_COMMAND                "nice cdrecord dev=%device %image"
 
 #define DVD_UNLOAD_VOLUME_COMMAND             "eject -r %device"
 #define DVD_LOAD_VOLUME_COMMAND               "eject -t %device"
