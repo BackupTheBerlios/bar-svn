@@ -7,9 +7,10 @@
   * added option --always-create-image
   * fixed creating CDs: use mkisofs+cdrecord
   * removed double linefeed for log entries
-  * fized log entries when creating database index: avoid
+  * fixed log entries when creating database index: avoid
     creating huge log files
   * only write log file in daemon/server mode
+  * add missing MacOSX JARs to distribution
   * renewed man page, improved manual
 
 2011-04-10 0.16b
