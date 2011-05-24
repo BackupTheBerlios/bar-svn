@@ -24,6 +24,7 @@ LAUNCH4J_DIR       = @LAUNCH4J_DIR@
 
 JAVA               = @JAVA@
 JAVA_FLAGS         = @JAVA_FLAGS@ -Xmx128m
+JAVA_DATA_MODEL    = @JAVA_DATA_MODEL@
 
 JAVAC              = @JAVAC@
 JAVAC_FLAGS        = @JAVAC_FLAGS@ -source 1.5
