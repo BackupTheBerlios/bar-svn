@@ -1,3 +1,8 @@
+2011-05-26 0.16d
+  * barcontrol: fix parsing of ftp/scp/sftp archive names
+  * fix parsing of ftp archive names
+  * support for non-passive/passive ftp connections
+
 2011-04-17 0.16c
   * renamed macro %file -> %directory for cd/dvd/bd/device-commands
   * fixed typing error in code when FTP is not available
