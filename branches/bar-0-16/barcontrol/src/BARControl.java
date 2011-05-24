@@ -233,17 +233,19 @@ class ArchiveNameParts
 
       String specifier = archiveName.substring(6);
       Object[] data = new Object[2];
-      int index = 0;
-      if      (StringParser.parse(specifier.substring(index),"%s:%s@",data,StringParser.QUOTE_CHARS))
+      int index;
+      if      ((index = StringParser.parse(specifier,0,"%s:%s@",data,StringParser.QUOTE_CHARS)) >= 0)
       {
         loginName     = (String)data[0];
         loginPassword = (String)data[1];
-        index = specifier.indexOf('@')+1;
       }
-      else if (StringParser.parse(specifier.substring(index),"%s@",data,StringParser.QUOTE_CHARS))
+      else if ((index = StringParser.parse(specifier,0,"%s@",data,StringParser.QUOTE_CHARS)) >= 0)
       {
         loginName = (String)data[0];
-        index = specifier.indexOf('@')+1;
+      }
+      else
+      {
+        index = 0;
       }
       if (StringParser.parse(specifier.substring(index),"%s/%s",data,StringParser.QUOTE_CHARS))
       {
@@ -262,11 +264,14 @@ class ArchiveNameParts
 
       String specifier = archiveName.substring(6);
       Object[] data = new Object[3];
-      int index = 0;
-      if (StringParser.parse(specifier.substring(index),"%s@",data,StringParser.QUOTE_CHARS))
+      int index;
+      if ((index = StringParser.parse(specifier,0,"%s@",data,StringParser.QUOTE_CHARS)) >= 0)
       {
         loginName = (String)data[0];
-        index = specifier.indexOf('@')+1;
+      }
+      else
+      {
+        index = 0;
       }
       if      (StringParser.parse(specifier.substring(index),"%s:%d/%s",data,StringParser.QUOTE_CHARS))
       {
@@ -291,11 +296,14 @@ class ArchiveNameParts
 
       String specifier = archiveName.substring(7);
       Object[] data = new Object[3];
-      int index = 0;
-      if (StringParser.parse(specifier.substring(index),"%s@",data,StringParser.QUOTE_CHARS))
+      int index;
+      if ((index = StringParser.parse(specifier,0,"%s@",data,StringParser.QUOTE_CHARS)) >= 0)
       {
         loginName = (String)data[0];
-        index = specifier.indexOf('@')+1;
+      }
+      else
+      {
+        index = 0;
       }
       if      (StringParser.parse(specifier.substring(index),"%s:%d/%s",data,StringParser.QUOTE_CHARS))
       {
