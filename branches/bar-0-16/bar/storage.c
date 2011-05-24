@@ -1107,7 +1107,7 @@ bool Storage_parseFTPSpecifier(const String ftpSpecifier,
   if      (String_matchCString(ftpSpecifier,STRING_BEGIN,"[^:]*:[^@]*@.*",NULL,NULL,NULL))
   {
     s = String_new();
-    String_parse(ftpSpecifier,STRING_BEGIN,"%S:%S@",NULL,loginName,s);
+    String_parse(ftpSpecifier,STRING_BEGIN,"%S:%S@%S",NULL,loginName,s,hostName);
     if (password != NULL) Password_setString(password,s);
     String_delete(s);
 
@@ -1115,7 +1115,7 @@ bool Storage_parseFTPSpecifier(const String ftpSpecifier,
   }
   else if (String_matchCString(ftpSpecifier,STRING_BEGIN,"[^@]*@.*",NULL,NULL,NULL))
   {
-    String_parse(ftpSpecifier,STRING_BEGIN,"%S@",NULL,loginName);
+    String_parse(ftpSpecifier,STRING_BEGIN,"%S@%S",NULL,loginName,hostName);
 
     result = TRUE;
   }
@@ -2858,7 +2858,8 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
 
         if (!storageFileHandle->jobOptions->dryRunFlag)
         {
-          /* create file */
+          /* create file: first try non-passive, then passive mode */
+          FtpOptions(FTPLIB_CONNMODE,FTPLIB_PORT,storageFileHandle->ftp.control);
           if (FtpAccess(String_cString(fileName),
                         FTPLIB_FILE_WRITE,
                         FTPLIB_IMAGE,
@@ -2867,8 +2868,18 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
                        ) != 1
              )
           {
-            FtpQuit(storageFileHandle->ftp.control);
-            return ERROR_CREATE_FILE;
+            FtpOptions(FTPLIB_CONNMODE,FTPLIB_PASSIVE,storageFileHandle->ftp.control);
+            if (FtpAccess(String_cString(fileName),
+                          FTPLIB_FILE_WRITE,
+                          FTPLIB_IMAGE,
+                          storageFileHandle->ftp.control,
+                          &storageFileHandle->ftp.data
+                         ) != 1
+               )
+            {
+              FtpQuit(storageFileHandle->ftp.control);
+              return ERRORX(CREATE_FILE,0,"ftp access");
+            }
           }
         }
       }
@@ -2903,8 +2914,8 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
             /* open channel and file for writing */
             storageFileHandle->scp.channel = libssh2_scp_send(Network_getSSHSession(&storageFileHandle->scp.socketHandle),
                                                               String_cString(fileName),
-  // ???
-  0600,
+// ???
+0600,
                                                               fileSize
                                                              );
             if (storageFileHandle->scp.channel == NULL)
@@ -2966,8 +2977,8 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
             storageFileHandle->sftp.sftpHandle = libssh2_sftp_open(storageFileHandle->sftp.sftp,
                                                                    String_cString(fileName),
                                                                    LIBSSH2_FXF_CREAT|LIBSSH2_FXF_WRITE|LIBSSH2_FXF_TRUNC,
-  // ???
-  LIBSSH2_SFTP_S_IRUSR|LIBSSH2_SFTP_S_IWUSR
+// ???
+LIBSSH2_SFTP_S_IRUSR|LIBSSH2_SFTP_S_IWUSR
                                                                   );
             if (storageFileHandle->sftp.sftpHandle == NULL)
             {
