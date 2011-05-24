@@ -62,9 +62,9 @@
   LOCAL String defaultSSHPrivateKeyFileName;
 #endif /* HAVE_SSH2 */
 
-#ifdef HAVE_GNU_TLS
+#ifdef HAVE_GCRYPT
   GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#endif /* HAVE_GNU_TLS */
+#endif /* HAVE_GCRYPT */
 
 /****************************** Macros *********************************/
 
@@ -92,8 +92,10 @@ Errors Network_initAll(void)
   #else /* not HAVE_SSH2 */
   #endif /* HAVE_SSH2 */
 
+  #ifdef HAVE_GCRYPT
+    gcry_control(GCRYCTL_SET_THREAD_CBS,&gcry_threads_pthread);
+  #endif /* HAVE_GCRYPT */
   #ifdef HAVE_GNU_TLS
-    gcry_control (GCRYCTL_SET_THREAD_CBS,&gcry_threads_pthread);
     gnutls_global_init();
 //gnutls_global_set_log_level(10);
 //gnutls_global_set_log_function(tlslog);
