@@ -3555,7 +3555,9 @@ bool Storage_eof(StorageFileHandle *storageFileHandle)
       break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
-HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
+//HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
+// NYI: temporary
+return TRUE;
       #else /* not HAVE_FTP */
       #endif /* HAVE_FTP */
       break;
@@ -4138,7 +4140,9 @@ uint64 Storage_getSize(StorageFileHandle *storageFileHandle)
       break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
-HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
+//HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
+// NYI: temporary
+return 0LL;
       #else /* not HAVE_FTP */
       #endif /* HAVE_FTP */
       break;
