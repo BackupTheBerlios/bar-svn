@@ -3712,17 +3712,18 @@ Errors Archive_readFileEntry(ArchiveInfo        *archiveInfo,
             break;
         }
       }
+      if (error != ERROR_NONE)
+      {
+        Chunk_done(&archiveEntryInfo->file.chunkFileData.info);
+        Chunk_done(&archiveEntryInfo->file.chunkFileEntry.info);
+        Crypt_done(&archiveEntryInfo->file.cryptInfoData);
+        Crypt_done(&archiveEntryInfo->file.chunkFileData.cryptInfo);
+        Crypt_done(&archiveEntryInfo->file.chunkFileEntry.cryptInfo);
+      }
     }
 
     if (error != ERROR_NONE)
     {
-      /* free resources */
-      Chunk_done(&archiveEntryInfo->file.chunkFileData.info);
-      Chunk_done(&archiveEntryInfo->file.chunkFileEntry.info);
-      Crypt_done(&archiveEntryInfo->file.cryptInfoData);
-      Crypt_done(&archiveEntryInfo->file.chunkFileData.cryptInfo);
-      Crypt_done(&archiveEntryInfo->file.chunkFileEntry.cryptInfo);
-
       if (   (archiveEntryInfo->cryptAlgorithm != CRYPT_ALGORITHM_NONE)
           && (archiveInfo->cryptType != CRYPT_TYPE_ASYMMETRIC)
          )
