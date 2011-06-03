@@ -4,6 +4,8 @@
   * support for non-passive/passive ftp connections
   * fixed wrong free of resources when archive entry could
     not be read
+  * fixed numbers for compress/crypt type: must be a real
+    constant (self-assigned enum may change)
 
 2011-04-17 0.16c
   * renamed macro %file -> %directory for cd/dvd/bd/device-commands
