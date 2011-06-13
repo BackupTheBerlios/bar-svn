@@ -1704,9 +1704,9 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
         storageFileHandle->opticalDisk.writePostProcessCommand= opticalDisk.writePostProcessCommand;
         storageFileHandle->opticalDisk.writeCommand           = opticalDisk.writeCommand;
         storageFileHandle->opticalDisk.writeImageCommand      = opticalDisk.writeImageCommand;
-        storageFileHandle->opticalDisk.steps                  = jobOptions->errorCorrectionCodesFlag?4:1; 
-        storageFileHandle->opticalDisk.directory              = String_new();                             
-        storageFileHandle->opticalDisk.step                   = 0;                                        
+        storageFileHandle->opticalDisk.steps                  = jobOptions->errorCorrectionCodesFlag?4:1;
+        storageFileHandle->opticalDisk.directory              = String_new();
+        storageFileHandle->opticalDisk.step                   = 0;
         if (jobOptions->waitFirstVolumeFlag)
         {
           storageFileHandle->opticalDisk.number  = 0;
@@ -1964,7 +1964,7 @@ String Storage_getHandleName(String                  storageName,
   assert(storageFileHandle != NULL);
 
   /* initialize variables */
-  storageSpecifier = String_new(); 
+  storageSpecifier = String_new();
 
   /* format specifier */
   switch (storageFileHandle->type)
@@ -2814,6 +2814,23 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
 
       if (!storageFileHandle->jobOptions->dryRunFlag)
       {
+        /* create directory if not existing */
+        directoryName = File_getFilePathName(String_new(),fileName);
+        if (!File_exists(directoryName))
+        {
+          error = File_makeDirectory(directoryName,
+                                     FILE_DEFAULT_USER_ID,
+                                     FILE_DEFAULT_GROUP_ID,
+                                     FILE_DEFAULT_PERMISSION
+                                    );
+          if (error != ERROR_NONE)
+          {
+            String_delete(directoryName);
+            return error;
+          }
+        }
+        String_delete(directoryName);
+
         /* open file */
         error = File_open(&storageFileHandle->fileSystem.fileHandle,
                           fileName,
@@ -2828,7 +2845,11 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
       {
-        const char *plainPassword;
+        String          pathName;
+        String          directoryName;
+        StringTokenizer pathNameTokenizer;
+        String          name;
+        const char      *plainPassword;
 
         /* initialise variables */
 
@@ -2858,6 +2879,40 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
 
         if (!storageFileHandle->jobOptions->dryRunFlag)
         {
+          /* create directory (try it and ignore errors) */
+          pathName      = File_getFilePathName(String_new(),fileName);
+          directoryName = File_newFileName();
+          File_initSplitFileName(&pathNameTokenizer,pathName);
+          if (File_getNextSplitFileName(&pathNameTokenizer,&name))
+          {
+            // create root-directory
+            if (!String_empty(name))
+            {
+              File_setFileName(directoryName,name);
+            }
+            else
+            {
+              File_setFileNameChar(directoryName,FILES_PATHNAME_SEPARATOR_CHAR);
+            }
+            (void)FtpMkdir(String_cString(directoryName),storageFileHandle->ftp.control);
+
+            // create sub-directories
+            while (File_getNextSplitFileName(&pathNameTokenizer,&name))
+            {
+              if (!String_empty(name))
+              {
+                // get sub-directory
+                File_appendFileName(directoryName,name);
+
+                // create sub-directory
+                (void)FtpMkdir(String_cString(directoryName),storageFileHandle->ftp.control);
+              }
+            }
+          }
+          File_doneSplitFileName(&pathNameTokenizer);
+          File_deleteFileName(directoryName);
+          File_deleteFileName(pathName);
+
           /* create file: first try non-passive, then passive mode */
           FtpOptions(FTPLIB_CONNMODE,FTPLIB_PORT,storageFileHandle->ftp.control);
           if (FtpAccess(String_cString(fileName),
@@ -3805,8 +3860,8 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
                 }
                 storageFileHandle->sftp.readAheadBuffer.offset = storageFileHandle->sftp.index;
                 storageFileHandle->sftp.readAheadBuffer.length = n;
-  //fprintf(stderr,"%s,%d: n=%ld storageFileHandle->sftp.bufferOffset=%llu storageFileHandle->sftp.bufferLength=%lu\n",__FILE__,__LINE__,n,
-  //storageFileHandle->sftp.readAheadBuffer.offset,storageFileHandle->sftp.readAheadBuffer.length);
+//fprintf(stderr,"%s,%d: n=%ld storageFileHandle->sftp.bufferOffset=%llu storageFileHandle->sftp.bufferLength=%lu\n",__FILE__,__LINE__,n,
+//storageFileHandle->sftp.readAheadBuffer.offset,storageFileHandle->sftp.readAheadBuffer.length);
 
                 n = MIN(size,storageFileHandle->sftp.readAheadBuffer.length);
                 memcpy(buffer,storageFileHandle->sftp.readAheadBuffer.data,n);
@@ -3905,7 +3960,9 @@ Errors Storage_write(StorageFileHandle *storageFileHandle,
               {
                 length = size-writtenBytes;
               }
+fprintf(stderr,"%s, %d: length=%d\n",__FILE__,__LINE__,length);
               n = FtpWrite((void*)buffer,length,storageFileHandle->ftp.data);
+fprintf(stderr,"%s, %d: n=%d\n",__FILE__,__LINE__,n);
               if (n < 0)
               {
                 error = ERROR_NETWORK_SEND;
@@ -4314,7 +4371,7 @@ HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
-        {        
+        {
           /* scp protocol does not support a seek-function. Thus try to
              read and discard data to position the read index to the
              requested offset.
