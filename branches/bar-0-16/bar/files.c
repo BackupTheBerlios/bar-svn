@@ -104,7 +104,7 @@ String File_appendFileName(String fileName, const String name)
     }
   }
   String_append(fileName,name);
-  
+
   return fileName;
 }
 
@@ -121,7 +121,7 @@ String File_appendFileNameCString(String fileName, const char *name)
     }
   }
   String_appendCString(fileName,name);
-  
+
   return fileName;
 }
 
@@ -287,7 +287,7 @@ Errors File_getTmpFileNameCString(String fileName, char const *pattern, const St
   handle = mkstemp(s);
   if (handle == -1)
   {
-    error = ERRORX(IO_ERROR,errno,s); 
+    error = ERRORX(IO_ERROR,errno,s);
     free(s);
     return error;
   }
@@ -586,7 +586,7 @@ Errors File_close(FileHandle *fileHandle)
   assert(fileHandle != NULL);
   assert(fileHandle->file != NULL);
   assert(fileHandle->name != NULL);
- 
+
   fclose(fileHandle->file);
   fileHandle->file = NULL;
   String_delete(fileHandle->name);
@@ -1598,6 +1598,7 @@ Errors File_makeDirectory(const String   pathName,
   }
   if      (!File_exists(directoryName))
   {
+    // create root-directory
     if (mkdir(String_cString(directoryName),0777 & ~currentCreationMask) != 0)
     {
       error = ERRORX(IO_ERROR,errno,String_cString(directoryName));
@@ -1606,6 +1607,8 @@ Errors File_makeDirectory(const String   pathName,
       File_deleteFileName(directoryName);
       return error;
     }
+
+    // set owner/group
     if (   (userId  != FILE_DEFAULT_USER_ID)
         || (groupId != FILE_DEFAULT_GROUP_ID)
        )
@@ -1621,6 +1624,8 @@ Errors File_makeDirectory(const String   pathName,
         return error;
       }
     }
+
+    // set permission
     if (permission != FILE_DEFAULT_PERMISSION)
     {
       if (chmod(String_cString(directoryName),((mode_t)permission|S_IXUSR|S_IXGRP|S_IXOTH) & ~currentCreationMask) != 0)
@@ -1663,7 +1668,9 @@ Errors File_makeDirectory(const String   pathName,
           File_deleteFileName(directoryName);
           return error;
         }
-        if (chmod(String_cString(parentDirectoryName),fileStat.st_mode|S_IRUSR|S_IWUSR|S_IXUSR) != 0)
+        if (   ((fileStat.st_mode & (S_IRUSR|S_IWUSR|S_IXUSR)) != (S_IRUSR|S_IWUSR|S_IXUSR))
+            && (chmod(String_cString(parentDirectoryName),fileStat.st_mode|S_IRUSR|S_IWUSR|S_IXUSR) != 0)
+           )
         {
           error = ERRORX(IO_ERROR,errno,String_cString(parentDirectoryName));
           File_doneSplitFileName(&pathNameTokenizer);
@@ -1681,6 +1688,8 @@ Errors File_makeDirectory(const String   pathName,
           File_deleteFileName(directoryName);
           return error;
         }
+
+        // set owner/group
         if (   (userId  != FILE_DEFAULT_USER_ID)
             || (groupId != FILE_DEFAULT_GROUP_ID)
            )
@@ -1697,6 +1706,8 @@ Errors File_makeDirectory(const String   pathName,
             return error;
           }
         }
+
+        // set permission
         if (permission != FILE_DEFAULT_PERMISSION)
         {
           // set permission
@@ -1720,6 +1731,8 @@ Errors File_makeDirectory(const String   pathName,
       }
     }
   }
+
+  // free resources
   File_doneSplitFileName(&pathNameTokenizer);
   File_deleteFileName(parentDirectoryName);
   File_deleteFileName(directoryName);
@@ -1763,7 +1776,7 @@ Errors File_readLink(String       fileName,
   if (buffer == NULL)
   {
     HALT_INSUFFICIENT_MEMORY();
-  }  
+  }
   bufferSize = BUFFER_SIZE;
 
   /* try to read link, increase buffer if needed */
@@ -1774,7 +1787,7 @@ Errors File_readLink(String       fileName,
     if (buffer == NULL)
     {
       HALT_INSUFFICIENT_MEMORY();
-    }  
+    }
   }
 
   if (result != -1)
