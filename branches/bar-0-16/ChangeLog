@@ -1,3 +1,9 @@
+2011-06-14 0.16e
+  * create sub-directories when storing to file system or
+    ftp server
+  * fix creating directories: to not set parent directory
+    permissions if permissions are already set
+
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
   * fix parsing of ftp archive names
