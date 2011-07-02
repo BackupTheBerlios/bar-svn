@@ -29,6 +29,8 @@
 #define STRING_QUOTE        "'"
 #define STRING_QUOTES       "\"'"
 
+#define STRING_NO_ASSIGN (void*)(-1)
+
 /***************************** Datatypes *******************************/
 
 /***************************** Variables *******************************/

@@ -1663,9 +1663,12 @@ LOCAL bool matchString(const String  string,
     {
       matchedSubString = (String)va_arg(arguments,void*);
       assert(matchedSubString != NULL);
-      if (subMatches[z].rm_so != -1)
+      if (matchedSubString != STRING_NO_ASSIGN)
       {
-        String_setBuffer(matchedSubString,&string->data[subMatches[z].rm_so],subMatches[z].rm_eo-subMatches[z].rm_so);
+        if (subMatches[z].rm_so != -1)
+        {
+          String_setBuffer(matchedSubString,&string->data[subMatches[z].rm_so],subMatches[z].rm_eo-subMatches[z].rm_so);
+        }
       }
     }
     va_end(arguments);
