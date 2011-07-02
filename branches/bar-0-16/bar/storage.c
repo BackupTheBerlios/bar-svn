@@ -4207,12 +4207,9 @@ Errors Storage_write(StorageFileHandle *storageFileHandle,
               }
               else if (n == 0)
               {
-fprintf(stderr,"%s, %d: 1 errno=%ld\n",__FILE__,__LINE__,errno);
-Misc_udelay(1000);
                 n = FtpWrite((void*)buffer,length,storageFileHandle->ftp.data);
                 if      (n <= 0)
                 {
-fprintf(stderr,"%s, %d: 2 errno=%ld\n",__FILE__,__LINE__,errno);
                   error = ERROR_NETWORK_SEND;
                   break;
                 }
