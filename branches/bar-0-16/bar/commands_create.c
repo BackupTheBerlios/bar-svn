@@ -4069,15 +4069,16 @@ Errors Command_create(const char                      *storageName,
           switch (entryMsg.entryType)
           {
             case ENTRY_TYPE_FILE:
-              createInfo.failError = storeFileEntry(&archiveInfo,
-                                                    compressExcludePatternList,
-                                                    jobOptions,
-                                                    &createInfo,
-                                                    buffer,
-                                                    BUFFER_SIZE,
-                                                    storeIncrementalFileInfoFlag,
-                                                    entryMsg.name
-                                                   );
+              error = storeFileEntry(&archiveInfo,
+                                     compressExcludePatternList,
+                                     jobOptions,
+                                     &createInfo,
+                                     buffer,
+                                     BUFFER_SIZE,
+                                     storeIncrementalFileInfoFlag,
+                                     entryMsg.name
+                                    );
+              if (error != ERROR_NONE) createInfo.failError = error;
               abortFlag |= !updateStatusInfo(&createInfo);
               break;
             case ENTRY_TYPE_IMAGE:
@@ -4088,14 +4089,15 @@ Errors Command_create(const char                      *storageName,
           switch (entryMsg.entryType)
           {
             case ENTRY_TYPE_FILE:
-              createInfo.failError = storeDirectoryEntry(&archiveInfo,
-                                                         jobOptions,
-                                                         &createInfo,
-                                                         buffer,
-                                                         BUFFER_SIZE,
-                                                         storeIncrementalFileInfoFlag,
-                                                         entryMsg.name
-                                                        );
+              error = storeDirectoryEntry(&archiveInfo,
+                                          jobOptions,
+                                          &createInfo,
+                                          buffer,
+                                          BUFFER_SIZE,
+                                          storeIncrementalFileInfoFlag,
+                                          entryMsg.name
+                                         );
+              if (error != ERROR_NONE) createInfo.failError = error;
               abortFlag |= !updateStatusInfo(&createInfo);
               break;
             case ENTRY_TYPE_IMAGE:
@@ -4106,14 +4108,15 @@ Errors Command_create(const char                      *storageName,
           switch (entryMsg.entryType)
           {
             case ENTRY_TYPE_FILE:
-              createInfo.failError = storeLinkEntry(&archiveInfo,
-                                                    jobOptions,
-                                                    &createInfo,
-                                                    buffer,
-                                                    BUFFER_SIZE,
-                                                    storeIncrementalFileInfoFlag,
-                                                    entryMsg.name
-                                                   );
+              error = storeLinkEntry(&archiveInfo,
+                                     jobOptions,
+                                     &createInfo,
+                                     buffer,
+                                     BUFFER_SIZE,
+                                     storeIncrementalFileInfoFlag,
+                                     entryMsg.name
+                                    );
+              if (error != ERROR_NONE) createInfo.failError = error;
               abortFlag |= !updateStatusInfo(&createInfo);
               break;
             case ENTRY_TYPE_IMAGE:
@@ -4124,15 +4127,16 @@ Errors Command_create(const char                      *storageName,
           switch (entryMsg.entryType)
           {
             case ENTRY_TYPE_FILE:
-              createInfo.failError = storeHardLinkEntry(&archiveInfo,
-                                                        compressExcludePatternList,
-                                                        jobOptions,
-                                                        &createInfo,
-                                                        buffer,
-                                                        BUFFER_SIZE,
-                                                        storeIncrementalFileInfoFlag,
-                                                        &entryMsg.nameList
-                                                       );
+              error = storeHardLinkEntry(&archiveInfo,
+                                         compressExcludePatternList,
+                                         jobOptions,
+                                         &createInfo,
+                                         buffer,
+                                         BUFFER_SIZE,
+                                         storeIncrementalFileInfoFlag,
+                                         &entryMsg.nameList
+                                        );
+              if (error != ERROR_NONE) createInfo.failError = error;
               abortFlag |= !updateStatusInfo(&createInfo);
               break;
             case ENTRY_TYPE_IMAGE:
@@ -4143,25 +4147,27 @@ Errors Command_create(const char                      *storageName,
           switch (entryMsg.entryType)
           {
             case ENTRY_TYPE_FILE:
-              createInfo.failError = storeSpecialEntry(&archiveInfo,
-                                                       jobOptions,
-                                                       &createInfo,
-                                                       buffer,
-                                                       BUFFER_SIZE,
-                                                       storeIncrementalFileInfoFlag,
-                                                       entryMsg.name
-                                                      );
+              error = storeSpecialEntry(&archiveInfo,
+                                        jobOptions,
+                                        &createInfo,
+                                        buffer,
+                                        BUFFER_SIZE,
+                                        storeIncrementalFileInfoFlag,
+                                        entryMsg.name
+                                       );
+              if (error != ERROR_NONE) createInfo.failError = error;
               abortFlag |= !updateStatusInfo(&createInfo);
               break;
             case ENTRY_TYPE_IMAGE:
-              createInfo.failError = storeImageEntry(&archiveInfo,
-                                                     compressExcludePatternList,
-                                                     jobOptions,
-                                                     &createInfo,
-                                                     buffer,
-                                                     BUFFER_SIZE,
-                                                     entryMsg.name
-                                                    );
+              error = storeImageEntry(&archiveInfo,
+                                      compressExcludePatternList,
+                                      jobOptions,
+                                      &createInfo,
+                                      buffer,
+                                      BUFFER_SIZE,
+                                      entryMsg.name
+                                     );
+              if (error != ERROR_NONE) createInfo.failError = error;
               abortFlag |= !updateStatusInfo(&createInfo);
               break;
           }
