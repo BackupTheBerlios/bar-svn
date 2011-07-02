@@ -161,11 +161,20 @@ typedef struct
       struct
       {
         String           hostName;                     // FTP server host name
+        uint             hostPort;                     // FTP server port number
         String           loginName;                    // FTP login name
         Password         *password;                    // FTP login password
 
         netbuf           *control;
         netbuf           *data;
+        uint64           index;                        // current read/write index in file [0..n-1]
+        uint64           size;                         // size of file [bytes]
+        struct                                         // read-ahead buffer
+        {
+          byte   *data;
+          uint64 offset;
+          ulong  length;
+        } readAheadBuffer;
         StorageBandWidth bandWidth;                    // band width data
       } ftp;
     #endif /* HAVE_FTP */
@@ -456,11 +465,11 @@ String Storage_getName(String       storageName,
 *          loginName     - login user name variable (can be NULL)
 *          password      - password variable (can be NULL)
 *          hostName      - host name variable (can be NULL)
-*          fileName      - file name variable (can be NULL)
-* Output : loginName - login user name (can be NULL)
-*          password  - password (can be NULL)
-*          hostName  - host name (can be NULL)
-*          fileName  - file name (can be NULL)
+*          hostPort      - host port variable (can be NULL)
+* Output : loginName - login user name
+*          password  - password
+*          hostName  - host name
+*          hostPort  - host port
 * Return : TRUE if FTP specifier parsed, FALSE if specifier invalid
 * Notes  : -
 \***********************************************************************/
@@ -468,7 +477,8 @@ String Storage_getName(String       storageName,
 bool Storage_parseFTPSpecifier(const String ftpSpecifier,
                                String       loginName,
                                Password     *password,
-                               String       hostName
+                               String       hostName,
+                               uint         *hostPort
                               );
 
 /***********************************************************************\
