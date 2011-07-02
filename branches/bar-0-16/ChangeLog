@@ -1,8 +1,19 @@
-2011-06-14 0.16e
+2011-07-03 0.16e
   * create sub-directories when storing to file system or
     ftp server
   * fix creating directories: to not set parent directory
     permissions if permissions are already set
+  * barcontrol: do not close new job dialog on error
+  * barcontrol: fixed setting crypt type radio buttons with
+    default value
+  * save job file immediately after creating a new one
+  * fix lost error state when writing file to a server
+  * improved FTP transmission, added patch to set timeout
+    for receiving data in FTPLib
+  * fixed possible inifite loop when executing external
+    command, e. g. sending the log file via log-post-command
+  * fixed error in pre-defined log-post-command in bar.cfg
+  * fix losing failure error
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
