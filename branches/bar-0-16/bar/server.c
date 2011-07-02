@@ -684,7 +684,7 @@ LOCAL void resetJobRunningInfo(JobNode *jobNode)
 }
 
 /***********************************************************************\
-* Name   : newJobN
+* Name   : newJob
 * Purpose: create new job
 * Input  : jobType  - job type
 *          fileName - file name or NULL
@@ -1129,7 +1129,11 @@ LOCAL bool readJob(JobNode *jobNode)
   jobNode->jobOptions.patternType                  = PATTERN_TYPE_GLOB;
   jobNode->jobOptions.compressAlgorithm            = COMPRESS_ALGORITHM_NONE;
   jobNode->jobOptions.cryptAlgorithm               = CRYPT_ALGORITHM_NONE;
-  jobNode->jobOptions.cryptType                    = CRYPT_TYPE_NONE;
+  #ifdef HAVE_GCRYPT
+    jobNode->jobOptions.cryptType                  = CRYPT_TYPE_SYMMETRIC;
+  #else /* not HAVE_GCRYPT */
+    jobNode->jobOptions.cryptType                  = CRYPT_TYPE_NONE;
+  #endif /* HAVE_GCRYPT */
   jobNode->jobOptions.cryptPasswordMode            = PASSWORD_MODE_DEFAULT;
   String_clear(jobNode->jobOptions.cryptPublicKeyFileName);
   String_clear(jobNode->jobOptions.ftpServer.loginName);
@@ -3926,6 +3930,9 @@ LOCAL void serverCommand_jobNew(ClientInfo *clientInfo, uint id, const String ar
 
     /* free resources */
     File_deleteFileName(fileName);
+
+    /* write job to file */
+    updateJob(jobNode);
 
     /* add new job to list */
     List_append(&jobList,jobNode);
