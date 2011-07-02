@@ -40,7 +40,7 @@ public class StringUtils
    */
   public static String escape(String string, boolean enclosingQuotes, char quoteChar)
   {
-    StringBuffer buffer = new StringBuffer();
+    StringBuilder buffer = new StringBuilder();
 
     if (enclosingQuotes) buffer.append(quoteChar);
     for (int index = 0; index < string.length(); index++)
@@ -226,8 +226,8 @@ public class StringUtils
    */
   public static String join(Object[] objects, String joinString, char quoteChar)
   {
-    StringBuffer buffer = new StringBuffer();
-    String       string;
+    StringBuilder buffer = new StringBuilder();
+    String        string;
     if (objects != null)
     {
       for (Object object : objects)
@@ -271,16 +271,168 @@ public class StringUtils
     return join(strings," ");
   }
 
+  /** join boolean array
+   * @param array array to join (convert to string with toString())
+   * @param joinString string used to join two strings
+   * @return string
+   */
+  public static String join(boolean[] array, String joinString)
+  {
+    StringBuilder buffer = new StringBuilder();
+    String        string;
+    if (array != null)
+    {
+      for (boolean n : array)
+      {
+        if (buffer.length() > 0) buffer.append(joinString);
+        buffer.append(Boolean.toString(n));
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** join boolean array with space
+   * @param strings strings to join
+   * @return string
+   */
+  public static String join(boolean[] array)
+  {
+    return join(array," ");
+  }
+
+  /** join integer array
+   * @param array array to join (convert to string with toString())
+   * @param joinString string used to join two strings
+   * @return string
+   */
+  public static String join(int[] array, String joinString)
+  {
+    StringBuilder buffer = new StringBuilder();
+    String        string;
+    if (array != null)
+    {
+      for (int n : array)
+      {
+        if (buffer.length() > 0) buffer.append(joinString);
+        buffer.append(Integer.toString(n));
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** join integer array with space
+   * @param strings strings to join
+   * @return string
+   */
+  public static String join(int[] array)
+  {
+    return join(array," ");
+  }
+
+  /** join long array
+   * @param array array to join (convert to string with toString())
+   * @param joinString string used to join two strings
+   * @return string
+   */
+  public static String join(long[] array, String joinString)
+  {
+    StringBuilder buffer = new StringBuilder();
+    String        string;
+    if (array != null)
+    {
+      for (long n : array)
+      {
+        if (buffer.length() > 0) buffer.append(joinString);
+        buffer.append(Long.toString(n));
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** join long array with space
+   * @param strings strings to join
+   * @return string
+   */
+  public static String join(long[] array)
+  {
+    return join(array," ");
+  }
+
+  /** join float array
+   * @param array array to join (convert to string with toString())
+   * @param joinString string used to join two strings
+   * @return string
+   */
+  public static String join(float[] array, String joinString)
+  {
+    StringBuilder buffer = new StringBuilder();
+    String        string;
+    if (array != null)
+    {
+      for (float n : array)
+      {
+        if (buffer.length() > 0) buffer.append(joinString);
+        buffer.append(Float.toString(n));
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** join float array with space
+   * @param strings strings to join
+   * @return string
+   */
+  public static String join(float[] array)
+  {
+    return join(array," ");
+  }
+
+  /** join double array
+   * @param array array to join (convert to string with toString())
+   * @param joinString string used to join two strings
+   * @return string
+   */
+  public static String join(double[] array, String joinString)
+  {
+    StringBuilder buffer = new StringBuilder();
+    String        string;
+    if (array != null)
+    {
+      for (double n : array)
+      {
+        if (buffer.length() > 0) buffer.append(joinString);
+        buffer.append(Double.toString(n));
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** join double array with space
+   * @param strings strings to join
+   * @return string
+   */
+  public static String join(double[] array)
+  {
+    return join(array," ");
+  }
+
   /** split string
    * @param string string to split
    * @param splitChars characters used for splitting
-   * @param spaceChars characters skipped (spaces)
-   * @param quoteChars quote characters
+   * @param spaceChars spaces characters to skip (can be null)
+   * @param quoteChars quote characters (can be null)
+   * @param emptyFlag true to return empty parts, false to skip empty parts
    * @return string array
    */
-  public static String[] split(String string, String splitChars, String spaceChars, String quoteChars)
+  public static String[] split(String string, String splitChars, String spaceChars, String quoteChars, boolean emptyFlag)
   {
     ArrayList<String> stringList = new ArrayList<String>();
+//Dprintf.dprintf("string=%s splitChars=%s spaceChars=%s quoteChars=%s em=%s",string,splitChars,spaceChars,quoteChars,emptyFlag);
 
     char[]        chars  = string.toCharArray();
     int           i      = 0;
@@ -288,10 +440,13 @@ public class StringUtils
     StringBuilder buffer = new StringBuilder();
     while (i < n)
     {
-      // skip spaces
-      while (splitChars.indexOf(chars[i]) >= 0)
+      if (spaceChars != null)
       {
-        i++;
+        // skip spaces
+        while ((i < n) && (spaceChars.indexOf(chars[i]) >= 0))
+        {
+          i++;
+        }
       }
 
       // get next word, respect quotes
@@ -336,10 +491,50 @@ public class StringUtils
       i += 1;
 
       // add to list
-      if (buffer.length() > 0) stringList.add(buffer.toString());
+      if (emptyFlag || (buffer.length() > 0))
+      {
+        stringList.add(buffer.toString());
+      }
     }
 
     return stringList.toArray(new String[0]);
+  }
+
+  /** split string
+   * @param string string to split
+   * @param splitChar character used for splitting
+   * @param spaceChars spaces characters to skip (can be null)
+   * @param quoteChars quote characters (can be null)
+   * @param emptyFlag true to return empty parts, false to skip empty parts
+   * @return string array
+   */
+  public static String[] split(String string, char splitChar, String spaceChars, String quoteChars, boolean emptyFlag)
+  {
+    return split(string,new String(new char[]{splitChar}),spaceChars,quoteChars,emptyFlag);
+  }
+
+  /** split string, discard white spaces between strings
+   * @param string string to split
+   * @param splitChars characters used for splitting
+   * @param quoteChars quote characters
+   * @param emptyFlag TRUE to return empty parts, FALSE to skip empty parts
+   * @return string array
+   */
+  public static String[] split(String string, String splitChars, String quoteChars, boolean emptyFlag)
+  {
+    return split(string,splitChars,WHITE_SPACES,quoteChars,emptyFlag);
+  }
+
+  /** split string, discard white spaces between strings
+   * @param string string to split
+   * @param splitChar characters used for splitting
+   * @param quoteChars quote characters
+   * @param emptyFlag TRUE to return empty parts, FALSE to skip empty parts
+   * @return string array
+   */
+  public static String[] split(String string, char splitChar, String quoteChars, boolean emptyFlag)
+  {
+    return split(string,splitChar,WHITE_SPACES,quoteChars,emptyFlag);
   }
 
   /** split string, discard white spaces between strings
@@ -350,7 +545,40 @@ public class StringUtils
    */
   public static String[] split(String string, String splitChars, String quoteChars)
   {
-    return split(string,splitChars,WHITE_SPACES,quoteChars);
+    return split(string,splitChars,WHITE_SPACES,quoteChars,true);
+  }
+
+  /** split string, discard white spaces between strings
+   * @param string string to split
+   * @param splitChar character used for splitting
+   * @param quoteChars quote characters
+   * @return string array
+   */
+  public static String[] split(String string, char splitChar, String quoteChars)
+  {
+    return split(string,splitChar,WHITE_SPACES,quoteChars,true);
+  }
+
+  /** split string (no quotes)
+   * @param string string to split
+   * @param splitChars characters used for splitting
+   * @param emptyFlag TRUE to return empty parts, FALSE to skip empty parts
+   * @return string array
+   */
+  public static String[] split(String string, String splitChars, boolean emptyFlag)
+  {
+    return split(string,splitChars,null,null,emptyFlag);
+  }
+
+  /** split string (no quotes)
+   * @param string string to split
+   * @param splitChar character used for splitting
+   * @param emptyFlag TRUE to return empty parts, FALSE to skip empty parts
+   * @return string array
+   */
+  public static String[] split(String string, char splitChar, boolean emptyFlag)
+  {
+    return split(string,splitChar,null,null,emptyFlag);
   }
 
   /** split string (no quotes)
@@ -360,7 +588,17 @@ public class StringUtils
    */
   public static String[] split(String string, String splitChars)
   {
-    return split(string,splitChars,WHITE_SPACES,null);
+    return split(string,splitChars,true);
+  }
+
+  /** split string (no quotes)
+   * @param string string to split
+   * @param splitChar character used for splitting
+   * @return string array
+   */
+  public static String[] split(String string, char splitChar)
+  {
+    return split(string,splitChar,true);
   }
 
   /** create n-concationation of string 
@@ -368,9 +606,9 @@ public class StringUtils
    * @param number of concatations
    * @return string+...+string (count times)
    */
-  public static String multiply(String string, int count)
+  public static String repeat(String string, int count)
   {
-    StringBuffer buffer = new StringBuffer();
+    StringBuilder buffer = new StringBuilder();
  
     for (int z = 0; z < count; z++)
     {
@@ -378,6 +616,86 @@ public class StringUtils
     }
  
     return buffer.toString();
+  }
+
+  /** convert glob-pattern into regex-pattern
+   * @param string glob-pattern
+   * @return regex-pattern
+   */
+  public static String globToRegex(String string)
+  {
+    StringBuilder buffer = new StringBuilder();
+
+    int z = 0;
+    while (z < string.length())
+    {
+      switch (string.charAt(z))
+      {
+        case '*':
+          buffer.append(".*");
+          z++;
+          break;
+        case '?':
+          buffer.append('.');
+          z++;
+          break;
+        case '.':
+          buffer.append("\\.");
+          z++;
+          break;
+        case '\\':
+          buffer.append('\\');
+          z++;
+          if (z < string.length())
+          {
+            buffer.append(string.charAt(z));
+            z++;
+          }
+          break;
+        case '[':
+        case ']':
+        case '^':
+        case '$':
+        case '(':
+        case ')':
+        case '{':
+        case '}':
+        case '+':
+        case '|':
+          buffer.append('\\');
+          buffer.append(string.charAt(z));
+          z++;
+          break;
+        default:
+          buffer.append(string.charAt(z));
+          z++;
+          break;
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** parse string with boolean value
+   * @param string string
+   * @return boolean value or false
+   */
+  public static boolean parseBoolean(String string)
+  {
+    final String TRUE_STRINGS[] = 
+    {
+      "1",
+      "true",
+      "yes",
+      "on",
+    };
+
+    for (String trueString : TRUE_STRINGS)
+    {
+      if (string.equalsIgnoreCase(trueString)) return true;
+    }
+
+    return false;
   }
 }
 
