@@ -19,10 +19,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.LinkedHashSet;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
-import java.util.Collection;
 
 // graphics
 import org.eclipse.swt.events.FocusEvent;
