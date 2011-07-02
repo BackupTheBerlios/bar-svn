@@ -2005,8 +2005,12 @@ void initJobOptions(JobOptions *jobOptions)
   jobOptions->owner.groupId             = FILE_DEFAULT_GROUP_ID;
   jobOptions->patternType               = PATTERN_TYPE_GLOB;
   jobOptions->compressAlgorithm         = COMPRESS_ALGORITHM_NONE;
-  jobOptions->cryptType                 = CRYPT_TYPE_NONE;
   jobOptions->cryptAlgorithm            = CRYPT_ALGORITHM_NONE;
+  #ifdef HAVE_GCRYPT
+    jobOptions->cryptType               = CRYPT_TYPE_SYMMETRIC;
+  #else /* not HAVE_GCRYPT */
+    jobOptions->cryptType               = CRYPT_TYPE_NONE;
+  #endif /* HAVE_GCRYPT */
   jobOptions->cryptPasswordMode         = PASSWORD_MODE_DEFAULT;
   jobOptions->volumeSize                = 0LL;
   jobOptions->skipUnreadableFlag        = TRUE;
