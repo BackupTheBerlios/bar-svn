@@ -94,24 +94,79 @@ public class StringUtils
     return escape(string,true);
   }
 
+  /** remove enclosing ' or ", unescape
+   * @param string string to unescape
+   * @param enclosingQuotes true to remove enclosing quotes ' or "
+   * @param quoteChar quote character
+   * @return unescaped string
+   */
+  public static String unescape(String string, boolean enclosingQuotes, char quoteChar)
+  {
+    int          startIndex,endIndex;
+    StringBuffer buffer = new StringBuffer();
+
+    if  (   enclosingQuotes
+         && (   (string.startsWith("\"") && string.endsWith("\""))
+             || (string.startsWith("'") && string.endsWith("'"))
+            )
+        )
+    {
+      startIndex = 1;
+      endIndex   = string.length()-1;
+    }
+    else
+    {
+      startIndex = 0;
+      endIndex   = string.length();
+    }
+
+    int index = startIndex;
+    while (index < endIndex)
+    {
+      char ch = string.charAt(index);
+
+      if      ((ch == '\\') && ((index+1) < endIndex) && string.charAt(index+1) == quoteChar)
+      {
+        buffer.append(quoteChar);
+        index += 2;
+      }
+      else
+      {
+        buffer.append(ch);
+        index += 1;
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /** remove enclosing ' or ", unescape
+   * @param string string to unescape
+   * @param enclosingQuotes true to add enclosing quotes "
+   * @return unescaped string
+   */
+  public static String unescape(String string, boolean enclosingQuotes)
+  {
+    return unescape(string,enclosingQuotes,'"');
+  }
+
+  /** remove enclosing ' or ", unescape
+   * @param string string to unescape
+   * @param quoteChar quote character
+   * @return unescaped string
+   */
+  public static String unescape(String string, char quoteChar)
+  {
+    return unescape(string,true,quoteChar);
+  }
+
   /** remove enclosing ' or "
    * @param string string to unescape
    * @return unescaped string
    */
   public static String unescape(String string)
   {
-    if      (string.startsWith("\"") && string.endsWith("\""))
-    {
-      return string.substring(1,string.length()-1);
-    }
-    else if (string.startsWith("'") && string.endsWith("'"))
-    {
-      return string.substring(1,string.length()-1);
-    }
-    else
-    {
-      return string;
-    }
+    return unescape(string,true);
   }
 
   /** map strings in string
