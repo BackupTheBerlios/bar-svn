@@ -1182,7 +1182,7 @@ class TabJobs
   private WidgetVariable  compressAlgorithm       = new WidgetVariable(new String[]{"none","zip0","zip1","zip2","zip3","zip4","zip5","zip6","zip7","zip8","zip9","bzip1","bzip2","bzip3","bzip4","bzip5","bzip6","bzip7","bzip8","bzip9","lzma1","lzma2","lzma3","lzma4","lzma5","lzma6","lzma7","lzma8","lzma9"});
   private WidgetVariable  compressMinSize         = new WidgetVariable(0);
   private WidgetVariable  cryptAlgorithm          = new WidgetVariable(new String[]{"none","3DES","CAST5","BLOWFISH","AES128","AES192","AES256","TWOFISH128","TWOFISH256"});
-  private WidgetVariable  cryptType               = new WidgetVariable(new String[]{"symmetric","asymmetric"});
+  private WidgetVariable  cryptType               = new WidgetVariable(new String[]{"none","symmetric","asymmetric"});
   private WidgetVariable  cryptPublicKeyFileName  = new WidgetVariable("");
   private WidgetVariable  cryptPasswordMode       = new WidgetVariable(new String[]{"default","ask","config"});
   private WidgetVariable  cryptPassword           = new WidgetVariable("");
@@ -2468,13 +2468,13 @@ class TabJobs
           {
             public void modified(Control control, WidgetVariable cryptType)
             {
-              ((Button)control).setSelection(cryptType.equals("symmetric"));
+              ((Button)control).setSelection(cryptType.equals("none") || cryptType.equals("symmetric"));
             }
           });
           button.setToolTipText("Use symmetric encryption with pass-phrase.");
 
           button = Widgets.newRadio(composite,"asymmetric");
-          button.setSelection(false);          
+          button.setSelection(false);
           Widgets.layout(button,0,1,TableLayoutData.W);
           Widgets.addModifyListener(new WidgetModifyListener(button,cryptAlgorithm)
           {
@@ -2618,7 +2618,7 @@ class TabJobs
             {
               Widgets.setEnabled(control,
                                     !variables[0].equals("none")
-                                 && variables[1].equals("symmetric")
+                                 && (variables[1].equals("none") || variables[1].equals("symmetric"))
                                 );
             }
           });
@@ -2651,7 +2651,7 @@ class TabJobs
             {
               Widgets.setEnabled(control,
                                     !variables[0].equals("none")
-                                 && variables[1].equals("symmetric")
+                                 && (variables[1].equals("none") || variables[1].equals("symmetric"))
                                 );
             }
           });
@@ -2684,7 +2684,7 @@ class TabJobs
             {
               Widgets.setEnabled(control,
                                     !variables[0].equals("none")
-                                 && variables[1].equals("symmetric")
+                                 && (variables[1].equals("none") || variables[1].equals("symmetric"))
                                 );
             }
           });
@@ -2717,7 +2717,7 @@ class TabJobs
             {
               Widgets.setEnabled(control,
                                     !variables[0].equals("none")
-                                 && variables[1].equals("symmetric")
+                                 && (variables[1].equals("none") || variables[1].equals("symmetric"))
                                  && variables[2].equals("config")
                                 );
             }
@@ -2779,7 +2779,7 @@ class TabJobs
             {
               Widgets.setEnabled(control,
                                     !variables[0].equals("none")
-                                 && variables[1].equals("symmetric")
+                                 && (variables[1].equals("none") || variables[1].equals("symmetric"))
                                  && variables[2].equals("config")
                                 );
             }
@@ -4618,7 +4618,7 @@ class TabJobs
       archivePartSizeFlag.set(archivePartSize.getLong() > 0);
       compressAlgorithm.set(BARServer.getStringOption(selectedJobId,"compress-algorithm"));
       cryptAlgorithm.set(BARServer.getStringOption(selectedJobId,"crypt-algorithm"));
-      cryptType.set(BARServer.getStringOption(selectedJobId,"crypt-type"));
+      cryptType.set(BARServer.getStringOption(selectedJobId,"crypt-type"));      
       cryptPublicKeyFileName.set(BARServer.getStringOption(selectedJobId,"crypt-public-key"));
       cryptPasswordMode.set(BARServer.getStringOption(selectedJobId,"crypt-password-mode"));
       cryptPassword.set(BARServer.getStringOption(selectedJobId,"crypt-password"));
@@ -4694,10 +4694,10 @@ class TabJobs
            <lastExecutedDateTime>
            <estimatedRestTime>
         */
-  //System.err.println("BARControl.java"+", "+1357+": "+line);
+//Dprintf.dprintf("line=%s",line);
         if (StringParser.parse(line,"%d %S %S %s %ld %S %S %S %S %ld %ld",data,StringParser.QUOTE_CHARS))
         {
-  //System.err.println("BARControl.java"+", "+747+": "+data[0]+"--"+data[5]+"--"+data[6]);
+//Dprintf.dprintf("%s--%s--%s",data[0],data[5],data[6]);
           // get data
           int    id   = (Integer)data[0];
           String name = (String )data[1];
@@ -4791,11 +4791,15 @@ throw new Error("NYI");
             else
             {
               Dialogs.error(shell,"Cannot create new job:\n\n"+result[0]);
+              widgetJobName.forceFocus();
+              return;
             }
           }
           catch (CommunicationError error)
           {
             Dialogs.error(shell,"Cannot create new job:\n\n"+error.getMessage());
+            widgetJobName.forceFocus();
+            return;
           }
         }
         widget.getShell().close();
