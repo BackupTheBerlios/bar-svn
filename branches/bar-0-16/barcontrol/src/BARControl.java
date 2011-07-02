@@ -31,6 +31,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 // graphics
 import org.eclipse.swt.custom.SashForm;
@@ -218,6 +221,8 @@ class ArchiveNameParts
    */
   public ArchiveNameParts(String archiveName)
   {
+    Matcher matcher;
+
     type          = StorageTypes.NONE;
     loginName     = "";
     loginPassword = "";
@@ -232,25 +237,38 @@ class ArchiveNameParts
       type = StorageTypes.FTP;
 
       String specifier = archiveName.substring(6);
-      Object[] data = new Object[2];
-      int index;
-      if      ((index = StringParser.parse(specifier,0,"%s:%s@",data,StringParser.QUOTE_CHARS)) >= 0)
+//Dprintf.dprintf("specifier=%s",specifier);
+      if      ((matcher = Pattern.compile("^([^:]*?):(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)/(.*)$").matcher(specifier)).matches())
       {
-        loginName     = (String)data[0];
-        loginPassword = (String)data[1];
+        loginName     = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        loginPassword = matcher.group(2);
+        hostName      = matcher.group(4);
+        hostPort      = Integer.parseInt(matcher.group(5));
+        fileName      = matcher.group(6);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
-      else if ((index = StringParser.parse(specifier,0,"%s@",data,StringParser.QUOTE_CHARS)) >= 0)
+      else if ((matcher = Pattern.compile("^([^:]*?):(([^@]|\\@)*?)@([^@/]*?)/(.*)$").matcher(specifier)).matches())
       {
-        loginName = (String)data[0];
+        loginName     = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        loginPassword = matcher.group(2);
+        hostName      = matcher.group(4);
+        fileName      = matcher.group(5);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
-      else
+      else if ((matcher = Pattern.compile("^(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)/(.*)$").matcher(specifier)).matches())
       {
-        index = 0;
+        loginName = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        hostName  = matcher.group(3);
+        hostPort  = Integer.parseInt(matcher.group(4));
+        fileName  = matcher.group(5);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
-      if (StringParser.parse(specifier.substring(index),"%s/%s",data,StringParser.QUOTE_CHARS))
+      else if ((matcher = Pattern.compile("^(([^@]|\\@)*?)@([^@/]*?)/(.*)$").matcher(specifier)).matches())
       {
-        hostName = (String)data[0];
-        fileName = (String)data[1];
+        loginName = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        hostName  = matcher.group(3);
+        fileName  = matcher.group(4);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
       else
       {
@@ -263,26 +281,21 @@ class ArchiveNameParts
       type = StorageTypes.SCP;
 
       String specifier = archiveName.substring(6);
-      Object[] data = new Object[3];
-      int index;
-      if ((index = StringParser.parse(specifier,0,"%s@",data,StringParser.QUOTE_CHARS)) >= 0)
+//Dprintf.dprintf("specifier=%s",specifier);
+      if      ((matcher = Pattern.compile("^(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)/(.*)$").matcher(specifier)).matches())
       {
-        loginName = (String)data[0];
+        loginName = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        hostName  = matcher.group(3);
+        hostPort  = Integer.parseInt(matcher.group(4));
+        fileName  = matcher.group(5);
+//Dprintf.dprintf("%s: loginName=%s hostName=%s hostPort=%d fileName=%s",matcher.group(0),loginName,hostName,hostPort,fileName);
       }
-      else
+      else if ((matcher = Pattern.compile("^(([^@]|\\@)*?)@([^@/]*?)/(.*)$").matcher(specifier)).matches())
       {
-        index = 0;
-      }
-      if      (StringParser.parse(specifier.substring(index),"%s:%d/%s",data,StringParser.QUOTE_CHARS))
-      {
-        hostName = (String)data[0];
-        hostPort = (Integer)data[1];
-        fileName = (String)data[2];
-      }
-      else if (StringParser.parse(specifier.substring(index),"%s/%s",data,StringParser.QUOTE_CHARS))
-      {
-        hostName = (String)data[0];
-        fileName = (String)data[1];
+        loginName = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        hostName  = matcher.group(3);
+        fileName  = matcher.group(4);
+//Dprintf.dprintf("%s: loginName=%s hostName=%s hostPort=%d fileName=%s",matcher.group(0),loginName,hostName,hostPort,fileName);
       }
       else
       {
@@ -295,26 +308,38 @@ class ArchiveNameParts
       type = StorageTypes.SFTP;
 
       String specifier = archiveName.substring(7);
-      Object[] data = new Object[3];
-      int index;
-      if ((index = StringParser.parse(specifier,0,"%s@",data,StringParser.QUOTE_CHARS)) >= 0)
+//Dprintf.dprintf("specifier=%s",specifier);
+      if      ((matcher = Pattern.compile("^([^:]*?):(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)/(.*)$").matcher(specifier)).matches())
       {
-        loginName = (String)data[0];
+        loginName     = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        loginPassword = matcher.group(2);
+        hostName      = matcher.group(4);
+        hostPort      = Integer.parseInt(matcher.group(5));
+        fileName      = matcher.group(6);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
-      else
+      else if ((matcher = Pattern.compile("^([^:]*?):(([^@]|\\@)*?)@([^@/]*?)/(.*)$").matcher(specifier)).matches())
       {
-        index = 0;
+        loginName     = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        loginPassword = matcher.group(2);
+        hostName      = matcher.group(4);
+        fileName      = matcher.group(5);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
-      if      (StringParser.parse(specifier.substring(index),"%s:%d/%s",data,StringParser.QUOTE_CHARS))
+      else if ((matcher = Pattern.compile("^(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)/(.*)$").matcher(specifier)).matches())
       {
-        hostName = (String)data[0];
-        hostPort = (Integer)data[1];
-        fileName = (String)data[2];
+        loginName = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        hostName  = matcher.group(3);
+        hostPort  = Integer.parseInt(matcher.group(4));
+        fileName  = matcher.group(5);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
-      else if (StringParser.parse(specifier.substring(index),"%s/%s",data,StringParser.QUOTE_CHARS))
+      else if ((matcher = Pattern.compile("^(([^@]|\\@)*?)@([^@/]*?)/(.*)$").matcher(specifier)).matches())
       {
-        hostName = (String)data[0];
-        fileName = (String)data[1];
+        loginName = StringUtils.map(matcher.group(1),new String[]{"\\@"},new String[]{"@"});
+        hostName  = matcher.group(3);
+        fileName  = matcher.group(4);
+//Dprintf.dprintf("%s: loginName=%s loginPassword=%s hostName=%s fileName=%s",matcher.group(0),loginName,loginPassword,hostName,fileName);
       }
       else
       {
@@ -327,15 +352,18 @@ class ArchiveNameParts
       type = StorageTypes.CD;
 
       String specifier = archiveName.substring(5);
+//Dprintf.dprintf("specifier=%s",specifier);
       Object[] data = new Object[2];
-      if (StringParser.parse(specifier,"%S:%S",data,StringParser.QUOTE_CHARS))
+      if      ((matcher = Pattern.compile("^([^:]*?):(.*)$").matcher(specifier)).matches())
       {
-        deviceName = (String)data[0];
-        fileName   = (String)data[1];
+        deviceName = matcher.group(1);
+        fileName   = matcher.group(2);
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
       else
       {
         fileName = specifier;
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
     }
     else if (archiveName.startsWith("dvd://"))
@@ -344,15 +372,16 @@ class ArchiveNameParts
       type = StorageTypes.DVD;
 
       String specifier = archiveName.substring(6);
-      Object[] data = new Object[2];
-      if (StringParser.parse(specifier,"%S:%S",data,StringParser.QUOTE_CHARS))
+      if      ((matcher = Pattern.compile("^([^:]*?):(.*)$").matcher(specifier)).matches())
       {
-        deviceName = (String)data[0];
-        fileName   = (String)data[1];
+        deviceName = matcher.group(1);
+        fileName   = matcher.group(2);
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
       else
       {
         fileName = specifier;
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
     }
     else if (archiveName.startsWith("bd://"))
@@ -361,32 +390,36 @@ class ArchiveNameParts
       type = StorageTypes.BD;
 
       String specifier = archiveName.substring(5);
-      Object[] data = new Object[2];
-      if (StringParser.parse(specifier,"%S:%S",data,StringParser.QUOTE_CHARS))
+//Dprintf.dprintf("specifier=%s",specifier);
+      if      ((matcher = Pattern.compile("^([^:]*?):(.*)$").matcher(specifier)).matches())
       {
-        deviceName = (String)data[0];
-        fileName   = (String)data[1];
+        deviceName = matcher.group(1);
+        fileName   = matcher.group(2);
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
       else
       {
         fileName = specifier;
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
     }
     else if (archiveName.startsWith("device://"))
     {
-      // device
+      // device0
       type = StorageTypes.DEVICE;
 
       String specifier = archiveName.substring(9);
-      Object[] data = new Object[2];
-      if (StringParser.parse(specifier,"%S:%S",data,StringParser.QUOTE_CHARS))
+//Dprintf.dprintf("specifier=%s",specifier);
+      if      ((matcher = Pattern.compile("^([^:]*?):(.*)$").matcher(specifier)).matches())
       {
-        deviceName = (String)data[0];
-        fileName   = (String)data[1];
+        deviceName = matcher.group(1);
+        fileName   = matcher.group(2);
+//Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
       else
       {
         fileName = specifier;
+Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,fileName);
       }
     }
     else if (archiveName.startsWith("file://"))
@@ -424,7 +457,7 @@ class ArchiveNameParts
         {
           if (!loginName.equals("") || !loginPassword.equals(""))
           {
-            if (!loginName.equals("")) archiveNameBuffer.append(loginName);
+            if (!loginName.equals("")) archiveNameBuffer.append(StringUtils.map(loginName,new String[]{"@"},new String[]{"\\@"}));
             if (!loginPassword.equals("")) { archiveNameBuffer.append(':'); archiveNameBuffer.append(loginPassword); }
             archiveNameBuffer.append('@');
           }
@@ -436,7 +469,7 @@ class ArchiveNameParts
         archiveNameBuffer.append("scp://");
         if (!loginName.equals("") || !hostName.equals(""))
         {
-          if (!loginName.equals("")) { archiveNameBuffer.append(loginName); archiveNameBuffer.append('@'); }
+          if (!loginName.equals("")) { archiveNameBuffer.append(StringUtils.map(loginName,new String[]{"@"},new String[]{"\\@"})); archiveNameBuffer.append('@'); }
           if (!hostName.equals("")) { archiveNameBuffer.append(hostName); }
           if (hostPort > 0) { archiveNameBuffer.append(':'); archiveNameBuffer.append(hostPort); }
           archiveNameBuffer.append('/');
@@ -446,7 +479,7 @@ class ArchiveNameParts
         archiveNameBuffer.append("sftp://");
         if (!loginName.equals("") || !hostName.equals(""))
         {
-          if (!loginName.equals("")) { archiveNameBuffer.append(loginName); archiveNameBuffer.append('@'); }
+          if (!loginName.equals("")) { archiveNameBuffer.append(StringUtils.map(loginName,new String[]{"@"},new String[]{"\\@"})); archiveNameBuffer.append('@'); }
           if (!hostName.equals("")) { archiveNameBuffer.append(hostName); }
           if (hostPort > 0) { archiveNameBuffer.append(':'); archiveNameBuffer.append(hostPort); }
           archiveNameBuffer.append('/');
