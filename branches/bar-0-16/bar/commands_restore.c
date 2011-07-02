@@ -266,7 +266,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
     }
 
     StringList_getFirst(archiveFileNameList,archiveFileName);
-    printInfo(0,"Restore archive '%s':\n",String_cString(archiveFileName));
+    printInfo(0,"Restore from archive '%s':\n",String_cString(archiveFileName));
 
     /* open archive */
     error = Archive_open(&archiveInfo,
