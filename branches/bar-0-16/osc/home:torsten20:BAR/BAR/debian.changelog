@@ -1,3 +1,22 @@
+bar (0.16e) stable; urgency=low
+  * create sub-directories when storing to file system or
+    ftp server
+  * fix creating directories: to not set parent directory
+    permissions if permissions are already set
+  * barcontrol: do not close new job dialog on error
+  * barcontrol: fixed setting crypt type radio buttons with
+    default value
+  * save job file immediately after creating a new one
+  * fix lost error state when writing file to a server
+  * improved FTP transmission, added patch to set timeout
+    for receiving data in FTPLib
+  * fixed possible inifite loop when executing external
+    command, e. g. sending the log file via log-post-command
+  * fixed error in pre-defined log-post-command in bar.cfg
+  * fix losing failure error
+
+ -- Torsten Rupp <torsten.rupp.net>  Sun, 03 Jul 2011 00:00:00 +0200
+
 bar (0.16d) stable; urgency=low
   * barcontrol: fix parsing of ftp/scp/sftp archive names
   * fix parsing of ftp archive names
