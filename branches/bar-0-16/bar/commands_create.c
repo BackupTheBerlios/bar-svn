@@ -2213,6 +2213,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
 
   byte                       *buffer;
   String                     storageName;
+  String                     printableStorageName;
   bool                       abortFlag;
   StorageMsg                 storageMsg;
   Errors                     error;
@@ -2234,7 +2235,8 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
   {
     HALT_INSUFFICIENT_MEMORY();
   }
-  storageName = String_new();
+  storageName          = String_new();
+  printableStorageName = String_new();
 
   /* initial pre-processing */
   if ((createInfo->requestedAbortFlag == NULL) || !(*createInfo->requestedAbortFlag))
@@ -2320,9 +2322,10 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
                               &createInfo->storageFileHandle,
                               storageMsg.destinationFileName
                              );
+        Storage_getPrintableName(printableStorageName,storageName);
 
         /* open file to store */
-        printInfo(0,"Store '%s' to '%s'...",String_cString(storageMsg.fileName),String_cString(storageName));
+        printInfo(0,"Store '%s' to '%s'...",String_cString(storageMsg.fileName),String_cString(printableStorageName));
         error = File_open(&fileHandle,storageMsg.fileName,FILE_OPENMODE_READ);
         if (error != ERROR_NONE)
         {
@@ -2370,7 +2373,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
               /* output error message, store error */
               printInfo(0,"FAIL!\n");
               printError("Cannot store file '%s' (error: %s)\n",
-                         String_cString(storageName),
+                         String_cString(printableStorageName),
                          Errors_getText(error)
                         );
 
@@ -2386,7 +2389,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
           }
 
           /* update status info, check for abort */
-          String_set(createInfo->statusInfo.storageName,storageName);
+          String_set(createInfo->statusInfo.storageName,printableStorageName);
           abortFlag |= !updateStatusInfo(createInfo);
 
           /* store data */
@@ -2405,7 +2408,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
               /* output error message, store error */
               printInfo(0,"FAIL!\n");
               printError("Cannot read file '%s' (error: %s)!\n",
-                         String_cString(storageName),
+                         String_cString(printableStorageName),
                          Errors_getText(error)
                         );
 
@@ -2421,7 +2424,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
                 /* output error message, store error */
                 printInfo(0,"FAIL!\n");
                 printError("Cannot write file '%s' (error: %s)!\n",
-                           String_cString(storageName),
+                           String_cString(printableStorageName),
                            Errors_getText(error)
                           );
 
@@ -2471,7 +2474,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
         if (createInfo->failError == ERROR_NONE)
         {
           printInfo(0,"ok\n");
-          logMessage(LOG_TYPE_STORAGE,"stored '%s'\n",String_cString(storageName));
+          logMessage(LOG_TYPE_STORAGE,"stored '%s'\n",String_cString(printableStorageName));
         }
 
         /* update database index and set state */
@@ -2676,6 +2679,7 @@ LOCAL void storageThreadCode(CreateInfo *createInfo)
   }
 
   /* free resoures */
+  String_delete(printableStorageName);
   String_delete(storageName);
   free(buffer);
 
@@ -3779,6 +3783,7 @@ Errors Command_create(const char                      *storageName,
                       bool                            *requestedAbortFlag
                      )
 {
+  String           printableStorageName;
   CreateInfo       createInfo;
   ArchiveInfo      archiveInfo;
   byte             *buffer;
@@ -3878,6 +3883,9 @@ Errors Command_create(const char                      *storageName,
     HALT_FATAL_ERROR("Cannot initialise storage semaphore!");
   }
 
+  /* get printable storage name */
+  printableStorageName = Storage_getPrintableName(String_new(),createInfo.storageName);
+
   /* init storage */
   error = Storage_init(&createInfo.storageFileHandle,
                        createInfo.storageName,
@@ -3891,9 +3899,10 @@ Errors Command_create(const char                      *storageName,
   if (error != ERROR_NONE)
   {
     printError("Cannot initialize storage '%s' (error: %s)\n",
-               storageName,
+               String_cString(printableStorageName),
                Errors_getText(error)
               );
+    String_delete(printableStorageName);
     Semaphore_done(&createInfo.storageSemaphore);
     MsgQueue_done(&createInfo.storageMsgQueue,NULL,NULL);
     MsgQueue_done(&createInfo.entryMsgQueue,(MsgQueueMsgFreeFunction)freeEntryMsg,NULL);
@@ -3954,6 +3963,7 @@ Errors Command_create(const char                      *storageName,
           Storage_indexDiscard(&createInfo.storageIndexHandle);
         }
 #endif /* 0 */
+        String_delete(printableStorageName);
         Semaphore_done(&createInfo.storageSemaphore);
         MsgQueue_done(&createInfo.storageMsgQueue,NULL,NULL);
         MsgQueue_done(&createInfo.entryMsgQueue,(MsgQueueMsgFreeFunction)freeEntryMsg,NULL);
@@ -3990,7 +4000,7 @@ Errors Command_create(const char                      *storageName,
   if (error != ERROR_NONE)
   {
     printError("Cannot create archive file '%s' (error: %s)\n",
-               String_cString(createInfo.storageName),
+               String_cString(printableStorageName),
                Errors_getText(error)
               );
     if (useIncrementalFileInfoFlag)
@@ -4006,6 +4016,7 @@ Errors Command_create(const char                      *storageName,
       Storage_closeIndex(&createInfo.storageIndexHandle);
     }
 #endif /* 0 */
+    String_delete(printableStorageName);
     Semaphore_done(&createInfo.storageSemaphore);
     MsgQueue_done(&createInfo.storageMsgQueue,NULL,NULL);
     MsgQueue_done(&createInfo.entryMsgQueue,(MsgQueueMsgFreeFunction)freeEntryMsg,NULL);
@@ -4237,6 +4248,7 @@ Errors Command_create(const char                      *storageName,
                 );
       if (!incrementalFileInfoExistFlag) File_delete(incrementalListFileName,FALSE);
       String_delete(incrementalListFileName);
+      String_delete(printableStorageName);
       Semaphore_done(&createInfo.storageSemaphore);
       MsgQueue_done(&createInfo.storageMsgQueue,NULL,NULL);
       MsgQueue_done(&createInfo.entryMsgQueue,(MsgQueueMsgFreeFunction)freeEntryMsg,NULL);
@@ -4272,6 +4284,7 @@ Errors Command_create(const char                      *storageName,
   Thread_done(&createInfo.collectorSumThread);
   Thread_done(&createInfo.collectorThread);
   Thread_done(&createInfo.storageThread);
+  String_delete(printableStorageName);
   Semaphore_done(&createInfo.storageSemaphore);
   MsgQueue_done(&createInfo.storageMsgQueue,(MsgQueueMsgFreeFunction)freeStorageMsg,NULL);
   MsgQueue_done(&createInfo.entryMsgQueue,(MsgQueueMsgFreeFunction)freeEntryMsg,NULL);
