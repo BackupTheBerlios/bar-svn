@@ -754,7 +754,7 @@ LOCAL JobNode *newJob(JobTypes jobType, const String fileName)
 *          name     - name of job
 * Output : -
 * Return : job node
-* Notes  : -
+* Notes  : -copyJ
 \***********************************************************************/
 
 LOCAL JobNode *copyJob(JobNode      *jobNode,
@@ -1414,6 +1414,15 @@ LOCAL Errors updateJob(JobNode *jobNode)
     String_delete(line);
     StringList_done(&jobFileList);
     return error;
+  }
+  error = File_setPermission(jobNode->fileName,FILE_PERMISSION_USER_READ|FILE_PERMISSION_USER_WRITE);
+  if (error != ERROR_NONE)
+  {
+    logMessage(LOG_TYPE_WARNING,
+               "cannot set file permissions of job '%s' (error: %s)\n",
+               String_cString(jobNode->fileName),
+               Errors_getText(error)
+              );
   }
 
   /* save time modified */
@@ -3915,6 +3924,7 @@ LOCAL void serverCommand_jobNew(ClientInfo *clientInfo, uint id, const String ar
       return;
     }
     File_close(&fileHandle);
+    (void)File_setPermission(fileName,FILE_PERMISSION_USER_READ|FILE_PERMISSION_USER_WRITE);
 
     /* create new job */
     jobNode = newJob(JOB_TYPE_CREATE,fileName);
@@ -4014,6 +4024,7 @@ LOCAL void serverCommand_jobCopy(ClientInfo *clientInfo, uint id, const String a
       return;
     }
     File_close(&fileHandle);
+    (void)File_setPermission(fileName,FILE_PERMISSION_USER_READ|FILE_PERMISSION_USER_WRITE);
 
     /* copy job */
     newJobNode = copyJob(jobNode,fileName);
@@ -4027,6 +4038,9 @@ LOCAL void serverCommand_jobCopy(ClientInfo *clientInfo, uint id, const String a
 
     /* free resources */
     File_deleteFileName(fileName);
+
+    /* write job to file */
+    updateJob(jobNode);
 
     /* add new job to list */
     List_append(&jobList,newJobNode);
@@ -6190,16 +6204,17 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
   DatabaseQueryHandle databaseQueryHandle;
   ulong               n;
   DatabaseId          databaseId;
-  String              name;
+  String              storageName;
   uint64              dateTime;
   uint64              size;
   uint                state;
   String              errorMessage;
+  String              printableStorageName;
 
   assert(clientInfo != NULL);
   assert(arguments != NULL);
 
-  /* get filter pattern */
+  /* get max. count, status pattern, filter pattern, */
   if (argumentCount < 1)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected max. number of entries to send");
@@ -6222,8 +6237,9 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
   if (indexDatabaseHandle != NULL)
   {
     /* initialise variables */
-    name         = String_new();
-    errorMessage = String_new();
+    storageName          = String_new();
+    errorMessage         = String_new();
+    printableStorageName = String_new();
 
     /* list index */
     error = Index_initListStorage(&databaseQueryHandle,
@@ -6232,8 +6248,9 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
                                  );
     if (error != ERROR_NONE)
     {
+      String_delete(printableStorageName);
       String_delete(errorMessage);
-      String_delete(name);
+      String_delete(storageName);
 
       sendClientResult(clientInfo,id,TRUE,ERROR_DATABASE,"%s",Errors_getText(error));
       return;
@@ -6242,7 +6259,7 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
     while (   ((maxCount == 0L) || (n < maxCount))
            && Index_getNextStorage(&databaseQueryHandle,
                                    &databaseId,
-                                   name,
+                                   storageName,
                                    &dateTime,
                                    &size,
                                    &state,
@@ -6255,12 +6272,16 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
       UNUSED_VARIABLE(databaseId);
 
       assert((0 <= state) && (state < SIZE_OF_ARRAY(INDEX_STATE_STRINGS)));
+
+      Storage_getPrintableName(printableStorageName,storageName);
+
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
-                       "%llu %llu %'s %'S %'S",
+                       "%llu %llu %llu %'s %'S %'S",
+                       databaseId,
                        dateTime,
                        size,
                        INDEX_STATE_STRINGS[state],
-                       name,
+                       printableStorageName,
                        errorMessage
                       );
       n++;
@@ -6268,8 +6289,9 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
     Index_doneList(&databaseQueryHandle);
 
     /* free resources */
+    String_delete(printableStorageName);
     String_delete(errorMessage);
-    String_delete(name);
+    String_delete(storageName);
 
     sendClientResult(clientInfo,id,TRUE,ERROR_NONE,"");
   }
@@ -6348,39 +6370,25 @@ LOCAL void serverCommand_indexStorageAdd(ClientInfo *clientInfo, uint id, const 
 
 LOCAL void serverCommand_indexStorageRemove(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  String name;
-  Errors error;
-  int64  storageId;
+  DatabaseId databaseId;
+  Errors     error;
 
   assert(clientInfo != NULL);
   assert(arguments != NULL);
 
-  /* get archive name */
+  /* get id */
   if (argumentCount < 1)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected name");
     return;
   }
-  name = arguments[0];
+  databaseId = (DatabaseId)String_toInteger64(arguments[0],0,NULL,NULL,0);
 
   if (indexDatabaseHandle != NULL)
   {
-    /* find index */
-    if (!Index_findByName(indexDatabaseHandle,
-                          name,
-                          &storageId,
-                          NULL,
-                          NULL
-                         )
-       )
-    {
-      sendClientResult(clientInfo,id,TRUE,ERROR_DATABASE_INDEX_NOT_FOUND,"cannot find index to remove");
-      return;
-    }
-
     /* delete index */
     error = Index_delete(indexDatabaseHandle,
-                         storageId
+                         databaseId
                         );
     if (error != ERROR_NONE)
     {
