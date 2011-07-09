@@ -143,6 +143,7 @@ class TabRestore
    */
   class StorageData
   {
+    long        id;
     String      name;
     long        size;
     long        datetime;
@@ -152,6 +153,7 @@ class TabRestore
     boolean     tagged;
 
     /** create storage data
+     * @param id database id
      * @param name name
      * @param size size [bytes]
      * @param datetime date/time (timestamp)
@@ -159,8 +161,9 @@ class TabRestore
      * @param state storage state
      * @param errorMessage error message text
      */
-    StorageData(String name, long size, long datetime, String title, IndexStates state, String errorMessage)
+    StorageData(long id, String name, long size, long datetime, String title, IndexStates state, String errorMessage)
     {
+      this.id           = id;
       this.name         = name;
       this.size         = size;
       this.datetime     = datetime;
@@ -171,22 +174,24 @@ class TabRestore
     }
 
     /** create storage data
+     * @param id database id
      * @param name name
      * @param datetime date/time (timestamp)
      * @param title title to show
      */
-    StorageData(String name, long datetime, String title)
+    StorageData(long id, String name, long datetime, String title)
     {
-      this(name,0,datetime,title,IndexStates.OK,null);
+      this(id,name,0,datetime,title,IndexStates.OK,null);
     }
 
     /** create storage data
+     * @param id database id
      * @param name name
      * @param title title to show
      */
-    StorageData(String name, String title)
+    StorageData(long id, String name, String title)
     {
-      this(name,0,title);
+      this(id,name,0,title);
     }
 
     /** check if tagged
@@ -216,7 +221,7 @@ class TabRestore
 
   /** storage data map
    */
-  class StorageDataMap extends HashMap<String,StorageData>
+  class StorageDataMap extends HashMap<Long,StorageData>
   {
     /** remove not tagged entries
      */
@@ -235,7 +240,7 @@ class TabRestore
      */
     public void put(StorageData storageData)
     {
-      put(storageData.name,storageData);
+      put(storageData.id,storageData);
     }
   }
 
@@ -347,12 +352,12 @@ class TabRestore
         }
 
         // get names
-        HashSet<String> storageNameHashSet = new HashSet<String>();
+        HashSet<Long> storageNameHashSet = new HashSet<Long>();
         synchronized(storageDataMap)
         {
-          for (String storageName : storageDataMap.keySet())
+          for (StorageData storageData : storageDataMap.values())
           {
-            storageNameHashSet.add(storageName);
+            storageNameHashSet.add(storageData.id);
           }
         }
 
@@ -363,32 +368,34 @@ class TabRestore
                                  storageMaxCount+" "+
                                  "* "+
                                  (((storagePattern != null) && !storagePattern.equals("")) ? StringUtils.escape(storagePattern) : "*");
-  //Dprintf.dprintf("commandString=%s",commandString);
+//Dprintf.dprintf("commandString=%s",commandString);
           Command command = BARServer.runCommand(commandString);
 
           // read results, update/add data
           String line;
-          Object data[] = new Object[5];
+          Object data[] = new Object[6];
           while (!command.endOfData())
           {
             line = command.getNextResult(5*1000);
             if (line != null)
             {
-              if      (StringParser.parse(line,"%ld %ld %S %S %S",data,StringParser.QUOTE_CHARS))
+              if      (StringParser.parse(line,"%ld %ld %ld %S %S %S",data,StringParser.QUOTE_CHARS))
               {
                 /* get data
                    format:
+                     id
                      date/time
                      size
                      state
                      storage name
                      error message
                 */
-                long        datetime     = (Long)data[0];
-                long        size         = (Long)data[1];
-                IndexStates state        = Enum.valueOf(IndexStates.class,(String)data[2]);
-                String      storageName  = (String)data[3];
-                String      errorMessage = (String)data[4];
+                long        id           = (Long)data[0];
+                long        datetime     = (Long)data[1];
+                long        size         = (Long)data[2];
+                IndexStates state        = Enum.valueOf(IndexStates.class,(String)data[3]);
+                String      storageName  = (String)data[4];
+                String      errorMessage = (String)data[5];
 
                 synchronized(storageDataMap)
                 {
@@ -402,12 +409,12 @@ class TabRestore
                   }
                   else
                   {
-                    storageData = new StorageData(storageName,size,datetime,new File(storageName).getName(),state,errorMessage);
+                    storageData = new StorageData(id,storageName,size,datetime,new File(storageName).getName(),state,errorMessage);
                     storageDataMap.put(storageData);
                   }
                 }
 
-                storageNameHashSet.remove(storageName);
+                storageNameHashSet.remove(id);
               }
 //else {
 //Dprintf.dprintf("xxxxxxxxxxx "+line);
@@ -423,12 +430,12 @@ class TabRestore
         // remove not existing entries, but keep marked entries
         synchronized(storageDataMap)
         {
-          for (String storageName : storageNameHashSet)
+          for (Long id : storageNameHashSet)
           {
-            StorageData storageData = storageDataMap.get(storageName);
+            StorageData storageData = storageDataMap.get(id);
             if (!storageData.isTagged())
             {
-              storageDataMap.remove(storageName);
+              storageDataMap.remove(id);
             }
           }
         }
@@ -2525,7 +2532,7 @@ class TabRestore
           for (StorageData storageData : selectedStorageHashSet)
           {
             String[] result = new String[1];
-            int errorCode = BARServer.executeCommand("INDEX_STORAGE_REMOVE "+StringUtils.escape(storageData.name),result);
+            int errorCode = BARServer.executeCommand("INDEX_STORAGE_REMOVE "+storageData.id,result);
             if (errorCode == Errors.NONE)
             {
               synchronized(storageDataMap)
