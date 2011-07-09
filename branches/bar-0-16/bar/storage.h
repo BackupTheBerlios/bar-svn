@@ -394,7 +394,7 @@ void Storage_doneAll(void);
 * Output : -
 * Return : storage type
 * Notes  : storage types supported:
-*            ftp://[<user name>[:<password>]@]<host name>/<file name>
+*            ftp://[<user name>[:<password>]@]<host name>[:<port>]/<file name>
 *            ssh://[<user name>@]<host name>[:<port>]/<file name>
 *            scp://[<user name>@]<host name>[:<port>]/<file name>
 *            sftp://[<user name>@]<host name>[:<port>]/<file name>
@@ -419,7 +419,7 @@ StorageTypes Storage_getType(const String storageName);
 *          fileName         - storage file name (can be NULL)
 * Return : storage type
 * Notes  : storage types supported:
-*            ftp://[<user name>[:<password>]@]<host name>/<file name>
+*            ftp://[<user name>[:<password>]@]<host name>[:<port>]/<file name>
 *            ssh://[<user name>@]<host name>[:<port>]/<file name>
 *            scp://[<user name>@]<host name>[:<port>]/<file name>
 *            sftp://[<user name>@]<host name>[:<port>]/<file name>
@@ -456,6 +456,19 @@ String Storage_getName(String       storageName,
                        const String storageSpecifier,
                        const String fileName
                       );
+
+/***********************************************************************\
+* Name   : Storage_getPrintableName
+* Purpose: get printable storage name (without password)
+* Input  : storageName      - storage name variable
+* Output : string - string
+* Return : string
+* Notes  : -
+\***********************************************************************/
+
+String Storage_getPrintableName(String string,
+                                String storageName
+                               );
 
 /***********************************************************************\
 * Name   : Storage_parseFTPSpecifier
