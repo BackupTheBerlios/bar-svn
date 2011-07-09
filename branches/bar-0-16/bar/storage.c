@@ -858,9 +858,9 @@ StorageTypes Storage_parseName(const String storageName,
   if      (String_startsWithCString(storageName,"ftp://"))
   {
     String_sub(string,storageName,6,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^:]*:[^@]*@[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^@]*@[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^[^:]*:([^@]|\\@)*?@[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^([^@]|\\@)*?@[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -877,9 +877,9 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"ssh://"))
   {
     String_sub(string,storageName,6,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^@]*@[^:]*:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^:]*:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^([^@]|\\@)*?@[^:]*:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^:]*:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -896,9 +896,9 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"scp://"))
   {
     String_sub(string,storageName,6,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^@]*@[^:]*:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^:]*:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^([^@]|\\@)*?@[^:]*:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^:]*:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -915,9 +915,9 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"sftp://"))
   {
     String_sub(string,storageName,7,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^@]*@[^:]*:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^:]*:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^([^@]|\\@)*?@[^:]*:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^:]*:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -934,8 +934,8 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"cd://"))
   {
     String_sub(string,storageName,5,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^:]+:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^[^:]+:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -952,8 +952,8 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"dvd://"))
   {
     String_sub(string,storageName,6,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^:]+:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^[^:]+:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -970,8 +970,8 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"bd://"))
   {
     String_sub(string,storageName,5,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^:]+:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^[^:]+:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -988,8 +988,8 @@ StorageTypes Storage_parseName(const String storageName,
   else if (String_startsWithCString(storageName,"device://"))
   {
     String_sub(string,storageName,9,STRING_END);
-    if      (   String_matchCString(string,STRING_BEGIN,"[^:]+:[^/]*/",&nextIndex,NULL,NULL)
-             || String_matchCString(string,STRING_BEGIN,"[^/]*/",&nextIndex,NULL,NULL)
+    if      (   String_matchCString(string,STRING_BEGIN,"^[^:]+:[^/]*/",&nextIndex,NULL,NULL)
+             || String_matchCString(string,STRING_BEGIN,"^[^/]*/",&nextIndex,NULL,NULL)
             )
     {
       if (storageSpecifier != NULL) String_sub(storageSpecifier,string,0,nextIndex-1);
@@ -1023,91 +1023,91 @@ StorageTypes Storage_parseName(const String storageName,
   return storageType;
 }
 
-String Storage_getName(String       name,
+String Storage_getName(String       storageName,
                        StorageTypes storageType,
                        const String storageSpecifier,
                        const String fileName
                       )
 {
-  assert(name != NULL);
+  assert(storageName != NULL);
   assert(storageSpecifier != NULL);
 
-  String_clear(name);
+  String_clear(storageName);
   switch (storageType)
   {
     case STORAGE_TYPE_FILESYSTEM:
       if (!String_empty(fileName))
       {
-        String_append(name,fileName);
+        String_append(storageName,fileName);
+      }
+      break;
+    case STORAGE_TYPE_FTP:
+      String_appendCString(storageName,"ftp://");
+      String_append(storageName,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_SSH:
       if (!String_empty(fileName))
       {
-        String_append(name,fileName);
-      }
-      break;
-    case STORAGE_TYPE_FTP:
-      String_appendCString(name,"ftp://");
-      String_append(name,storageSpecifier);
-      if (!String_empty(fileName))
-      {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_SCP:
-      String_appendCString(name,"scp://");
-      String_append(name,storageSpecifier);
+      String_appendCString(storageName,"scp://");
+      String_append(storageName,storageSpecifier);
       if (!String_empty(fileName))
       {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_SFTP:
-      String_appendCString(name,"sftp://");
-      String_append(name,storageSpecifier);
+      String_appendCString(storageName,"sftp://");
+      String_append(storageName,storageSpecifier);
       if (!String_empty(fileName))
       {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_CD:
-      String_appendCString(name,"cd://");
-      String_append(name,storageSpecifier);
+      String_appendCString(storageName,"cd://");
+      String_append(storageName,storageSpecifier);
       if (!String_empty(fileName))
       {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_DVD:
-      String_appendCString(name,"dvd://");
-      String_append(name,storageSpecifier);
+      String_appendCString(storageName,"dvd://");
+      String_append(storageName,storageSpecifier);
       if (!String_empty(fileName))
       {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_BD:
-      String_appendCString(name,"bd://");
-      String_append(name,storageSpecifier);
+      String_appendCString(storageName,"bd://");
+      String_append(storageName,storageSpecifier);
       if (!String_empty(fileName))
       {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     case STORAGE_TYPE_DEVICE:
-      String_appendCString(name,"device://");
-      String_append(name,storageSpecifier);
+      String_appendCString(storageName,"device://");
+      String_append(storageName,storageSpecifier);
       if (!String_empty(fileName))
       {
-        String_appendChar(name,'/');
-        String_append(name,fileName);
+        String_appendChar(storageName,'/');
+        String_append(storageName,fileName);
       }
       break;
     #ifndef NDEBUG
@@ -1117,7 +1117,136 @@ String Storage_getName(String       name,
     #endif /* NDEBUG */
   }
 
-  return name;
+  return storageName;
+}
+
+String Storage_getPrintableName(String string,
+                                String storageName
+                               )
+{
+  String storageSpecifier;
+  String fileName;
+
+  assert(string != NULL);
+  assert(storageSpecifier != NULL);
+
+  storageSpecifier = String_new();
+  fileName         = String_new();
+
+  String_clear(string);
+  switch (Storage_parseName(storageName,storageSpecifier,fileName))
+  {
+    case STORAGE_TYPE_FILESYSTEM:
+      if (!String_empty(fileName))
+      {
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_FTP:
+      {
+        String loginName;
+        String hostName;
+        uint   hostPort;
+
+        loginName = String_new();
+        hostName  = String_new();
+
+        String_appendCString(string,"ftp://");
+        if (Storage_parseFTPSpecifier(storageSpecifier,loginName,NULL,hostName,&hostPort))
+        {
+          String_append(string,loginName);
+          String_appendChar(string,'@');
+          String_append(string,hostName);
+          if ((hostPort != 0) && (hostPort != 21))
+          {
+            String_format(string,":%d",hostPort);
+          }
+        }
+        else
+        {
+          String_append(string,storageSpecifier);
+        }
+        if (!String_empty(fileName))
+        {
+          String_appendChar(string,'/');
+          String_append(string,fileName);
+        }
+
+        String_delete(hostName);
+        String_delete(loginName);
+      }
+      break;
+    case STORAGE_TYPE_SSH:
+      if (!String_empty(fileName))
+      {
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_SCP:
+      String_appendCString(string,"scp://");
+      String_append(string,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(string,'/');
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_SFTP:
+      String_appendCString(string,"sftp://");
+      String_append(string,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(string,'/');
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_CD:
+      String_appendCString(string,"cd://");
+      String_append(string,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(string,'/');
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_DVD:
+      String_appendCString(string,"dvd://");
+      String_append(string,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(string,'/');
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_BD:
+      String_appendCString(string,"bd://");
+      String_append(string,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(string,'/');
+        String_append(string,fileName);
+      }
+      break;
+    case STORAGE_TYPE_DEVICE:
+      String_appendCString(string,"device://");
+      String_append(string,storageSpecifier);
+      if (!String_empty(fileName))
+      {
+        String_appendChar(string,'/');
+        String_append(string,fileName);
+      }
+      break;
+    #ifndef NDEBUG
+      default:
+        HALT_INTERNAL_ERROR_UNHANDLED_SWITCH_CASE();
+        break; /* not reached */
+    #endif /* NDEBUG */
+  }
+
+  String_delete(fileName);
+  String_delete(storageSpecifier);
+
+  return string;
 }
 
 bool Storage_parseFTPSpecifier(const String ftpSpecifier,
@@ -1297,10 +1426,6 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
 
       /* check if file can be created */
       break;
-    case STORAGE_TYPE_SSH:
-      String_delete(storageSpecifier);
-      return ERROR_FUNCTION_NOT_SUPPORTED;
-      break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
         {
@@ -1416,6 +1541,10 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
         String_delete(storageSpecifier);
         return ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_FTP */
+      break;
+    case STORAGE_TYPE_SSH:
+      String_delete(storageSpecifier);
+      return ERROR_FUNCTION_NOT_SUPPORTED;
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
@@ -1919,8 +2048,6 @@ Errors Storage_done(StorageFileHandle *storageFileHandle)
   {
     case STORAGE_TYPE_FILESYSTEM:
       break;
-    case STORAGE_TYPE_SSH:
-      break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
         free(storageFileHandle->ftp.readAheadBuffer.data);
@@ -1929,6 +2056,8 @@ Errors Storage_done(StorageFileHandle *storageFileHandle)
         String_delete(storageFileHandle->ftp.hostName);
       #else /* not HAVE_FTP */
       #endif /* HAVE_FTP */
+      break;
+    case STORAGE_TYPE_SSH:
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
@@ -2034,8 +2163,6 @@ String Storage_getHandleName(String                  storageName,
   {
     case STORAGE_TYPE_FILESYSTEM:
       break;
-    case STORAGE_TYPE_SSH:
-      break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
         if (!String_empty(storageFileHandle->ftp.hostName))
@@ -2052,6 +2179,8 @@ String Storage_getHandleName(String                  storageName,
         }
       #else /* not HAVE_FTP */
       #endif /* HAVE_FTP */
+      break;
+    case STORAGE_TYPE_SSH:
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
@@ -3505,8 +3634,6 @@ void Storage_close(StorageFileHandle *storageFileHandle)
         #endif /* NDEBUG */
       }
       break;
-    case STORAGE_TYPE_SSH:
-      break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
         switch (storageFileHandle->mode)
@@ -3532,6 +3659,8 @@ void Storage_close(StorageFileHandle *storageFileHandle)
         FtpQuit(storageFileHandle->ftp.control);
       #else /* not HAVE_FTP */
       #endif /* HAVE_FTP */
+      break;
+    case STORAGE_TYPE_SSH:
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
