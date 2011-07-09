@@ -281,6 +281,7 @@ if test $cleanFlag -eq 0; then
        $TAR xzf ftplib-3.1-src.tar.gz
        (cd ftplib-3.1; patch -p3 < ../ftplib-3.1-1.patch)
        (cd ftplib-3.1; patch -p1 < ../../misc/ftplib-3.1-ftpaccess.patch)
+       (cd ftplib-3.1; patch -p1 < ../../misc/ftplib-3.1-receive-timeout.patch)
      fi
     )
     if test $noDecompressFlag -eq 0; then
