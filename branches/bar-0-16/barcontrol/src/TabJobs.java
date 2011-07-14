@@ -4563,7 +4563,7 @@ class TabJobs
                                                              storageFileName.getString()
                                                             );
 
-    return archiveNameParts.getArchiveName();
+    return archiveNameParts.getName();
   }
 
   /** parse archive name
