@@ -50,7 +50,7 @@
 typedef struct
 {
   EntryList                 *includeEntryList;       // included entries (can be empty)
-  PatternList               *excludePatternList;     // excluded entries (can be empty)
+  PatternList               *excludePatternList;     // excluded entries (can be empty or NULL)
   const JobOptions          *jobOptions;
   bool                      *pauseFlag;              // pause flag (can be NULL)
   bool                      *requestedAbortFlag;     // request abort flag (can be NULL)
@@ -218,7 +218,6 @@ Errors Command_restore(StringList                      *archiveFileNameList,
 
   assert(archiveFileNameList != NULL);
   assert(includeEntryList != NULL);
-  assert(excludePatternList != NULL);
   assert(jobOptions != NULL);
 
   /* initialize variables */
@@ -353,7 +352,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
             }
 
             if (   (List_empty(includeEntryList) || EntryList_match(includeEntryList,fileName,PATTERN_MATCH_MODE_EXACT))
-                && !PatternList_match(excludePatternList,fileName,PATTERN_MATCH_MODE_EXACT)
+                && ((excludePatternList == NULL) || !PatternList_match(excludePatternList,fileName,PATTERN_MATCH_MODE_EXACT))
                )
             {
               String_set(restoreInfo.statusInfo.name,fileName);
@@ -710,7 +709,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
             }
 
             if (   (List_empty(includeEntryList) || EntryList_match(includeEntryList,imageName,PATTERN_MATCH_MODE_EXACT))
-                && !PatternList_match(excludePatternList,imageName,PATTERN_MATCH_MODE_EXACT)
+                && ((excludePatternList == NULL) || !PatternList_match(excludePatternList,imageName,PATTERN_MATCH_MODE_EXACT))
                )
             {
               String_set(restoreInfo.statusInfo.name,imageName);
@@ -929,7 +928,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
             }
 
             if (   (List_empty(includeEntryList) || EntryList_match(includeEntryList,directoryName,PATTERN_MATCH_MODE_EXACT))
-                && !PatternList_match(excludePatternList,directoryName,PATTERN_MATCH_MODE_EXACT)
+                && ((excludePatternList == NULL) || !PatternList_match(excludePatternList,directoryName,PATTERN_MATCH_MODE_EXACT))
                )
             {
               String_set(restoreInfo.statusInfo.name,directoryName);
@@ -1088,7 +1087,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
             }
 
             if (   (List_empty(includeEntryList) || EntryList_match(includeEntryList,linkName,PATTERN_MATCH_MODE_EXACT))
-                && !PatternList_match(excludePatternList,linkName,PATTERN_MATCH_MODE_EXACT)
+                && ((excludePatternList == NULL) || !PatternList_match(excludePatternList,linkName,PATTERN_MATCH_MODE_EXACT))
                )
             {
               String_set(restoreInfo.statusInfo.name,linkName);
@@ -1325,7 +1324,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
             STRINGLIST_ITERATE(&fileNameList,stringNode,fileName)
             {
               if (   (List_empty(includeEntryList) || EntryList_match(includeEntryList,fileName,PATTERN_MATCH_MODE_EXACT))
-                  && !PatternList_match(excludePatternList,fileName,PATTERN_MATCH_MODE_EXACT)
+                  && ((excludePatternList == NULL) || !PatternList_match(excludePatternList,fileName,PATTERN_MATCH_MODE_EXACT))
                  )
               {
                 String_set(restoreInfo.statusInfo.name,fileName);
@@ -1709,7 +1708,7 @@ Errors Command_restore(StringList                      *archiveFileNameList,
             }
 
             if (   (List_empty(includeEntryList) || EntryList_match(includeEntryList,fileName,PATTERN_MATCH_MODE_EXACT))
-                && !PatternList_match(excludePatternList,fileName,PATTERN_MATCH_MODE_EXACT)
+                && ((excludePatternList == NULL) || !PatternList_match(excludePatternList,fileName,PATTERN_MATCH_MODE_EXACT))
                )
             {
               String_set(restoreInfo.statusInfo.name,fileName);
