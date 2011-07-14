@@ -754,7 +754,7 @@ LOCAL JobNode *newJob(JobTypes jobType, const String fileName)
 *          name     - name of job
 * Output : -
 * Return : job node
-* Notes  : -copyJ
+* Notes  : -
 \***********************************************************************/
 
 LOCAL JobNode *copyJob(JobNode      *jobNode,
@@ -3519,7 +3519,7 @@ LOCAL void serverCommand_optionGet(ClientInfo *clientInfo, uint id, const String
   assert(clientInfo != NULL);
   assert(arguments != NULL);
 
-  /* get job id, name, value */
+  /* get job id, name */
   if (argumentCount < 1)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected job id");
@@ -6100,7 +6100,6 @@ LOCAL void serverCommand_restore(ClientInfo *clientInfo, uint id, const String a
   StringList         archiveNameList;
   String             string;
   EntryList          includeEntryList;
-  PatternList        excludePatternList;
   JobOptions         jobOptions;
   uint               z;
   RestoreCommandInfo restoreCommandInfo;
@@ -6111,15 +6110,13 @@ LOCAL void serverCommand_restore(ClientInfo *clientInfo, uint id, const String a
 
   StringList_init(&archiveNameList);
   EntryList_init(&includeEntryList);
-  PatternList_init(&excludePatternList);
   initJobOptions(&jobOptions);
 
-  /* get archive name, files */
+  /* get archive name, destination, overwrite flag, files */
   if (argumentCount < 1)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected storage name");
     freeJobOptions(&jobOptions);
-    PatternList_done(&excludePatternList);
     EntryList_done(&includeEntryList);
     StringList_done(&archiveNameList);
     return;
@@ -6129,7 +6126,6 @@ LOCAL void serverCommand_restore(ClientInfo *clientInfo, uint id, const String a
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected destination directory or device name");
     freeJobOptions(&jobOptions);
-    PatternList_done(&excludePatternList);
     EntryList_done(&includeEntryList);
     StringList_done(&archiveNameList);
     return;
@@ -6139,7 +6135,6 @@ LOCAL void serverCommand_restore(ClientInfo *clientInfo, uint id, const String a
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected destination directory or device name");
     freeJobOptions(&jobOptions);
-    PatternList_done(&excludePatternList);
     EntryList_done(&includeEntryList);
     StringList_done(&archiveNameList);
     return;
@@ -6162,7 +6157,7 @@ ENTRY_TYPE_FILE,
   restoreCommandInfo.id         = id;
   error = Command_restore(&archiveNameList,
                           &includeEntryList,
-                          &excludePatternList,
+                          NULL,
                           &jobOptions,
                           NULL,
                           NULL,
@@ -6175,7 +6170,6 @@ ENTRY_TYPE_FILE,
 
   /* free resources */
   freeJobOptions(&jobOptions);
-  PatternList_done(&excludePatternList);
   EntryList_done(&includeEntryList);
   StringList_done(&archiveNameList);
 }
@@ -6370,7 +6364,7 @@ LOCAL void serverCommand_indexStorageAdd(ClientInfo *clientInfo, uint id, const 
 
 LOCAL void serverCommand_indexStorageRemove(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  DatabaseId databaseId;
+  DatabaseId storageId;
   Errors     error;
 
   assert(clientInfo != NULL);
@@ -6382,13 +6376,13 @@ LOCAL void serverCommand_indexStorageRemove(ClientInfo *clientInfo, uint id, con
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected name");
     return;
   }
-  databaseId = (DatabaseId)String_toInteger64(arguments[0],0,NULL,NULL,0);
+  storageId = (DatabaseId)String_toInteger64(arguments[0],0,NULL,NULL,0);
 
   if (indexDatabaseHandle != NULL)
   {
     /* delete index */
     error = Index_delete(indexDatabaseHandle,
-                         databaseId
+                         storageId
                         );
     if (error != ERROR_NONE)
     {
@@ -6416,23 +6410,22 @@ LOCAL void serverCommand_indexStorageRemove(ClientInfo *clientInfo, uint id, con
 * Return : -
 * Notes  : Arguments:
 *            <status>|*
-*            <name pattern>
+*            <id>|0
 \***********************************************************************/
 
 LOCAL void serverCommand_indexStorageRefresh(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
   bool                stateAny;
   IndexStates         state;
-  String              patternText;
+  int64               storageId;
   Errors              error;
   DatabaseQueryHandle databaseQueryHandle;
-  int64               storageId;
   IndexStates         storageState;
 
   assert(clientInfo != NULL);
   assert(arguments != NULL);
 
-  /* get archive name */
+  /* state, id */
   if (argumentCount < 1)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected filter status");
@@ -6470,31 +6463,11 @@ LOCAL void serverCommand_indexStorageRefresh(ClientInfo *clientInfo, uint id, co
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected filter pattern");
     return;
   }
-  patternText = arguments[1];
+  storageId = (DatabaseId)String_toInteger64(arguments[1],0,NULL,NULL,0);
 
   if (indexDatabaseHandle != NULL)
   {
-    error = Index_initListStorage(&databaseQueryHandle,
-                                  indexDatabaseHandle,
-                                  patternText
-                                 );
-    if (error != ERROR_NONE)
-    {
-      sendClientResult(clientInfo,id,TRUE,ERROR_DATABASE,"%s",Errors_getText(error));
-      return;
-    }
-    while (   Index_getNextStorage(&databaseQueryHandle,
-                                   &storageId,
-                                   NULL,
-                                   NULL,
-                                   NULL,
-                                   &storageState,
-                                   NULL,
-                                   NULL,
-                                   NULL
-                                  )
-           && (stateAny || (state == storageState))
-          )
+    if (storageId != 0)
     {
       /* set state */
       Index_setState(indexDatabaseHandle,
@@ -6504,7 +6477,40 @@ LOCAL void serverCommand_indexStorageRefresh(ClientInfo *clientInfo, uint id, co
                      NULL
                     );
     }
-    Index_doneList(&databaseQueryHandle);
+    else
+    {
+      error = Index_initListStorage(&databaseQueryHandle,
+                                    indexDatabaseHandle,
+                                    NULL
+                                   );
+      if (error != ERROR_NONE)
+      {
+        sendClientResult(clientInfo,id,TRUE,ERROR_DATABASE,"%s",Errors_getText(error));
+        return;
+      }
+      while (   Index_getNextStorage(&databaseQueryHandle,
+                                     &storageId,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &storageState,
+                                     NULL,
+                                     NULL,
+                                     NULL
+                                    )
+             && (stateAny || (state == storageState))
+            )
+      {
+        /* set state */
+        Index_setState(indexDatabaseHandle,
+                       storageId,
+                       INDEX_STATE_UPDATE_REQUESTED,
+                       0LL,
+                       NULL
+                      );
+      }
+      Index_doneList(&databaseQueryHandle);
+    }
   }
   else
   {
@@ -6514,7 +6520,6 @@ LOCAL void serverCommand_indexStorageRefresh(ClientInfo *clientInfo, uint id, co
 
   sendClientResult(clientInfo,id,TRUE,ERROR_NONE,"");
 }
-
 
 /***********************************************************************\
 * Name   : freeIndexNode
@@ -6723,7 +6728,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
   assert(clientInfo != NULL);
   assert(arguments != NULL);
 
-  /* get filter pattern */
+  /* get max. count, new entires only, filter pattern */
   if (argumentCount < 1)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected max. number of entries to send");
@@ -7258,60 +7263,60 @@ const struct
 }
 SERVER_COMMANDS[] =
 {
-  { "ERROR_INFO",                   "i",    serverCommand_errorInfo,                 AUTHORIZATION_STATE_OK      },
-  { "AUTHORIZE",                    "S",    serverCommand_authorize,                 AUTHORIZATION_STATE_WAITING },
-  { "ABORT",                        "i",    serverCommand_abort,                     AUTHORIZATION_STATE_OK      },
-  { "STATUS",                       "",     serverCommand_status,                    AUTHORIZATION_STATE_OK      },
-  { "PAUSE",                        "i",    serverCommand_pause,                     AUTHORIZATION_STATE_OK      },
-  { "SUSPEND",                      "",     serverCommand_suspend,                   AUTHORIZATION_STATE_OK      },
-  { "CONTINUE",                     "",     serverCommand_continue,                  AUTHORIZATION_STATE_OK      },
-  { "DEVICE_LIST",                  "",     serverCommand_deviceList,                AUTHORIZATION_STATE_OK      },
-  { "FILE_LIST",                    "S",    serverCommand_fileList,                  AUTHORIZATION_STATE_OK      },
-  { "DIRECTORY_INFO",               "S",    serverCommand_directoryInfo,             AUTHORIZATION_STATE_OK      },
-  { "JOB_LIST",                     "",     serverCommand_jobList,                   AUTHORIZATION_STATE_OK      },
-  { "JOB_INFO",                     "i",    serverCommand_jobInfo,                   AUTHORIZATION_STATE_OK      },
-  { "JOB_NEW",                      "S",    serverCommand_jobNew,                    AUTHORIZATION_STATE_OK      },
-  { "JOB_COPY",                     "i S",  serverCommand_jobCopy,                   AUTHORIZATION_STATE_OK      },
-  { "JOB_RENAME",                   "i S",  serverCommand_jobRename,                 AUTHORIZATION_STATE_OK      },
-  { "JOB_DELETE",                   "i",    serverCommand_jobDelete,                 AUTHORIZATION_STATE_OK      },
-  { "JOB_START",                    "i",    serverCommand_jobStart,                  AUTHORIZATION_STATE_OK      },
-  { "JOB_ABORT",                    "i",    serverCommand_jobAbort,                  AUTHORIZATION_STATE_OK      },
-  { "JOB_FLUSH",                    "",     serverCommand_jobFlush,                  AUTHORIZATION_STATE_OK      },
-  { "INCLUDE_LIST",                 "i",    serverCommand_includeList,               AUTHORIZATION_STATE_OK      },
-  { "INCLUDE_CLEAR",                "i",    serverCommand_includeClear,              AUTHORIZATION_STATE_OK      },
-  { "INCLUDE_ADD",                  "i S",  serverCommand_includeAdd,                AUTHORIZATION_STATE_OK      },
-  { "EXCLUDE_LIST",                 "i",    serverCommand_excludeList,               AUTHORIZATION_STATE_OK      },
-  { "EXCLUDE_CLEAR",                "i",    serverCommand_excludeClear,              AUTHORIZATION_STATE_OK      },
-  { "EXCLUDE_ADD",                  "i S",  serverCommand_excludeAdd,                AUTHORIZATION_STATE_OK      },
-  { "EXCLUDE_COMPRESS_LIST",        "i",    serverCommand_excludeCompressList,       AUTHORIZATION_STATE_OK      },
-  { "EXCLUDE_COMPRESS_CLEAR",       "i",    serverCommand_excludeCompressClear,      AUTHORIZATION_STATE_OK      },
-  { "EXCLUDE_COMPRESS_ADD",         "i S",  serverCommand_excludeCompressAdd,        AUTHORIZATION_STATE_OK      },
-  { "SCHEDULE_LIST",                "i",    serverCommand_scheduleList,              AUTHORIZATION_STATE_OK      },
-  { "SCHEDULE_CLEAR",               "i",    serverCommand_scheduleClear,             AUTHORIZATION_STATE_OK      },
-  { "SCHEDULE_ADD",                 "i S",  serverCommand_scheduleAdd,               AUTHORIZATION_STATE_OK      },
-  { "OPTION_GET",                   "s",    serverCommand_optionGet,                 AUTHORIZATION_STATE_OK      },
-  { "OPTION_SET",                   "s S",  serverCommand_optionSet,                 AUTHORIZATION_STATE_OK      },
-  { "OPTION_DELETE",                "s S",  serverCommand_optionDelete,              AUTHORIZATION_STATE_OK      },
-  { "DECRYPT_PASSWORD_CLEAR",       "",     serverCommand_decryptPasswordsClear,     AUTHORIZATION_STATE_OK      },
-  { "DECRYPT_PASSWORD_ADD",         "S",    serverCommand_decryptPasswordAdd,        AUTHORIZATION_STATE_OK      },
-  { "FTP_PASSWORD",                 "i S",  serverCommand_ftpPassword,               AUTHORIZATION_STATE_OK      },
-  { "SSH_PASSWORD",                 "i S",  serverCommand_sshPassword,               AUTHORIZATION_STATE_OK      },
-  { "CRYPT_PASSWORD",               "S",    serverCommand_cryptPassword,             AUTHORIZATION_STATE_OK      },
-  { "VOLUME_LOAD",                  "i i",  serverCommand_volumeLoad,                AUTHORIZATION_STATE_OK      },
-  { "VOLUME_UNLOAD",                "",     serverCommand_volumeUnload,              AUTHORIZATION_STATE_OK      },
-  { "ARCHIVE_LIST",                 "S S",  serverCommand_archiveList,               AUTHORIZATION_STATE_OK      },
-  { "RESTORE",                      "S S",  serverCommand_restore,                   AUTHORIZATION_STATE_OK      },
+  { "ERROR_INFO",                   "i",        serverCommand_errorInfo,                 AUTHORIZATION_STATE_OK      },
+  { "AUTHORIZE",                    "S",        serverCommand_authorize,                 AUTHORIZATION_STATE_WAITING },
+  { "ABORT",                        "i",        serverCommand_abort,                     AUTHORIZATION_STATE_OK      },
+  { "STATUS",                       "",         serverCommand_status,                    AUTHORIZATION_STATE_OK      },
+  { "PAUSE",                        "i",        serverCommand_pause,                     AUTHORIZATION_STATE_OK      },
+  { "SUSPEND",                      "",         serverCommand_suspend,                   AUTHORIZATION_STATE_OK      },
+  { "CONTINUE",                     "",         serverCommand_continue,                  AUTHORIZATION_STATE_OK      },
+  { "DEVICE_LIST",                  "",         serverCommand_deviceList,                AUTHORIZATION_STATE_OK      },
+  { "FILE_LIST",                    "S",        serverCommand_fileList,                  AUTHORIZATION_STATE_OK      },
+  { "DIRECTORY_INFO",               "S",        serverCommand_directoryInfo,             AUTHORIZATION_STATE_OK      },
+  { "JOB_LIST",                     "",         serverCommand_jobList,                   AUTHORIZATION_STATE_OK      },
+  { "JOB_INFO",                     "i",        serverCommand_jobInfo,                   AUTHORIZATION_STATE_OK      },
+  { "JOB_NEW",                      "S",        serverCommand_jobNew,                    AUTHORIZATION_STATE_OK      },
+  { "JOB_COPY",                     "i S",      serverCommand_jobCopy,                   AUTHORIZATION_STATE_OK      },
+  { "JOB_RENAME",                   "i S",      serverCommand_jobRename,                 AUTHORIZATION_STATE_OK      },
+  { "JOB_DELETE",                   "i",        serverCommand_jobDelete,                 AUTHORIZATION_STATE_OK      },
+  { "JOB_START",                    "i",        serverCommand_jobStart,                  AUTHORIZATION_STATE_OK      },
+  { "JOB_ABORT",                    "i",        serverCommand_jobAbort,                  AUTHORIZATION_STATE_OK      },
+  { "JOB_FLUSH",                    "",         serverCommand_jobFlush,                  AUTHORIZATION_STATE_OK      },
+  { "INCLUDE_LIST",                 "i",        serverCommand_includeList,               AUTHORIZATION_STATE_OK      },
+  { "INCLUDE_CLEAR",                "i",        serverCommand_includeClear,              AUTHORIZATION_STATE_OK      },
+  { "INCLUDE_ADD",                  "i S",      serverCommand_includeAdd,                AUTHORIZATION_STATE_OK      },
+  { "EXCLUDE_LIST",                 "i",        serverCommand_excludeList,               AUTHORIZATION_STATE_OK      },
+  { "EXCLUDE_CLEAR",                "i",        serverCommand_excludeClear,              AUTHORIZATION_STATE_OK      },
+  { "EXCLUDE_ADD",                  "i S",      serverCommand_excludeAdd,                AUTHORIZATION_STATE_OK      },
+  { "EXCLUDE_COMPRESS_LIST",        "i",        serverCommand_excludeCompressList,       AUTHORIZATION_STATE_OK      },
+  { "EXCLUDE_COMPRESS_CLEAR",       "i",        serverCommand_excludeCompressClear,      AUTHORIZATION_STATE_OK      },
+  { "EXCLUDE_COMPRESS_ADD",         "i S",      serverCommand_excludeCompressAdd,        AUTHORIZATION_STATE_OK      },
+  { "SCHEDULE_LIST",                "i",        serverCommand_scheduleList,              AUTHORIZATION_STATE_OK      },
+  { "SCHEDULE_CLEAR",               "i",        serverCommand_scheduleClear,             AUTHORIZATION_STATE_OK      },
+  { "SCHEDULE_ADD",                 "i S",      serverCommand_scheduleAdd,               AUTHORIZATION_STATE_OK      },
+  { "OPTION_GET",                   "s",        serverCommand_optionGet,                 AUTHORIZATION_STATE_OK      },
+  { "OPTION_SET",                   "s S",      serverCommand_optionSet,                 AUTHORIZATION_STATE_OK      },
+  { "OPTION_DELETE",                "s S",      serverCommand_optionDelete,              AUTHORIZATION_STATE_OK      },
+  { "DECRYPT_PASSWORD_CLEAR",       "",         serverCommand_decryptPasswordsClear,     AUTHORIZATION_STATE_OK      },
+  { "DECRYPT_PASSWORD_ADD",         "S",        serverCommand_decryptPasswordAdd,        AUTHORIZATION_STATE_OK      },
+  { "FTP_PASSWORD",                 "i S",      serverCommand_ftpPassword,               AUTHORIZATION_STATE_OK      },
+  { "SSH_PASSWORD",                 "i S",      serverCommand_sshPassword,               AUTHORIZATION_STATE_OK      },
+  { "CRYPT_PASSWORD",               "S",        serverCommand_cryptPassword,             AUTHORIZATION_STATE_OK      },
+  { "VOLUME_LOAD",                  "i i",      serverCommand_volumeLoad,                AUTHORIZATION_STATE_OK      },
+  { "VOLUME_UNLOAD",                "",         serverCommand_volumeUnload,              AUTHORIZATION_STATE_OK      },
+  { "ARCHIVE_LIST",                 "S S",      serverCommand_archiveList,               AUTHORIZATION_STATE_OK      },
+  { "RESTORE",                      "S b S b S",serverCommand_restore,                   AUTHORIZATION_STATE_OK      },
 
-  { "INDEX_STORAGE_LIST",           "i S S",serverCommand_indexStorageList,          AUTHORIZATION_STATE_OK      },
-  { "INDEX_STORAGE_ADD",            "S",    serverCommand_indexStorageAdd,           AUTHORIZATION_STATE_OK      },
-  { "INDEX_STORAGE_REMOVE",         "S",    serverCommand_indexStorageRemove,        AUTHORIZATION_STATE_OK      },
-  { "INDEX_STORAGE_REFRESH",        "S",    serverCommand_indexStorageRefresh,       AUTHORIZATION_STATE_OK      },
-  { "INDEX_ENTRIES_LIST",           "i b S",serverCommand_indexEntriesList,          AUTHORIZATION_STATE_OK      },
+  { "INDEX_STORAGE_LIST",           "i S S",    serverCommand_indexStorageList,          AUTHORIZATION_STATE_OK      },
+  { "INDEX_STORAGE_ADD",            "S",        serverCommand_indexStorageAdd,           AUTHORIZATION_STATE_OK      },
+  { "INDEX_STORAGE_REMOVE",         "i",        serverCommand_indexStorageRemove,        AUTHORIZATION_STATE_OK      },
+  { "INDEX_STORAGE_REFRESH",        "i",        serverCommand_indexStorageRefresh,       AUTHORIZATION_STATE_OK      },
+  { "INDEX_ENTRIES_LIST",           "i b S",    serverCommand_indexEntriesList,          AUTHORIZATION_STATE_OK      },
 
   #ifndef NDEBUG
-  { "DEBUG_MEMORY_PRINT_INFO",      "",     serverCommand_debugMemoryPrintInfo,      AUTHORIZATION_STATE_OK      },
-  { "DEBUG_MEMORY_PRINT_STATISTICS","",     serverCommand_debugMemoryPrintStatistics,AUTHORIZATION_STATE_OK      },
-  { "DEBUG_MEMORY_DUMP_INFO",       "",     serverCommand_debugMemoryDumpInfo,       AUTHORIZATION_STATE_OK      },
+  { "DEBUG_MEMORY_PRINT_INFO",      "",         serverCommand_debugMemoryPrintInfo,      AUTHORIZATION_STATE_OK      },
+  { "DEBUG_MEMORY_PRINT_STATISTICS","",         serverCommand_debugMemoryPrintStatistics,AUTHORIZATION_STATE_OK      },
+  { "DEBUG_MEMORY_DUMP_INFO",       "",         serverCommand_debugMemoryDumpInfo,       AUTHORIZATION_STATE_OK      },
   #endif /* NDEBUG */
 };
 
