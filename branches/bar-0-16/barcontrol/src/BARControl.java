@@ -443,9 +443,9 @@ Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,file
    * @param fileName file name part
    * @return archive name
    */
-  public String getArchiveName(String fileName)
+  public String getName(String fileName)
   {
-    StringBuffer archiveNameBuffer = new StringBuffer();
+    StringBuilder archiveNameBuffer = new StringBuilder();
 
     switch (type)
     {
@@ -529,18 +529,112 @@ Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,file
   /** get archive path name
    * @return archive path name (archive name without file name)
    */
-  public String getArchivePathName()
+  public String getPath()
   {
     File file = new File(fileName);
-    return getArchiveName(file.getParent());
+    return getName(file.getParent());
   }
 
   /** get archive name
    * @return archive name
    */
-  public String getArchiveName()
+  public String getName()
   {
-    return getArchiveName(fileName);
+    return getName(fileName);
+  }
+
+  /** get archive name
+   * @param fileName file name part
+   * @return archive name
+   */
+  public String getPrintableName(String fileName)
+  {
+    StringBuilder archiveNameBuffer = new StringBuilder();
+
+    switch (type)
+    {
+      case FILESYSTEM:
+        break;
+      case FTP:
+        archiveNameBuffer.append("ftp://");
+        if (!loginName.equals("") || !hostName.equals(""))
+        {
+          if (!loginName.equals("") || !loginPassword.equals(""))
+          {
+            if (!loginName.equals("")) archiveNameBuffer.append(StringUtils.map(loginName,new String[]{"@"},new String[]{"\\@"}));
+            archiveNameBuffer.append('@');
+          }
+          if (!hostName.equals("")) { archiveNameBuffer.append(hostName); }
+          archiveNameBuffer.append('/');
+        }
+        break;
+      case SCP:
+        archiveNameBuffer.append("scp://");
+        if (!loginName.equals("") || !hostName.equals(""))
+        {
+          if (!loginName.equals("")) { archiveNameBuffer.append(StringUtils.map(loginName,new String[]{"@"},new String[]{"\\@"})); archiveNameBuffer.append('@'); }
+          if (!hostName.equals("")) { archiveNameBuffer.append(hostName); }
+          if (hostPort > 0) { archiveNameBuffer.append(':'); archiveNameBuffer.append(hostPort); }
+          archiveNameBuffer.append('/');
+        }
+        break;
+      case SFTP:
+        archiveNameBuffer.append("sftp://");
+        if (!loginName.equals("") || !hostName.equals(""))
+        {
+          if (!loginName.equals("")) { archiveNameBuffer.append(StringUtils.map(loginName,new String[]{"@"},new String[]{"\\@"})); archiveNameBuffer.append('@'); }
+          if (!hostName.equals("")) { archiveNameBuffer.append(hostName); }
+          if (hostPort > 0) { archiveNameBuffer.append(':'); archiveNameBuffer.append(hostPort); }
+          archiveNameBuffer.append('/');
+        }
+        break;
+      case CD:
+        archiveNameBuffer.append("cd://");
+        if (!deviceName.equals(""))
+        {
+          archiveNameBuffer.append(deviceName);
+          archiveNameBuffer.append(':');
+        }
+        break;
+      case DVD:
+        archiveNameBuffer.append("dvd://");
+        if (!deviceName.equals(""))
+        {
+          archiveNameBuffer.append(deviceName);
+          archiveNameBuffer.append(':');
+        }
+        break;
+      case BD:
+        archiveNameBuffer.append("bd://");
+        if (!deviceName.equals(""))
+        {
+          archiveNameBuffer.append(deviceName);
+          archiveNameBuffer.append(':');
+        }
+        break;
+      case DEVICE:
+        archiveNameBuffer.append("device://");
+        if (!deviceName.equals(""))
+        {
+          archiveNameBuffer.append(deviceName);
+          archiveNameBuffer.append(':');
+        }
+        break;
+    }
+    if (fileName != null)
+    {
+      archiveNameBuffer.append(fileName);
+    }
+
+    return archiveNameBuffer.toString();
+  }
+
+  /** get archive name
+   * @return archive name
+   */
+  public String getPrintableName()
+  {
+    return getPrintableName(fileName);
   }
 
   /** convert to string
@@ -548,7 +642,7 @@ Dprintf.dprintf("%s: deviceName=%s fileName=%s",matcher.group(0),deviceName,file
    */
   public String toString()
   {
-    return getArchiveName();
+    return getName();
   }
 }
 
