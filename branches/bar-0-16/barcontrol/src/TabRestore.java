@@ -352,12 +352,12 @@ class TabRestore
         }
 
         // get names
-        HashSet<Long> storageNameHashSet = new HashSet<Long>();
+        HashSet<String> storageNameHashSet = new HashSet<String>();
         synchronized(storageDataMap)
         {
           for (StorageData storageData : storageDataMap.values())
           {
-            storageNameHashSet.add(storageData.id);
+            storageNameHashSet.add(storageData.name);
           }
         }
 
@@ -414,11 +414,8 @@ class TabRestore
                   }
                 }
 
-                storageNameHashSet.remove(id);
+                storageNameHashSet.remove(storageName);
               }
-//else {
-//Dprintf.dprintf("xxxxxxxxxxx "+line);
-//}
             }
           }
         }
@@ -430,12 +427,12 @@ class TabRestore
         // remove not existing entries, but keep marked entries
         synchronized(storageDataMap)
         {
-          for (Long id : storageNameHashSet)
+          for (String storageName : storageNameHashSet)
           {
-            StorageData storageData = storageDataMap.get(id);
+            StorageData storageData = storageDataMap.get(storageName);
             if (!storageData.isTagged())
             {
-              storageDataMap.remove(id);
+              storageDataMap.remove(storageName);
             }
           }
         }
@@ -2231,7 +2228,7 @@ class TabRestore
              )
           {
             // get and save path
-            pathNames.add(archiveNameParts.getArchivePathName());
+            pathNames.add(archiveNameParts.getPath());
           }
         }
 
@@ -2349,10 +2346,13 @@ class TabRestore
       // update/add entries
       for (StorageData storageData : storageDataMap.values())
       {
+        // get archive name parts
+        ArchiveNameParts archiveNameParts = new ArchiveNameParts(storageData.name);
+
         // upate/insert
         if (!Widgets.updateTableEntry(widgetStorageList,
                                       (Object)storageData,
-                                      storageData.name,
+                                      archiveNameParts.getPrintableName(),
                                       Units.formatByteSize(storageData.size),
                                       simpleDateFormat.format(new Date(storageData.datetime*1000)),
                                       storageData.state.toString()
@@ -2362,7 +2362,7 @@ class TabRestore
           Widgets.insertTableEntry(widgetStorageList,
                                    findStorageListIndex(storageData),
                                    (Object)storageData,
-                                   storageData.name,
+                                   archiveNameParts.getPrintableName(),
                                    Units.formatByteSize(storageData.size),
                                    simpleDateFormat.format(new Date(storageData.datetime*1000)),
                                    storageData.state.toString()
@@ -2571,7 +2571,7 @@ class TabRestore
             String[] result = new String[1];
             int errorCode = BARServer.executeCommand("INDEX_STORAGE_REFRESH "+
                                                      "* "+
-                                                     StringUtils.escape(storageData.name),
+                                                     storageData.id,
                                                      result
                                                     );
             if (errorCode == Errors.NONE)
@@ -2605,7 +2605,7 @@ class TabRestore
         String[] result = new String[1];
         int errorCode = BARServer.executeCommand("INDEX_STORAGE_REFRESH "+
                                                  "ERROR "+
-                                                 "*",
+                                                 "0",
                                                  result
                                                 );
         if (errorCode == Errors.NONE)
@@ -3017,13 +3017,13 @@ class TabRestore
         {
           for (final EntryData entryData : entryData_)
           {
-            if (!directory.equals(""))
+            if (!directory.isEmpty())
             {
-              busyDialog.updateText("'"+entryData.name+"' into '"+directory+"'");
+              busyDialog.updateText(0,"'"+entryData.name+"' into '"+directory+"'");
             }
             else
             {
-              busyDialog.updateText("'"+entryData.name+"'");
+              busyDialog.updateText(0,"'"+entryData.name+"'");
             }
 
             ArrayList<String> result = new ArrayList<String>();
@@ -3033,7 +3033,7 @@ class TabRestore
                                    (overwriteEntries?"1":"0")+" "+
                                    StringUtils.escape(StringUtils.map(entryData.name,FILENAME_MAP_FROM,FILENAME_MAP_TO))
                                    ;
-  //Dprintf.dprintf("command=%s",commandString);
+//Dprintf.dprintf("command=%s",commandString);
             Command command = BARServer.runCommand(commandString);
 
             // read results, update/add data
@@ -3046,7 +3046,7 @@ class TabRestore
               line = command.getNextResult(60*1000);
               if (line != null)
               {
-  //Dprintf.dprintf("line=%s",line);
+//Dprintf.dprintf("line=%s",line);
                 if      (StringParser.parse(line,"%ld %ld %ld %ld %S",data,StringParser.QUOTE_CHARS))
                 {
                   /* get data
