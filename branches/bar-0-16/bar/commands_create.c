@@ -332,6 +332,7 @@ LOCAL Errors writeIncrementalList(const String     fileName,
   error = File_open(&fileHandle,tmpFileName,FILE_OPENMODE_CREATE);
   if (error != ERROR_NONE)
   {
+    File_delete(tmpFileName,FALSE);
     File_deleteFileName(tmpFileName);
     File_deleteFileName(directory);
     return error;
@@ -344,6 +345,7 @@ LOCAL Errors writeIncrementalList(const String     fileName,
   if (error != ERROR_NONE)
   {
     File_close(&fileHandle);
+    File_delete(tmpFileName,FALSE);
     File_deleteFileName(tmpFileName);
     File_deleteFileName(directory);
     return error;
@@ -353,6 +355,7 @@ LOCAL Errors writeIncrementalList(const String     fileName,
   if (error != ERROR_NONE)
   {
     File_close(&fileHandle);
+    File_delete(tmpFileName,FALSE);
     File_deleteFileName(tmpFileName);
     File_deleteFileName(directory);
     return error;
@@ -397,6 +400,7 @@ fprintf(stderr,"%s,%d: %s %d\n",__FILE__,__LINE__,s,incrementalFileInfo->state);
   File_close(&fileHandle);
   if (error != ERROR_NONE)
   {
+    File_delete(tmpFileName,FALSE);
     File_delete(tmpFileName,FALSE);
     File_deleteFileName(tmpFileName);
     File_deleteFileName(directory);
