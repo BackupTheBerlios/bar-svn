@@ -575,7 +575,7 @@ error = ERROR_NONE;
     stdoutLine = String_new();
     stderrLine = String_new();
     status = 0;
-    while ((waitpid(pid,&status,WNOHANG) != -1) && !WIFEXITED(status) && !WIFSIGNALED(status))
+    while ((waitpid(pid,&status,WNOHANG) == 0) || (!WIFEXITED(status) && !WIFSIGNALED(status)))
     {
       if (readProcessIO(pipeStdout[0],stdoutLine))
       {
