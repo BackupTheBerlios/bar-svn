@@ -1243,67 +1243,82 @@ LOCAL bool parseString(const char    *string,
                      && (string[index] != (*format))
                     )
               {
-                /* check for string quote */
-                stringQuote = NULL;
-                if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
-                if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
-
-                if (stringQuote != NULL)
+                if (   (string[index] == '\\')
+                    && ((index+1) < length)
+                   )
                 {
-                  do
+                  /* quoted character */
+                  if ((formatToken.width == 0) || (z < formatToken.width-1))
                   {
-                    /* skip quote-char */
-                    index++;
-
-                    /* get string */
-                    while ((index < length) && (string[index] != (*stringQuote)))
-                    {
-                      if (   ((index+1) < length)
-                          && (string[index] == '\\')
-                          && (string[index+1] == (*stringQuote))
-                         )
-                      {
-                        if ((formatToken.width == 0) || (z < formatToken.width-1))
-                        {
-                          if (value.s != NULL) value.s[z] = string[index+1];
-                          z++;
-                        }
-                        index += 2;
-                      }
-                      else
-                      {
-                        if (z < (formatToken.width-1))
-                        {
-                          if (value.s != NULL) value.s[z] = string[index];
-                          z++;
-                        }
-                        index++;
-                      }
-                    }
-
-                    /* skip quote-char */
-                    if (index < length)
-                    {
-                      index++;
-                    }
-
-                    stringQuote = NULL;
-                    if (index < length)
-                    {
-                      if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
-                      if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
-                    }
+                    String_appendChar(value.string,string[index+1]);
+                    z++;
                   }
-                  while (stringQuote != NULL);
+                  index+=2;
                 }
                 else
                 {
-                  if (z < (formatToken.width-1))
+                  /* check for string quote */
+                  stringQuote = NULL;
+                  if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
+                  if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
+
+                  if (stringQuote != NULL)
                   {
-                    if (value.s != NULL) value.s[z] = string[index];
-                    z++;
+                    do
+                    {
+                      /* skip quote-char */
+                      index++;
+
+                      /* get string */
+                      while ((index < length) && (string[index] != (*stringQuote)))
+                      {
+                        if (   ((index+1) < length)
+                            && (string[index] == '\\')
+                            && (string[index+1] == (*stringQuote))
+                           )
+                        {
+                          if ((formatToken.width == 0) || (z < formatToken.width-1))
+                          {
+                            if (value.s != NULL) value.s[z] = string[index+1];
+                            z++;
+                          }
+                          index += 2;
+                        }
+                        else
+                        {
+                          if (z < (formatToken.width-1))
+                          {
+                            if (value.s != NULL) value.s[z] = string[index];
+                            z++;
+                          }
+                          index++;
+                        }
+                      }
+
+                      /* skip quote-char */
+                      if (index < length)
+                      {
+                        index++;
+                      }
+
+                      stringQuote = NULL;
+                      if (index < length)
+                      {
+                        if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
+                        if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
+                      }
+                    }
+                    while (stringQuote != NULL);
                   }
-                  index++;
+                  else
+                  {
+                    if (z < (formatToken.width-1))
+                    {
+                      if (value.s != NULL) value.s[z] = string[index];
+                      z++;
+                    }
+                    index++;
+                  }
                 }
               }
               if (value.s != NULL) value.s[z] = '\0';
@@ -1323,72 +1338,87 @@ LOCAL bool parseString(const char    *string,
               z = 0;
               while (   (index < length)
                      && (formatToken.blankFlag || !isspace(string[index]))
-    // NUL in string here a problem?
+// NUL in string here a problem?
                      && (string[index] != (*format))
                     )
               {
-                /* check for string quote */
-                stringQuote = NULL;
-                if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
-                if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
-
-                if (stringQuote != NULL)
+                if (   (string[index] == '\\')
+                    && ((index+1) < length)
+                   )
                 {
-                  do
+                  /* quoted character */
+                  if ((formatToken.width == 0) || (z < formatToken.width-1))
                   {
-                    /* skip quote-char */
-                    index++;
-
-                    /* get string */
-                    while ((index < length) && (string[index] != (*stringQuote)))
-                    {
-                      if (   ((index+1) < length)
-                          && (string[index] == '\\')
-                          && (string[index+1] == (*stringQuote))
-                         )
-                      {
-                        if ((formatToken.width == 0) || (z < formatToken.width-1))
-                        {
-                          String_appendChar(value.string,string[index+1]);
-                          z++;
-                        }
-                        index += 2;
-                      }
-                      else
-                      {
-                        if ((formatToken.width == 0) || (z < formatToken.width-1))
-                        {
-                          String_appendChar(value.string,string[index]);
-                          z++;
-                        }
-                        index++;
-                      }
-                    }
-
-                    /* skip quote-char */
-                    if (index < length)
-                    {
-                      index++;
-                    }
-
-                    /* check for string quote */
-                    stringQuote = NULL;
-                    if (index < length)
-                    {
-                      if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
-                      if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
-                    }
+                    String_appendChar(value.string,string[index+1]);
+                    z++;
                   }
-                  while (stringQuote != NULL);
+                  index+=2;
                 }
                 else
                 {
-                  if ((formatToken.width == 0) || (z < formatToken.width-1))
+                  /* check for string quote */
+                  stringQuote = NULL;
+                  if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
+                  if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
+
+                  if (stringQuote != NULL)
                   {
-                    String_appendChar(value.string,string[index]);
-                    z++;
+                    do
+                    {
+                      /* skip quote-char */
+                      index++;
+
+                      /* get string */
+                      while ((index < length) && (string[index] != (*stringQuote)))
+                      {
+                        if (   ((index+1) < length)
+                            && (string[index] == '\\')
+                            && (string[index+1] == (*stringQuote))
+                           )
+                        {
+                          if ((formatToken.width == 0) || (z < formatToken.width-1))
+                          {
+                            String_appendChar(value.string,string[index+1]);
+                            z++;
+                          }
+                          index += 2;
+                        }
+                        else
+                        {
+                          if ((formatToken.width == 0) || (z < formatToken.width-1))
+                          {
+                            String_appendChar(value.string,string[index]);
+                            z++;
+                          }
+                          index++;
+                        }
+                      }
+
+                      /* skip quote-char */
+                      if (index < length)
+                      {
+                        index++;
+                      }
+
+                      /* check for string quote */
+                      stringQuote = NULL;
+                      if (index < length)
+                      {
+                        if ((formatToken.quoteChar != '\0') && (formatToken.quoteChar == string[index])) stringQuote = &formatToken.quoteChar;
+                        if ((stringQuote == NULL) && (stringQuotes != NULL)) stringQuote = strchr(stringQuotes,string[index]);
+                      }
+                    }
+                    while (stringQuote != NULL);
                   }
-                  index++;
+                  else
+                  {
+                    if ((formatToken.width == 0) || (z < formatToken.width-1))
+                    {
+                      String_appendChar(value.string,string[index]);
+                      z++;
+                    }
+                    index++;
+                  }
                 }
               }
             }
