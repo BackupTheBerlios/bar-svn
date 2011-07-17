@@ -806,7 +806,7 @@ sslSocket.setEnabledProtocols(new String[]{"SSLv3"});
       byte authorizeData[] = new byte[sessionId.length];
       for (int z = 0; z < sessionId.length; z++)
       {
-        authorizeData[z] = (byte)(((z < serverPassword.length())?(int)serverPassword.charAt(z):0)^(int)sessionId[z]);
+        authorizeData[z] = (byte)((((serverPassword != null) && (z < serverPassword.length()))?(int)serverPassword.charAt(z):0)^(int)sessionId[z]);
       }
       commandId++;
       String command = Long.toString(commandId)+" AUTHORIZE "+encodeHex(authorizeData);
@@ -890,6 +890,7 @@ sslSocket.setEnabledProtocols(new String[]{"SSLv3"});
       }
       catch (InterruptedException exception)
       {
+        // ignored 
       }
 
       // free resources

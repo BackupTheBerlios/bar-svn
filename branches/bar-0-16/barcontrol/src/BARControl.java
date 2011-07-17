@@ -1454,13 +1454,12 @@ public class BARControl
          )
       {
         // connect to server
-        LoginData loginData = new LoginData(Settings.serverName,Settings.serverPort,Settings.serverTLSPort);
         try
         {
-          BARServer.connect(loginData.serverName,
-                            loginData.port,
-                            loginData.tlsPort,
-                            loginData.password,
+          BARServer.connect(Settings.serverName,
+                            Settings.serverPort,
+                            Settings.serverTLSPort,
+                            Settings.serverPassword,
                             Settings.serverKeyFileName
                            );
         }
