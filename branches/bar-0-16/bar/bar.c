@@ -1966,6 +1966,9 @@ void logPostProcess(void)
   if (logFile != NULL) fflush(logFile);
   if (tmpLogFile != NULL) fflush(tmpLogFile);
 
+  /* close temporary log file */
+  if (tmpLogFile != NULL) fclose(tmpLogFile);
+
   /* log post command */
   if (logPostCommand != NULL)
   {
@@ -1988,8 +1991,7 @@ void logPostProcess(void)
     }
   }
 
-  /* reset temporary log file */
-  if (tmpLogFile != NULL) fclose(tmpLogFile);
+  /* reset and reopen temporary log file */
   tmpLogFile = fopen(String_cString(tmpLogFileName),"w");
 }
 
