@@ -1,4 +1,4 @@
-2011-07-03 0.16e
+2011-07-18 0.16e
   * create sub-directories when storing to file system or
     ftp server
   * fix creating directories: to not set parent directory
@@ -17,6 +17,14 @@
   * create job files with read/write permission for owner only
   * do not print passwords to log/screen which may be included
     in FTP specifier
+  * fixed missing delete temporary file on error in incremental
+    mode
+  * fixed adding index of FTP content to local archive database
+  * fixed string parser: parse \x as x if outside of " or '
+  * BARControl: fix Null-Pointer-Exception when server password
+    is not set
+  * improved FTP read: try to read all data when the network
+    connection is bad
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
