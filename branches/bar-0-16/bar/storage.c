@@ -217,7 +217,7 @@ LOCAL Errors checkFTPLogin(const String loginName,
      )
   {
     Password_undeploy(password);
-    FtpQuit(ftpControl);
+    FtpClose(ftpControl);
     return ERROR_FTP_AUTHENTIFICATION;
   }
   Password_undeploy(password);
@@ -3068,7 +3068,7 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
            )
         {
           Password_undeploy(storageFileHandle->ftp.password);
-          FtpQuit(storageFileHandle->ftp.control);
+          FtpClose(storageFileHandle->ftp.control);
           return ERROR_FTP_AUTHENTIFICATION;
         }
         Password_undeploy(storageFileHandle->ftp.password);
@@ -3116,7 +3116,7 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
                         ) != 1
              )
           {
-            FtpQuit(storageFileHandle->ftp.control);
+            FtpClose(storageFileHandle->ftp.control);
             return ERRORX(CREATE_FILE,0,"ftp access");
           }
           if (FtpOptions(FTPLIB_CALLBACK,
@@ -3125,7 +3125,7 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
                         ) != 1
              )
           {
-            FtpQuit(storageFileHandle->ftp.control);
+            FtpClose(storageFileHandle->ftp.control);
             return ERRORX(CREATE_FILE,0,"ftp access");
           }
 
@@ -3148,7 +3148,7 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
                          ) != 1
                )
             {
-              FtpQuit(storageFileHandle->ftp.control);
+              FtpClose(storageFileHandle->ftp.control);
               return ERRORX(CREATE_FILE,0,"ftp access");
             }
           }
@@ -3394,23 +3394,10 @@ Errors Storage_open(StorageFileHandle *storageFileHandle,
              )
           {
             Password_undeploy(storageFileHandle->ftp.password);
-            FtpQuit(storageFileHandle->ftp.control);
+            FtpClose(storageFileHandle->ftp.control);
             return ERROR_FTP_AUTHENTIFICATION;
           }
           Password_undeploy(storageFileHandle->ftp.password);
-
-          /* open file for reading */
-          if (FtpAccess(String_cString(fileName),
-                        FTPLIB_FILE_READ,
-                        FTPLIB_IMAGE,
-                        storageFileHandle->ftp.control,
-                        &storageFileHandle->ftp.data
-                       ) != 1
-             )
-          {
-            FtpQuit(storageFileHandle->ftp.control);
-            return ERROR_FTP_AUTHENTIFICATION;
-          }
 
           /* get file size */
           if (FtpSize(String_cString(fileName),
@@ -3421,10 +3408,34 @@ Errors Storage_open(StorageFileHandle *storageFileHandle,
              )
           {
             FtpClose(storageFileHandle->ftp.data);
-            FtpQuit(storageFileHandle->ftp.control);
-            return ERROR_FTP_AUTHENTIFICATION;
+            FtpClose(storageFileHandle->ftp.control);
+            return ERROR_FTP_GET_SIZE;
           }
           storageFileHandle->ftp.size = (uint64)size;
+
+          /* open file for reading: first try non-passive, then passive mode */
+          FtpOptions(FTPLIB_CONNMODE,FTPLIB_PORT,storageFileHandle->ftp.control);
+          if (FtpAccess(String_cString(fileName),
+                        FTPLIB_FILE_READ,
+                        FTPLIB_IMAGE,
+                        storageFileHandle->ftp.control,
+                        &storageFileHandle->ftp.data
+                       ) != 1
+             )
+          {
+            FtpOptions(FTPLIB_CONNMODE,FTPLIB_PASSIVE,storageFileHandle->ftp.control);
+            if (FtpAccess(String_cString(fileName),
+                          FTPLIB_FILE_READ,
+                          FTPLIB_IMAGE,
+                          storageFileHandle->ftp.control,
+                          &storageFileHandle->ftp.data
+                         ) != 1
+               )
+            {
+              FtpClose(storageFileHandle->ftp.control);
+              return ERROR_FTP_AUTHENTIFICATION;
+            }
+          }
         }
       #else /* not HAVE_FTP */
         return ERROR_FUNCTION_NOT_SUPPORTED;
@@ -3642,12 +3653,12 @@ void Storage_close(StorageFileHandle *storageFileHandle)
             if (!storageFileHandle->jobOptions->dryRunFlag)
             {
               assert(storageFileHandle->ftp.data != NULL);
-              FtpClose(storageFileHandle->ftp.data);
+              FtpQuit(storageFileHandle->ftp.data);
             }
             break;
           case STORAGE_MODE_READ:
             assert(storageFileHandle->ftp.data != NULL);
-            FtpClose(storageFileHandle->ftp.data);
+            FtpQuit(storageFileHandle->ftp.data);
             break;
           #ifndef NDEBUG
             default:
@@ -4008,7 +4019,6 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
   assert(buffer != NULL);
   assert(bytesRead != NULL);
 
-//fprintf(stderr,"%s,%d: size=%lu\n",__FILE__,__LINE__,size);
   (*bytesRead) = 0L;
   error = ERROR_NONE;
   switch (storageFileHandle->type)
@@ -4031,7 +4041,6 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
             assert(storageFileHandle->ftp.data != NULL);
             assert(storageFileHandle->ftp.readAheadBuffer.data != NULL);
 
-
             /* copy as much as available from read-ahead buffer */
             if (   (storageFileHandle->ftp.index >= storageFileHandle->ftp.readAheadBuffer.offset)
                 && (storageFileHandle->ftp.index < (storageFileHandle->ftp.readAheadBuffer.offset+storageFileHandle->ftp.readAheadBuffer.length))
@@ -4047,41 +4056,63 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
             }
 
             /* read rest of data */
-            if (size > 0)
+            while (size > 0L)
             {
               if (size < MAX_BUFFER_SIZE)
               {
-                /* read into read-ahead buffer */
+                // read into read-ahead buffer
                 n = FtpRead(storageFileHandle->ftp.readAheadBuffer.data,
                             MIN((size_t)(storageFileHandle->ftp.size-storageFileHandle->ftp.index),MAX_BUFFER_SIZE),
                             storageFileHandle->ftp.data
                            );
-                if (n < 0)
+                if (n == 0)
+                {
+                  // wait a short time for more data
+                  Misc_udelay(250*1000);
+
+                  // read into read-ahead buffer
+                  n = FtpRead(storageFileHandle->ftp.readAheadBuffer.data,
+                              MIN((size_t)(storageFileHandle->ftp.size-storageFileHandle->ftp.index),MAX_BUFFER_SIZE),
+                              storageFileHandle->ftp.data
+                             );
+                }
+                if (n <= 0)
                 {
                   error = ERROR(IO_ERROR,errno);
                   break;
                 }
                 storageFileHandle->ftp.readAheadBuffer.offset = storageFileHandle->ftp.index;
                 storageFileHandle->ftp.readAheadBuffer.length = n;
-  //fprintf(stderr,"%s,%d: n=%ld storageFileHandle->ftp.bufferOffset=%llu storageFileHandle->ftp.bufferLength=%lu\n",__FILE__,__LINE__,n,
-  //storageFileHandle->ftp.readAheadBuffer.offset,storageFileHandle->ftp.readAheadBuffer.length);
 
                 n = MIN(size,storageFileHandle->ftp.readAheadBuffer.length);
                 memcpy(buffer,storageFileHandle->ftp.readAheadBuffer.data,n);
               }
               else
               {
-                /* read direct */
+                // read direct
                 n = FtpRead(buffer,
                             size,
                             storageFileHandle->ftp.data
                            );
-                if (n < 0)
+                if (n == 0)
+                {
+                  // wait a short time for more data
+                  Misc_udelay(250*1000);
+
+                  // read direct
+                  n = FtpRead(buffer,
+                              size,
+                              storageFileHandle->ftp.data
+                             );
+                }
+                if (n <= 0)
                 {
                   error = ERROR(IO_ERROR,errno);
                   break;
                 }
               }
+              buffer = (byte*)buffer+n;
+              size -= n;
               (*bytesRead) += n;
               storageFileHandle->ftp.index += n;
             }
@@ -4132,11 +4163,11 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
             }
 
             /* read rest of data */
-            if (size > 0)
+            while (size > 0L)
             {
               if (size < MAX_BUFFER_SIZE)
               {
-                /* read into read-ahead buffer */
+                // read into read-ahead buffer
                 do
                 {
                   n = libssh2_channel_read(storageFileHandle->scp.channel,
@@ -4160,7 +4191,7 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
               }
               else
               {
-                /* read direct */
+                // read direct
                 n = libssh2_channel_read(storageFileHandle->scp.channel,
                                          buffer,
                                          size
@@ -4171,6 +4202,8 @@ Errors Storage_read(StorageFileHandle *storageFileHandle,
                   break;
                 }
               }
+              buffer = (byte*)buffer+n;
+              size -= n;
               (*bytesRead) += n;
               storageFileHandle->scp.index += n;
             }
@@ -4652,7 +4685,11 @@ Errors Storage_tell(StorageFileHandle *storageFileHandle,
       break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
-HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
+        if (!storageFileHandle->jobOptions->dryRunFlag)
+        {
+          (*offset) = storageFileHandle->ftp.index;
+          error     = ERROR_NONE;
+        }
       #else /* not HAVE_FTP */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_FTP */
@@ -4733,7 +4770,71 @@ Errors Storage_seek(StorageFileHandle *storageFileHandle,
       break;
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
-HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
+        /* ftp protocol does not support a seek-function. Thus try to
+           read and discard data to position the read index to the
+           requested offset.
+           Note: this is slow!
+        */
+
+        if (!storageFileHandle->jobOptions->dryRunFlag)
+        {
+          assert(storageFileHandle->ftp.readAheadBuffer.data != NULL);
+
+          if      (offset > storageFileHandle->ftp.index)
+          {
+            uint64  skip;
+            ulong   i;
+            ssize_t n;
+
+            skip = offset-storageFileHandle->ftp.index;
+
+            /* skip data in read-ahead buffer */
+            if (   (storageFileHandle->ftp.index >= storageFileHandle->ftp.readAheadBuffer.offset)
+                && (storageFileHandle->ftp.index < (storageFileHandle->ftp.readAheadBuffer.offset+storageFileHandle->ftp.readAheadBuffer.length))
+               )
+            {
+              i = storageFileHandle->ftp.index-storageFileHandle->ftp.readAheadBuffer.offset;
+              n = MIN(skip,storageFileHandle->ftp.readAheadBuffer.length-i);
+              skip -= n;
+              storageFileHandle->ftp.index += n;
+            }
+
+            /* skip rest of data */
+            while (skip > 0LL)
+            {
+              // read data
+              n = FtpRead(storageFileHandle->ftp.readAheadBuffer.data,
+                          MIN((size_t)skip,MAX_BUFFER_SIZE),
+                          storageFileHandle->ftp.data
+                         );
+              if (n == 0)
+              {
+                // wait a short time for more data
+                Misc_udelay(250*1000);
+
+                // read into read-ahead buffer
+                n = FtpRead(storageFileHandle->ftp.readAheadBuffer.data,
+                            MIN((size_t)skip,MAX_BUFFER_SIZE),
+                            storageFileHandle->ftp.data
+                           );
+              }
+              if (n <= 0)
+              {
+                error = ERROR(IO_ERROR,errno);
+                break;
+              }
+              storageFileHandle->ftp.readAheadBuffer.offset = storageFileHandle->ftp.index;
+              storageFileHandle->ftp.readAheadBuffer.length = n;
+
+              skip -= n;
+              storageFileHandle->ftp.index += n;
+            }
+          }
+          else if (offset < storageFileHandle->ftp.index)
+          {
+            error = ERROR_FUNCTION_NOT_SUPPORTED;
+          }
+        }
       #else /* not HAVE_FTP */
         error = ERROR_FUNCTION_NOT_SUPPORTED;
       #endif /* HAVE_FTP */
@@ -4747,71 +4848,66 @@ HALT_INTERNAL_ERROR_STILL_NOT_IMPLEMENTED();
       break;
     case STORAGE_TYPE_SCP:
       #ifdef HAVE_SSH2
+        /* scp protocol does not support a seek-function. Thus try to
+           read and discard data to position the read index to the
+           requested offset.
+           Note: this is slow!
+        */
+
+        if (!storageFileHandle->jobOptions->dryRunFlag)
         {
-          /* scp protocol does not support a seek-function. Thus try to
-             read and discard data to position the read index to the
-             requested offset.
-             Note: this is slow!
-          */
+          assert(storageFileHandle->scp.channel != NULL);
+          assert(storageFileHandle->scp.readAheadBuffer.data != NULL);
 
-          if (!storageFileHandle->jobOptions->dryRunFlag)
+          if      (offset > storageFileHandle->scp.index)
           {
-            assert(storageFileHandle->scp.channel != NULL);
-            assert(storageFileHandle->scp.readAheadBuffer.data != NULL);
+            uint64  skip;
+            ulong   i;
+            ssize_t n;
 
-            if      (offset > storageFileHandle->scp.index)
+            skip = offset-storageFileHandle->scp.index;
+
+            /* skip data in read-ahead buffer */
+            if (   (storageFileHandle->scp.index >= storageFileHandle->scp.readAheadBuffer.offset)
+                && (storageFileHandle->scp.index < (storageFileHandle->scp.readAheadBuffer.offset+storageFileHandle->scp.readAheadBuffer.length))
+               )
             {
-              uint64  size;
-              ulong   i;
-              ssize_t n;
+              i = storageFileHandle->scp.index-storageFileHandle->scp.readAheadBuffer.offset;
+              n = MIN(skip,storageFileHandle->scp.readAheadBuffer.length-i);
+              skip -= n;
+              storageFileHandle->scp.index += n;
+            }
 
-              size = offset-storageFileHandle->scp.index;
-
-              /* skip data in read-ahead buffer */
-              if (   (storageFileHandle->scp.index >= storageFileHandle->scp.readAheadBuffer.offset)
-                  && (storageFileHandle->scp.index < (storageFileHandle->scp.readAheadBuffer.offset+storageFileHandle->scp.readAheadBuffer.length))
-                 )
+            /* skip rest of data */
+            while (skip > 0LL)
+            {
+              // wait for data
+              if (!waitSessionSocket(&storageFileHandle->scp.socketHandle))
               {
-                i = storageFileHandle->scp.index-storageFileHandle->scp.readAheadBuffer.offset;
-                n = MIN(size,storageFileHandle->scp.readAheadBuffer.length-i);
-                size -= n;
-                storageFileHandle->scp.index += n;
+                error = ERROR(IO_ERROR,errno);
+                break;
               }
 
-              /* skip rest of data */
-              if (size > 0)
+              // read data
+              n = libssh2_channel_read(storageFileHandle->scp.channel,
+                                       (char*)storageFileHandle->scp.readAheadBuffer.data,
+                                       MIN((size_t)skip,MAX_BUFFER_SIZE)
+                                      );
+              if (n < 0)
               {
-                while (size > 0LL)
-                {
-                  // wait for data
-                  if (!waitSessionSocket(&storageFileHandle->scp.socketHandle))
-                  {
-                    error = ERROR(IO_ERROR,errno);
-                    break;
-                  }
-
-                  // read data
-                  n = libssh2_channel_read(storageFileHandle->scp.channel,
-                                           (char*)storageFileHandle->scp.readAheadBuffer.data,
-                                           MIN((size_t)size,MAX_BUFFER_SIZE)
-                                          );
-                  if (n < 0)
-                  {
-                    error = ERROR(IO_ERROR,errno);
-                    break;
-                  }
-                  storageFileHandle->scp.readAheadBuffer.offset = storageFileHandle->scp.index;
-                  storageFileHandle->scp.readAheadBuffer.length = n;
-
-                  size -= n;
-                  storageFileHandle->scp.index += n;
-                }
+                error = ERROR(IO_ERROR,errno);
+                break;
               }
+              storageFileHandle->scp.readAheadBuffer.offset = storageFileHandle->scp.index;
+              storageFileHandle->scp.readAheadBuffer.length = n;
+
+              skip -= n;
+              storageFileHandle->scp.index += n;
             }
-            else if (offset < storageFileHandle->scp.index)
-            {
-              error = ERROR_FUNCTION_NOT_SUPPORTED;
-            }
+          }
+          else if (offset < storageFileHandle->scp.index)
+          {
+            error = ERROR_FUNCTION_NOT_SUPPORTED;
           }
         }
       #else /* not HAVE_SSH2 */
@@ -5004,7 +5100,6 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
             File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            error = ERROR_HOST_NOT_FOUND;
             break;
           }
 
@@ -5017,7 +5112,7 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
             File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            error = ERROR_HOST_NOT_FOUND;
+            error = ERRORX(HOST_NOT_FOUND,0,String_cString(hostName));
             break;
           }
           if (FtpConnect(String_cString(hostName),&control) != 1)
@@ -5040,7 +5135,7 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
              )
           {
             Password_undeploy(password);
-            FtpQuit(control);
+            FtpClose(control);
             String_delete(hostName);
             Password_delete(password);
             String_delete(loginName);
@@ -5052,17 +5147,23 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
           }
           Password_undeploy(password);
 
-          /* read directory */
+          /* read directory: first try non-passive, then passive mode */
+          FtpOptions(FTPLIB_CONNMODE,FTPLIB_PORT,control);
           if (FtpDir(String_cString(storageDirectoryListHandle->ftp.fileListFileName),String_cString(pathName),control) != 1)
           {
-            String_delete(hostName);
-            Password_delete(password);
-            String_delete(loginName);
-            File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
-            String_delete(storageDirectoryListHandle->ftp.line);
-            String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            error = ERROR_OPEN_DIRECTORY;
-            break;
+            FtpOptions(FTPLIB_CONNMODE,FTPLIB_PASSIVE,control);
+            if (FtpDir(String_cString(storageDirectoryListHandle->ftp.fileListFileName),String_cString(pathName),control) != 1)
+            {
+              FtpClose(control);
+              String_delete(hostName);
+              Password_delete(password);
+              String_delete(loginName);
+              File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
+              String_delete(storageDirectoryListHandle->ftp.line);
+              String_delete(storageDirectoryListHandle->ftp.fileListFileName);
+              error = ERROR_OPEN_DIRECTORY;
+              break;
+            }
           }
 
           /* disconnect */
@@ -5245,6 +5346,7 @@ void Storage_closeDirectoryList(StorageDirectoryListHandle *storageDirectoryList
     case STORAGE_TYPE_FTP:
       #ifdef HAVE_FTP
         File_close(&storageDirectoryListHandle->ftp.fileHandle);
+        File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
         String_delete(storageDirectoryListHandle->ftp.line);
         String_delete(storageDirectoryListHandle->ftp.fileListFileName);
       #else /* not HAVE_FTP */
