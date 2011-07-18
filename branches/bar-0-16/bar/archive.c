@@ -717,6 +717,7 @@ LOCAL Errors createArchiveFile(ArchiveInfo *archiveInfo)
                    );
   if (error != ERROR_NONE)
   {
+    File_delete(archiveInfo->fileName,FALSE);
     return error;
   }
 
@@ -725,6 +726,7 @@ LOCAL Errors createArchiveFile(ArchiveInfo *archiveInfo)
   if (error != ERROR_NONE)
   {
     File_close(&archiveInfo->file.fileHandle);
+    File_delete(archiveInfo->fileName,FALSE);
     return error;
   }
 
@@ -735,6 +737,7 @@ LOCAL Errors createArchiveFile(ArchiveInfo *archiveInfo)
     if (error != ERROR_NONE)
     {
       File_close(&archiveInfo->file.fileHandle);
+      File_delete(archiveInfo->fileName,FALSE);
       return error;
     }
   }
@@ -754,6 +757,7 @@ LOCAL Errors createArchiveFile(ArchiveInfo *archiveInfo)
     if (error != ERROR_NONE)
     {
       File_close(&archiveInfo->file.fileHandle);
+      File_delete(archiveInfo->fileName,FALSE);
       return error;
     }
   }
@@ -782,6 +786,8 @@ LOCAL Errors closeArchiveFile(ArchiveInfo *archiveInfo,
   Errors error;
 
   assert(archiveInfo != NULL);
+  assert(archiveInfo->chunkIO != NULL);
+  assert(archiveInfo->chunkIO->getSize != NULL);
   assert(archiveInfo->jobOptions != NULL);
   assert(archiveInfo->ioType == ARCHIVE_IO_TYPE_FILE);
   assert(archiveInfo->file.openFlag);
