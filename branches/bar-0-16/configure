@@ -6681,12 +6681,9 @@ if test $ENABLE_FTP = "yes"; then
 
     result=1
     if test $result -eq 1; then
-      (cd packages; patch --batch -N -p0 <$cwd/misc/ftplib-3.1-without-perror.patch)
-      # 1>/dev/null 2>/dev/null
-      (cd packages; patch --batch -N -p0 <$cwd/misc/ftplib-3.1-ftpaccess.patch)
-      # 1>/dev/null 2>/dev/null
-      (cd packages; patch --batch -N -p0 <$cwd/misc/ftplib-3.1-receive-timeout.patch)
-      # 1>/dev/null 2>/dev/null
+      (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-without-perror.patch) 1>/dev/null 2>/dev/null
+      (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-ftpaccess.patch) 1>/dev/null 2>/dev/null
+      (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-receive-timeout.patch) 1>/dev/null 2>/dev/null
     fi
     if test $result -eq 1; then
       (cd ftplib/linux; make) 1>/dev/null 2>/dev/null
@@ -7927,7 +7924,7 @@ fi
 VERSION_MAJOR=`cat version|grep MAJOR|sed 's/.*=//g'`
 VERSION_MINOR=`cat version|grep MINOR|sed 's/.*=//g'`
 
-COPYRIGHT_DATE="2007-2010"
+COPYRIGHT_DATE="2007-2011"
 
 
 cat >>confdefs.h <<_ACEOF
