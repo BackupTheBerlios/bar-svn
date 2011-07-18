@@ -3913,9 +3913,6 @@ int main(int argc, const char *argv[])
 
           /* free resources */
           StringList_done(&fileNameList);
-
-          /* log post command */
-          logPostProcess();
         }
         break;
       case COMMAND_GENERATE_KEYS:
