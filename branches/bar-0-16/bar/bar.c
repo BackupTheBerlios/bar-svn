@@ -1863,7 +1863,7 @@ void vlogMessage(ulong logType, const char *prefix, const char *text, va_list ar
       {
         /* append to log file */
         fprintf(logFile,"%s> ",String_cString(dateTime));
-        if (prefix != NULL) (void)fputs(prefix,tmpLogFile);
+        if (prefix != NULL) (void)fputs(prefix,logFile);
         va_copy(tmpArguments,arguments);
         vfprintf(logFile,text,tmpArguments);
         va_end(tmpArguments);
@@ -3687,7 +3687,7 @@ int main(int argc, const char *argv[])
 
         /* close log files */
         if (logFile != NULL) fclose(logFile);
-        fclose(tmpLogFile);unlink(String_cString(tmpLogFileName));
+        fclose(tmpLogFile); (void)unlink(String_cString(tmpLogFileName));
         File_delete(tmpLogFileName,FALSE);
 
         /* free resources */
