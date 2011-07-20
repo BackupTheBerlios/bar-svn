@@ -1717,7 +1717,8 @@ LOCAL StorageRequestResults storageRequestVolume(JobNode *jobNode,
 LOCAL void jobThreadCode(void)
 {
   JobNode      *jobNode;
-  String       archiveName;
+  String       storageName;
+  String       printableStorageName;
   EntryList    includeEntryList;
   PatternList  excludePatternList;
   PatternList  compressExcludePatternList;
@@ -1726,7 +1727,8 @@ LOCAL void jobThreadCode(void)
   StringList   archiveFileNameList;
 
   /* initialize variables */
-  archiveName = String_new();
+  storageName          = String_new();
+  printableStorageName = String_new();
   EntryList_init(&includeEntryList);
   PatternList_init(&excludePatternList);
   PatternList_init(&compressExcludePatternList);
@@ -1758,7 +1760,8 @@ LOCAL void jobThreadCode(void)
     startJob(jobNode);
 
     /* get copy of mandatory job data */
-    String_set(archiveName,jobNode->archiveName);
+    String_set(storageName,jobNode->archiveName);
+    Storage_getPrintableName(printableStorageName,storageName);
     EntryList_clear(&includeEntryList); EntryList_copy(&jobNode->includeEntryList,&includeEntryList);
     PatternList_clear(&excludePatternList); PatternList_copy(&jobNode->excludePatternList,&excludePatternList);
     PatternList_clear(&compressExcludePatternList); PatternList_copy(&jobNode->compressExcludePatternList,&compressExcludePatternList);
@@ -1807,8 +1810,8 @@ LOCAL void jobThreadCode(void)
     {
       case JOB_TYPE_CREATE:
         /* create archive */
-        logMessage(LOG_TYPE_ALWAYS,"start create archive '%s'\n",String_cString(archiveName));
-        jobNode->runningInfo.error = Command_create(String_cString(archiveName),
+        logMessage(LOG_TYPE_ALWAYS,"start create archive '%s'\n",String_cString(printableStorageName));
+        jobNode->runningInfo.error = Command_create(String_cString(storageName),
                                                     &includeEntryList,
                                                     &excludePatternList,
                                                     &compressExcludePatternList,
@@ -1824,12 +1827,12 @@ LOCAL void jobThreadCode(void)
                                                     &pauseFlags.storage,
                                                     &jobNode->requestedAbortFlag
                                                    );
-        logMessage(LOG_TYPE_ALWAYS,"done create archive '%s' (error: %s)\n",String_cString(archiveName),Errors_getText(jobNode->runningInfo.error));
+        logMessage(LOG_TYPE_ALWAYS,"done create archive '%s' (error: %s)\n",String_cString(printableStorageName),Errors_getText(jobNode->runningInfo.error));
         break;
       case JOB_TYPE_RESTORE:
-        logMessage(LOG_TYPE_ALWAYS,"start restore archive '%s'\n",String_cString(archiveName));
+        logMessage(LOG_TYPE_ALWAYS,"start restore archive '%s'\n",String_cString(printableStorageName));
         StringList_init(&archiveFileNameList);
-        StringList_append(&archiveFileNameList,archiveName);
+        StringList_append(&archiveFileNameList,storageName);
         jobNode->runningInfo.error = Command_restore(&archiveFileNameList,
                                                      &includeEntryList,
                                                      &excludePatternList,
@@ -1842,7 +1845,7 @@ LOCAL void jobThreadCode(void)
                                                      &jobNode->requestedAbortFlag
                                                     );
         StringList_done(&archiveFileNameList);
-        logMessage(LOG_TYPE_ALWAYS,"done restore archive '%s' (error: %s)\n",String_cString(archiveName),Errors_getText(jobNode->runningInfo.error));
+        logMessage(LOG_TYPE_ALWAYS,"done restore archive '%s' (error: %s)\n",String_cString(printableStorageName),Errors_getText(jobNode->runningInfo.error));
         break;
       #ifndef NDEBUG
         default:
@@ -1880,7 +1883,8 @@ LOCAL void jobThreadCode(void)
   PatternList_done(&compressExcludePatternList);
   PatternList_done(&excludePatternList);
   EntryList_done(&includeEntryList);
-  String_delete(archiveName);
+  String_delete(printableStorageName);
+  String_delete(storageName);
 }
 
 /*---------------------------------------------------------------------*/
@@ -8118,7 +8122,7 @@ Errors Server_run(uint             port,
     {
       if (clientNode->clientInfo.authorizationState == AUTHORIZATION_STATE_FAIL)
       {
-        /* authorizaton error -> disconnect  client */
+        /* authorization error -> disconnect client */
         printInfo(1,"Disconnected client '%s:%u': authorization failure\n",String_cString(clientNode->clientInfo.network.name),clientNode->clientInfo.network.port);
 
         deleteClientNode = clientNode;
