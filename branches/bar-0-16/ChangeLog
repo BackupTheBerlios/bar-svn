@@ -25,6 +25,7 @@
     is not set
   * improved FTP read: try to read all data when the network
     connection is bad
+  * fix CD/DVD/BD write command: must be %directory, not %file
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
