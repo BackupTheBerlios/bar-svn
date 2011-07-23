@@ -18,7 +18,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.LinkedHashSet;
 
 // graphics
 import org.eclipse.swt.events.FocusEvent;
@@ -430,7 +429,7 @@ class TabRestore
           for (String storageName : storageNameHashSet)
           {
             StorageData storageData = storageDataMap.get(storageName);
-            if (!storageData.isTagged())
+            if ((storageData != null) && !storageData.isTagged())
             {
               storageDataMap.remove(storageName);
             }
@@ -1438,6 +1437,19 @@ class TabRestore
           }
         });
 
+        menuItem = Widgets.addMenuItem(menu,"Remove all with error...");
+        menuItem.addSelectionListener(new SelectionListener()
+        {
+          public void widgetSelected(SelectionEvent selectionEvent)
+          {
+            MenuItem widget = (MenuItem)selectionEvent.widget;
+            removeAllWithErrorStorageIndex();
+          }
+          public void widgetDefaultSelected(SelectionEvent selectionEvent)
+          {
+          }
+        });
+
         menuItem = Widgets.addMenuItem(menu,"Refresh...");
         menuItem.addSelectionListener(new SelectionListener()
         {
@@ -2259,12 +2271,11 @@ class TabRestore
   }
 
   /** get tagged storage names
+   * @param storageNamesHashSet storage hash set to fill
    * @return tagged storage name hash set
    */
-  private LinkedHashSet<String> getTaggedStorageNameHashSet()
+  private HashSet<String> getTaggedStorageNameHashSet(HashSet<String> storageNamesHashSet)
   {
-    LinkedHashSet<String> storageNamesHashSet = new LinkedHashSet<String>();
-
     for (TableItem tableItem : widgetStorageList.getItems())
     {
       StorageData storageData = (StorageData)tableItem.getData();
@@ -2277,13 +2288,46 @@ class TabRestore
     return storageNamesHashSet;
   }
 
+  /** get tagged storage names
+   * @return tagged storage name hash set
+   */
+  private HashSet<String> getTaggedStorageNameHashSet()
+  {
+    return getTaggedStorageNameHashSet(new HashSet<String>());
+  }
+
+  /** get tagged storage
+   * @param storageNamesHashSet storage hash set to fill
+   * @return tagged storage hash set
+   */
+  private HashSet<StorageData> getTaggedStorageHashSet(HashSet<StorageData> storageNamesHashSet)
+  {
+    for (TableItem tableItem : widgetStorageList.getItems())
+    {
+      StorageData storageData = (StorageData)tableItem.getData();
+      if ((storageData != null) && !tableItem.getGrayed() && tableItem.getChecked())
+      {
+        storageNamesHashSet.add(storageData);
+      }
+    }
+
+    return storageNamesHashSet;
+  }
+
+  /** get tagged storage
+   * @return tagged storage hash set
+   */
+  private HashSet<StorageData> getTaggedStorageHashSet()
+  {
+    return getTaggedStorageHashSet(new HashSet<StorageData>());
+  }
+
   /** get selected storage
+   * @param storageHashSet storage hash set to fill
    * @return selected storage hash set
    */
-  private LinkedHashSet<StorageData> getSelectedStorageHashSet()
+  private HashSet<StorageData> getSelectedStorageHashSet(HashSet<StorageData> storageHashSet)
   {
-    LinkedHashSet<StorageData> storageHashSet = new LinkedHashSet<StorageData>();
-
     for (TableItem tableItem : widgetStorageList.getSelection())
     {
       StorageData storageData = (StorageData)tableItem.getData();
@@ -2294,6 +2338,14 @@ class TabRestore
     }
 
     return storageHashSet;
+  }
+
+  /** get selected storage
+   * @return selected storage hash set
+   */
+  private HashSet<StorageData> getSelectedStorageHashSet()
+  {
+    return getSelectedStorageHashSet(new HashSet<StorageData>());
   }
 
   /** check if some storage entries are tagged
@@ -2524,15 +2576,26 @@ class TabRestore
   {
     try
     {
-      HashSet<StorageData> selectedStorageHashSet = getSelectedStorageHashSet();
+      HashSet<StorageData> selectedStorageHashSet = new HashSet<StorageData>();
+
+      getTaggedStorageHashSet(selectedStorageHashSet);
+      getSelectedStorageHashSet(selectedStorageHashSet);
       if (!selectedStorageHashSet.isEmpty())
       {
         if (Dialogs.confirm(shell,"Really remove index for "+selectedStorageHashSet.size()+" entries?"))
         {
           for (StorageData storageData : selectedStorageHashSet)
           {
+            // get archive name parts
+            ArchiveNameParts archiveNameParts = new ArchiveNameParts(storageData.name);
+
+            // remove entry
             String[] result = new String[1];
-            int errorCode = BARServer.executeCommand("INDEX_STORAGE_REMOVE "+storageData.id,result);
+            int errorCode = BARServer.executeCommand("INDEX_STORAGE_REMOVE "+
+                                                     "* "+
+                                                     storageData.id,
+                                                     result
+                                                    );
             if (errorCode == Errors.NONE)
             {
               synchronized(storageDataMap)
@@ -2543,7 +2606,7 @@ class TabRestore
             }
             else
             {
-              Dialogs.error(shell,"Cannot remove database index for storage file\n\n'"+storageData.name+"'\n\n(error: "+result[0]+")");
+              Dialogs.error(shell,"Cannot remove database index for storage file\n\n'"+archiveNameParts.getPrintableName()+"'\n\n(error: "+result[0]+")");
             }
           }
         }
@@ -2555,19 +2618,56 @@ class TabRestore
     }
   }
 
+  /** remove all storage from database index with error
+   */
+  private void removeAllWithErrorStorageIndex()
+  {
+    try
+    {
+      if (Dialogs.confirm(shell,"Really remove all indizes with error state?"))
+      {
+        String[] result = new String[1];
+        int errorCode = BARServer.executeCommand("INDEX_STORAGE_REMOVE "+
+                                                 "ERROR "+
+                                                 "0",
+                                                 result
+                                                );
+        if (errorCode == Errors.NONE)
+        {
+          updateStorageListThread.triggerUpdate();
+        }
+        else
+        {
+          Dialogs.error(shell,"Cannot remove database indizes with error state' (error: "+result[0]+")");
+        }
+      }
+    }
+    catch (CommunicationError error)
+    {
+      Dialogs.error(shell,"Communication error while removing database indizes (error: "+error.toString()+")");
+    }
+  }
+
   /** refresh storage from database index
    */
   private void refreshStorageIndex()
   {
     try
     {
-      HashSet<StorageData> selectedStorageHashSet = getSelectedStorageHashSet();
+      HashSet<StorageData> selectedStorageHashSet = new HashSet<StorageData>();
+
+      getTaggedStorageHashSet(selectedStorageHashSet);
+      getSelectedStorageHashSet(selectedStorageHashSet);
       if (!selectedStorageHashSet.isEmpty())
       {
         if (Dialogs.confirm(shell,"Really refresh index for "+selectedStorageHashSet.size()+" entries?"))
         {
           for (StorageData storageData : selectedStorageHashSet)
           {
+            // get archive name parts
+            ArchiveNameParts archiveNameParts = new ArchiveNameParts(storageData.name);
+
+            // refresh entry
             String[] result = new String[1];
             int errorCode = BARServer.executeCommand("INDEX_STORAGE_REFRESH "+
                                                      "* "+
@@ -2580,7 +2680,7 @@ class TabRestore
             }
             else
             {
-              Dialogs.error(shell,"Cannot refresh database index for storage file\n\n'"+storageData.name+"'\n\n(error: "+result[0]+")");
+              Dialogs.error(shell,"Cannot refresh database index for storage file\n\n'"+archiveNameParts.getPrintableName()+"'\n\n(error: "+result[0]+")");
             }
           }
 
@@ -2614,13 +2714,13 @@ class TabRestore
         }
         else
         {
-          Dialogs.error(shell,"Cannot refresh database index with error state' (error: "+result[0]+")");
+          Dialogs.error(shell,"Cannot refresh database indizes with error state' (error: "+result[0]+")");
         }
       }
     }
     catch (CommunicationError error)
     {
-      Dialogs.error(shell,"Communication error while refreshing database index (error: "+error.toString()+")");
+      Dialogs.error(shell,"Communication error while refreshing database indizes (error: "+error.toString()+")");
     }
   }
 
@@ -2629,7 +2729,7 @@ class TabRestore
    * @param directory destination directory or ""
    * @param overwriteEntries true to overwrite existing entries
    */
-  private void restoreArchives(LinkedHashSet<String> storageNamesHashSet, String directory, boolean overwriteEntries)
+  private void restoreArchives(HashSet<String> storageNamesHashSet, String directory, boolean overwriteEntries)
   {
     shell.setCursor(waitCursor);
 
@@ -2639,9 +2739,9 @@ class TabRestore
     {
       public void run(final BusyDialog busyDialog, Object userData)
       {
-        final LinkedHashSet<String> storageNamesHashSet = (LinkedHashSet<String>)((Object[])userData)[0];
-        final String                directory           = (String               )((Object[])userData)[1];
-        final boolean               overwriteEntries    = (Boolean              )((Object[])userData)[2];
+        final HashSet<String> storageNamesHashSet = (HashSet<String>)((Object[])userData)[0];
+        final String          directory           = (String         )((Object[])userData)[1];
+        final boolean         overwriteEntries    = (Boolean        )((Object[])userData)[2];
 
         int errorCode;
 
