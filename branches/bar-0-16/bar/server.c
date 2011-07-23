@@ -6363,35 +6363,114 @@ LOCAL void serverCommand_indexStorageAdd(ClientInfo *clientInfo, uint id, const 
 * Output : -
 * Return : -
 * Notes  : Arguments:
-*            <name>
+*            <status>|*
+*            <id>|0
 \***********************************************************************/
 
 LOCAL void serverCommand_indexStorageRemove(ClientInfo *clientInfo, uint id, const String arguments[], uint argumentCount)
 {
-  DatabaseId storageId;
-  Errors     error;
+  bool                stateAny;
+  IndexStates         state;
+  DatabaseId          storageId;
+  Errors              error;
+  DatabaseQueryHandle databaseQueryHandle;
+  IndexStates         storageState;
 
   assert(clientInfo != NULL);
   assert(arguments != NULL);
 
-  /* get id */
+  /* state, id */
   if (argumentCount < 1)
   {
-    sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected name");
+    sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected filter status");
     return;
   }
-  storageId = (DatabaseId)String_toInteger64(arguments[0],0,NULL,NULL,0);
+  stateAny = FALSE;
+  state    = INDEX_STATE_NONE;
+  if      (String_equalsCString(arguments[0],"*"))
+  {
+    stateAny = TRUE;
+  }
+  else if (String_equalsIgnoreCaseCString(arguments[0],"OK"))
+  {
+    state = INDEX_STATE_OK;
+  }
+  else if (String_equalsIgnoreCaseCString(arguments[0],"UPDATE_REQUESTED"))
+  {
+    state = INDEX_STATE_UPDATE_REQUESTED;
+  }
+  else if (String_equalsIgnoreCaseCString(arguments[0],"UPDATE"))
+  {
+    state = INDEX_STATE_UPDATE;
+  }
+  else if (String_equalsIgnoreCaseCString(arguments[0],"ERROR"))
+  {
+    state = INDEX_STATE_ERROR;
+  }
+  else
+  {
+    sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected filter state *,OK,UPDATE_REQUESTED,UPDATE,ERROR");
+    return;
+  }
+  if (argumentCount < 2)
+  {
+    sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected filter pattern");
+    return;
+  }
+  storageId = (DatabaseId)String_toInteger64(arguments[1],0,NULL,NULL,0);
 
   if (indexDatabaseHandle != NULL)
   {
-    /* delete index */
-    error = Index_delete(indexDatabaseHandle,
-                         storageId
-                        );
-    if (error != ERROR_NONE)
+    if (storageId != 0)
     {
-      sendClientResult(clientInfo,id,TRUE,error,"remove index fail");
-      return;
+      /* delete index */
+      error = Index_delete(indexDatabaseHandle,
+                           storageId
+                          );
+      if (error != ERROR_NONE)
+      {
+        sendClientResult(clientInfo,id,TRUE,error,"remove index fail");
+        return;
+      }
+    }
+    else
+    {
+      error = Index_initListStorage(&databaseQueryHandle,
+                                    indexDatabaseHandle,
+                                    NULL
+                                   );
+      if (error != ERROR_NONE)
+      {
+        sendClientResult(clientInfo,id,TRUE,ERROR_DATABASE,"%s",Errors_getText(error));
+        return;
+      }
+      while (Index_getNextStorage(&databaseQueryHandle,
+                                  &storageId,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  &storageState,
+                                  NULL,
+                                  NULL,
+                                  NULL
+                                 )
+            )
+      {
+        if (stateAny || (state == storageState))
+        {
+          /* delete index */
+          error = Index_delete(indexDatabaseHandle,
+                               storageId
+                              );
+          if (error != ERROR_NONE)
+          {
+            Index_doneList(&databaseQueryHandle);
+            sendClientResult(clientInfo,id,TRUE,error,"remove index fail");
+            return;
+          }
+        }
+      }
+      Index_doneList(&databaseQueryHandle);
     }
   }
   else
@@ -6492,26 +6571,28 @@ LOCAL void serverCommand_indexStorageRefresh(ClientInfo *clientInfo, uint id, co
         sendClientResult(clientInfo,id,TRUE,ERROR_DATABASE,"%s",Errors_getText(error));
         return;
       }
-      while (   Index_getNextStorage(&databaseQueryHandle,
-                                     &storageId,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     &storageState,
-                                     NULL,
-                                     NULL,
-                                     NULL
-                                    )
-             && (stateAny || (state == storageState))
+      while (Index_getNextStorage(&databaseQueryHandle,
+                                  &storageId,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  &storageState,
+                                  NULL,
+                                  NULL,
+                                  NULL
+                                 )
             )
       {
-        /* set state */
-        Index_setState(indexDatabaseHandle,
-                       storageId,
-                       INDEX_STATE_UPDATE_REQUESTED,
-                       0LL,
-                       NULL
-                      );
+        if (stateAny || (state == storageState))
+        {
+          /* set state */
+          Index_setState(indexDatabaseHandle,
+                         storageId,
+                         INDEX_STATE_UPDATE_REQUESTED,
+                         0LL,
+                         NULL
+                        );
+        }
       }
       Index_doneList(&databaseQueryHandle);
     }
@@ -7313,8 +7394,8 @@ SERVER_COMMANDS[] =
 
   { "INDEX_STORAGE_LIST",           "i S S",    serverCommand_indexStorageList,          AUTHORIZATION_STATE_OK      },
   { "INDEX_STORAGE_ADD",            "S",        serverCommand_indexStorageAdd,           AUTHORIZATION_STATE_OK      },
-  { "INDEX_STORAGE_REMOVE",         "i",        serverCommand_indexStorageRemove,        AUTHORIZATION_STATE_OK      },
-  { "INDEX_STORAGE_REFRESH",        "i",        serverCommand_indexStorageRefresh,       AUTHORIZATION_STATE_OK      },
+  { "INDEX_STORAGE_REMOVE",         "S i",      serverCommand_indexStorageRemove,        AUTHORIZATION_STATE_OK      },
+  { "INDEX_STORAGE_REFRESH",        "S i",      serverCommand_indexStorageRefresh,       AUTHORIZATION_STATE_OK      },
   { "INDEX_ENTRIES_LIST",           "i b S",    serverCommand_indexEntriesList,          AUTHORIZATION_STATE_OK      },
 
   #ifndef NDEBUG
