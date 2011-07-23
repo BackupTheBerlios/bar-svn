@@ -3407,7 +3407,7 @@ Errors Storage_open(StorageFileHandle *storageFileHandle,
                      ) != 1
              )
           {
-            FtpClose(storageFileHandle->ftp.data);
+fprintf(stderr,"%s, %d: last=%s\n",__FILE__,__LINE__,FtpLastResponse(storageFileHandle->ftp.control));
             FtpClose(storageFileHandle->ftp.control);
             return ERROR_FTP_GET_SIZE;
           }
