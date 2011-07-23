@@ -61,6 +61,7 @@ RMDIR      = rmdir
 RMF        = rm -f
 RMRF       = rm -rf
 SED        = sed
+SLEEP      = sleep
 STAT       = stat
 TAR        = tar
 
@@ -352,6 +353,7 @@ runserver_ssl barserver_ssl: bar ../bar-ca.pem ../bar-server-cert.pem ../bar-ser
 #   splitting
 #   everything together
 #   images
+#   dvd
 #
 # For image tests some sudo-commands are required:
 #  sudo losetup <loop device> <file>
@@ -394,7 +396,7 @@ TEST_FILES_CLEAN = \
 
 .PHONY: test clean_test
 .PHONY: test1 test2 test3 test4 test5 test6 test_all
-.PHONY: test_basic test_compress test_crypt test_asymmetric_crypt test_split test_image
+.PHONY: test_basic test_compress test_crypt test_asymmetric_crypt test_split test_image test_dvd
 test:
 	@$(MAKE) QUIET=1 --no-print-directory -s test1 test2 test3 test4 test5 test6 test_all
 
@@ -461,6 +463,15 @@ test6 test_image: bar
             test_image_operations \
             ; \
         done
+	@$(ECHO) "ok"
+
+test7 test_dvd: bar
+	@$(ECHO_NO_LF) "Test 7: dvd..."
+	$(MAKE) \
+          BAR_FILE="test" \
+          OPTIONS="--compress-algorithm=none --crypt-algorithm=none" \
+          test_dvd_operations \
+          ;
 	@$(ECHO) "ok"
 
 test_all: bar
@@ -960,6 +971,14 @@ test_image_operations_base: bar
 	$(call FunctionTestDeviceDump,$(DEVICE0),test/dev0.image)
 	$(call FunctionTestDeviceDump,$(DEVICE1),test/dev1.image)
 	$(DIFF) test/dev0.image test/dev1.image
+
+.PHONY: test_dvd_operations
+test_dvd_operations:
+	$(RMRF) $(TEST_FILES_CLEAN)
+	$(SLEEP) 30
+	SSH_ASKPASS= ./bar -c dvd://$(if $(BAR_FILE),$(BAR_FILE),test).bar test/data $(if $(OPTIONS),$(OPTIONS),--compress-algorithm=none --crypt-algorithm=none) $(if $(QUIET),1>/dev/null)
+	$(SLEEP) 30
+	SSH_ASKPASS= ./bar -c dvd://$(if $(BAR_FILE),$(BAR_FILE),test).bar test/data $(if $(OPTIONS),$(OPTIONS),--compress-algorithm=none --crypt-algorithm=none) --ecc $(if $(QUIET),1>/dev/null)
 
 # ----------------------------------------------------------------------------
 
