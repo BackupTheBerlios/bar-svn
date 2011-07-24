@@ -234,12 +234,41 @@ class TabRestore
       }
     }
 
+    /** get storage data from map
+     * @param id storage id
+     */
+    public StorageData get(long storageId)
+    {
+      return super.get(storageId);
+    }
+
+    /** get storage data from map
+     * @param storageName storage name
+     */
+    public StorageData get(String storageName)
+    {
+      for (StorageData storageData : values())
+      {
+        if (storageData.name.equals(storageName)) return storageData;
+      }
+
+      return null;
+    }
+
     /** put storage data into map
      * @param storageData storage data
      */
     public void put(StorageData storageData)
     {
       put(storageData.id,storageData);
+    }
+
+    /** remove storage data from map
+     * @param storageData storage data
+     */
+    public void remove(StorageData storageData)
+    {
+      remove(storageData.id);
     }
   }
 
@@ -398,7 +427,7 @@ class TabRestore
 
                 synchronized(storageDataMap)
                 {
-                  StorageData storageData = storageDataMap.get(storageName);
+                  StorageData storageData = storageDataMap.get(id);
                   if (storageData != null)
                   {
                     storageData.size         = size;
@@ -431,7 +460,7 @@ class TabRestore
             StorageData storageData = storageDataMap.get(storageName);
             if ((storageData != null) && !storageData.isTagged())
             {
-              storageDataMap.remove(storageName);
+              storageDataMap.remove(storageData);
             }
           }
         }
