@@ -2110,6 +2110,7 @@ LOCAL void freeIndexCryptPasswordNode(IndexCryptPasswordNode *indexCryptPassword
 LOCAL void indexThreadCode(void)
 {
   String                 storageName;
+  String                 printableStorageName;
   IndexCryptPasswordList indexCryptPasswordList;
   DatabaseQueryHandle    databaseQueryHandle;
   int64                  storageId;
@@ -2119,7 +2120,8 @@ LOCAL void indexThreadCode(void)
   int                    z;
 
   /* initialize variables */
-  storageName = String_new();
+  storageName          = String_new();
+  printableStorageName = String_new();
   List_init(&indexCryptPasswordList);
 
   /* reset/delete incomplete database entries (ignore possible errors) */
@@ -2219,8 +2221,9 @@ LOCAL void indexThreadCode(void)
            && (storageId == DATABASE_ID_NONE)
           );
     if (quitFlag) break;
+    Storage_getPrintableName(printableStorageName,storageName);
 
-    logMessage(LOG_TYPE_INDEX,"create index #%lld for '%s'\n",storageId,String_cString(storageName));
+    logMessage(LOG_TYPE_INDEX,"create index #%lld for '%s'\n",storageId,String_cString(printableStorageName));
 
     // get all job crypt passwords and crypt public keys (including no password and default)
     addIndexCryptPasswordNode(&indexCryptPasswordList,NULL,NULL);
@@ -2256,14 +2259,14 @@ LOCAL void indexThreadCode(void)
       {
         logMessage(LOG_TYPE_INDEX,
                    "created storage index '%s'\n",
-                   String_cString(storageName)
+                   String_cString(printableStorageName)
                   );
       }
       else
       {
         logMessage(LOG_TYPE_ERROR,
                    "cannot create storage index '%s' (error: %s)\n",
-                   String_cString(storageName),
+                   String_cString(printableStorageName),
                    Errors_getText(error)
                   );
       }
@@ -2275,6 +2278,7 @@ LOCAL void indexThreadCode(void)
 
   /* free resources */
   List_done(&indexCryptPasswordList,(ListNodeFreeFunction)freeIndexCryptPasswordNode,NULL);
+  String_delete(printableStorageName);
   String_delete(storageName);
 }
 
