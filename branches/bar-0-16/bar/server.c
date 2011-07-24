@@ -2123,6 +2123,7 @@ LOCAL void indexThreadCode(void)
   List_init(&indexCryptPasswordList);
 
   /* reset/delete incomplete database entries (ignore possible errors) */
+  logMessage(LOG_TYPE_INDEX,"INDEX","start clean-up database\n");
   error = ERROR_NONE;
   while (Index_findByState(indexDatabaseHandle,
                            INDEX_STATE_UPDATE,
@@ -2168,10 +2169,12 @@ LOCAL void indexThreadCode(void)
          && (error == ERROR_NONE)
         )
   {
+    logMessage(LOG_TYPE_INDEX,"INDEX","delete incomplete index #%lld\n",storageId);
     error = Index_delete(indexDatabaseHandle,
                          storageId
                         );
   }
+  logMessage(LOG_TYPE_ALWAYS,"INDEX","done clean-up database\n");
 
   /* add/update index database */
   while (!quitFlag)
@@ -2217,6 +2220,8 @@ LOCAL void indexThreadCode(void)
           );
     if (quitFlag) break;
 
+    logMessage(LOG_TYPE_INDEX,"INDEX","create index #%lld for '%s'\n",storageId,String_cString(storageName));
+
     // get all job crypt passwords and crypt public keys (including no password and default)
     addIndexCryptPasswordNode(&indexCryptPasswordList,NULL,NULL);
     addIndexCryptPasswordNode(&indexCryptPasswordList,globalOptions.cryptPassword,NULL);
@@ -2245,13 +2250,23 @@ LOCAL void indexThreadCode(void)
                                  );
       if (quitFlag || (error == ERROR_NONE)) break;
     }
-    if (!quitFlag && (error != ERROR_NONE))
+    if (!quitFlag)
     {
-      logMessage(LOG_TYPE_ERROR,
-                 "cannot create storage index '%s' (error: %s)\n",
-                 String_cString(storageName),
-                 Errors_getText(error)
-                );
+      if (error == ERROR_NONE)
+      {
+        logMessage(LOG_TYPE_INDEX,
+                   "created storage index '%s'\n",
+                   String_cString(storageName)
+                  );
+      }
+      else
+      {
+        logMessage(LOG_TYPE_ERROR,
+                   "cannot create storage index '%s' (error: %s)\n",
+                   String_cString(storageName),
+                   Errors_getText(error)
+                  );
+      }
     }
 
     /* free resources */
