@@ -2121,7 +2121,6 @@ LOCAL void indexThreadCode(void)
   /* initialize variables */
   storageName = String_new();
   List_init(&indexCryptPasswordList);
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
 
   /* reset/delete incomplete database entries (ignore possible errors) */
   logMessage(LOG_TYPE_INDEX,"start clean-up database\n");
@@ -6217,7 +6216,7 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
   Errors              error;
   DatabaseQueryHandle databaseQueryHandle;
   ulong               n;
-  DatabaseId          databaseId;
+  DatabaseId          storageId;
   String              storageName;
   uint64              dateTime;
   uint64              size;
@@ -6272,7 +6271,7 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
     n = 0L;
     while (   ((maxCount == 0L) || (n < maxCount))
            && Index_getNextStorage(&databaseQueryHandle,
-                                   &databaseId,
+                                   &storageId,
                                    storageName,
                                    &dateTime,
                                    &size,
@@ -6283,15 +6282,13 @@ LOCAL void serverCommand_indexStorageList(ClientInfo *clientInfo, uint id, const
                                   )
           )
     {
-      UNUSED_VARIABLE(databaseId);
-
       assert((0 <= state) && (state < SIZE_OF_ARRAY(INDEX_STATE_STRINGS)));
 
       Storage_getPrintableName(printableStorageName,storageName);
 
       sendClientResult(clientInfo,id,FALSE,ERROR_NONE,
                        "%llu %llu %llu %'s %'S %'S",
-                       databaseId,
+                       storageId,
                        dateTime,
                        size,
                        INDEX_STATE_STRINGS[state],
@@ -6811,7 +6808,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
   IndexList           indexList;
   IndexNode           *indexNode;
   String              regexpString;
-  DatabaseId          databaseId;
+  DatabaseId          storageId;
   String              storageName;
   uint64              storageDateTime;
   String              name;
@@ -6879,7 +6876,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
       }
       while (   ((maxCount == 0L) || (List_count(&indexList) < maxCount))
              && Index_getNextFile(&databaseQueryHandle,
-                                  &databaseId,
+                                  &storageId,
                                   storageName,
                                   &storageDateTime,
                                   name,
@@ -6930,7 +6927,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
       }
       while (   ((maxCount == 0L) || (List_count(&indexList) < maxCount))
              && Index_getNextImage(&databaseQueryHandle,
-                                   &databaseId,
+                                   &storageId,
                                    storageName,
                                    &storageDateTime,
                                    name,
@@ -6940,6 +6937,8 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
                                   )
             )
       {
+        UNUSED_VARIABLE(storageId);
+
         indexNode = getIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_IMAGE,storageName,name,timeModified,newestEntriesOnly);
         if (indexNode == NULL) break;
         if (timeModified >= indexNode->timeModified)
@@ -6974,7 +6973,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
       }
       while (   ((maxCount == 0L) || (List_count(&indexList) < maxCount))
              && Index_getNextDirectory(&databaseQueryHandle,
-                                       &databaseId,
+                                       &storageId,
                                        storageName,
                                        &storageDateTime,
                                        name,
@@ -6985,6 +6984,8 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
                                       )
             )
       {
+        UNUSED_VARIABLE(storageId);
+
         indexNode = getIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_DIRECTORY,storageName,name,timeModified,newestEntriesOnly);
         if (indexNode == NULL) break;
         if (timeModified >= indexNode->timeModified)
@@ -7019,7 +7020,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
       }
       while (   ((maxCount == 0L) || (List_count(&indexList) < maxCount))
              && Index_getNextLink(&databaseQueryHandle,
-                                  &databaseId,
+                                  &storageId,
                                   storageName,
                                   &storageDateTime,
                                   name,
@@ -7031,6 +7032,8 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
                                  )
             )
       {
+        UNUSED_VARIABLE(storageId);
+
         indexNode = getIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_LINK,storageName,name,timeModified,newestEntriesOnly);
         if (indexNode == NULL) break;
         if (timeModified >= indexNode->timeModified)
@@ -7066,7 +7069,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
       }
       while (   ((maxCount == 0L) || (List_count(&indexList) < maxCount))
              && Index_getNextHardLink(&databaseQueryHandle,
-                                      &databaseId,
+                                      &storageId,
                                       storageName,
                                       &storageDateTime,
                                       name,
@@ -7080,6 +7083,8 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
                                      )
             )
       {
+        UNUSED_VARIABLE(storageId);
+
         indexNode = getIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_HARDLINK,storageName,name,timeModified,newestEntriesOnly);
         if (indexNode == NULL) break;
         if (timeModified >= indexNode->timeModified)
@@ -7117,7 +7122,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
       }
       while (   ((maxCount == 0L) || (List_count(&indexList) < maxCount))
              && Index_getNextSpecial(&databaseQueryHandle,
-                                     &databaseId,
+                                     &storageId,
                                      storageName,
                                      &storageDateTime,
                                      name,
@@ -7128,6 +7133,8 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
                                     )
             )
       {
+        UNUSED_VARIABLE(storageId);
+
         indexNode = getIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_SPECIAL,storageName,name,timeModified,newestEntriesOnly);
         if (indexNode == NULL) break;
         if (timeModified >= indexNode->timeModified)
