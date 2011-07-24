@@ -2121,9 +2121,10 @@ LOCAL void indexThreadCode(void)
   /* initialize variables */
   storageName = String_new();
   List_init(&indexCryptPasswordList);
+fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
 
   /* reset/delete incomplete database entries (ignore possible errors) */
-  logMessage(LOG_TYPE_INDEX,"INDEX","start clean-up database\n");
+  logMessage(LOG_TYPE_INDEX,"start clean-up database\n");
   error = ERROR_NONE;
   while (Index_findByState(indexDatabaseHandle,
                            INDEX_STATE_UPDATE,
@@ -2169,12 +2170,12 @@ LOCAL void indexThreadCode(void)
          && (error == ERROR_NONE)
         )
   {
-    logMessage(LOG_TYPE_INDEX,"INDEX","delete incomplete index #%lld\n",storageId);
+    logMessage(LOG_TYPE_INDEX,"delete incomplete index #%lld\n",storageId);
     error = Index_delete(indexDatabaseHandle,
                          storageId
                         );
   }
-  logMessage(LOG_TYPE_ALWAYS,"INDEX","done clean-up database\n");
+  logMessage(LOG_TYPE_INDEX,"done clean-up database\n");
 
   /* add/update index database */
   while (!quitFlag)
@@ -2220,7 +2221,7 @@ LOCAL void indexThreadCode(void)
           );
     if (quitFlag) break;
 
-    logMessage(LOG_TYPE_INDEX,"INDEX","create index #%lld for '%s'\n",storageId,String_cString(storageName));
+    logMessage(LOG_TYPE_INDEX,"create index #%lld for '%s'\n",storageId,String_cString(storageName));
 
     // get all job crypt passwords and crypt public keys (including no password and default)
     addIndexCryptPasswordNode(&indexCryptPasswordList,NULL,NULL);
