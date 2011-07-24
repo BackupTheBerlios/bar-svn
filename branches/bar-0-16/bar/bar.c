@@ -310,6 +310,7 @@ LOCAL const CommandLineOptionSet COMMAND_LINE_OPTIONS_LOG_TYPES[] =
   {"excluded",  LOG_TYPE_ENTRY_EXCLUDED,     "log excluded files"       },
 
   {"storage",   LOG_TYPE_STORAGE,            "log storage"              },
+  {"index",     LOG_TYPE_INDEX,              "log index"                },
 
   {"all",       LOG_TYPE_ALL,                "log everything"           },
 };
@@ -608,6 +609,7 @@ LOCAL const ConfigValueSet CONFIG_VALUE_LOG_TYPES[] =
   {"excluded",  LOG_TYPE_ENTRY_EXCLUDED     },
 
   {"storage",   LOG_TYPE_STORAGE            },
+  {"index",     LOG_TYPE_INDEX,             },
 
   {"all",       LOG_TYPE_ALL                },
 };

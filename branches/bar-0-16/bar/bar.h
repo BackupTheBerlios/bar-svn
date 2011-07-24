@@ -76,6 +76,7 @@ typedef enum
   LOG_TYPE_ENTRY_INCOMPLETE    = (1 <<  6),
   LOG_TYPE_ENTRY_EXCLUDED      = (1 <<  7),
   LOG_TYPE_STORAGE             = (1 <<  8),
+  LOG_TYPE_INDEX               = (1 <<  9),
 } LogTypes;
 
 #define LOG_TYPE_NONE 0x00000000
