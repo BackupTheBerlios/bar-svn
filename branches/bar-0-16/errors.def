@@ -109,7 +109,7 @@ ERROR WRONG_PRIVATE_KEY              "wrong private key"
 ERROR CREATE_FILE
 ERROR OPEN_FILE
 ERROR OPEN_DIRECTORY
-  // Note: to not add file name to error message if error number is set; name should be part of error text
+  // Note: do not add file name to error message if error number is set; name should be part of error text
   if (ERRNO != 0)
   {
     strncpy(errorText,strerror(ERRNO),sizeof(errorText)-1);
