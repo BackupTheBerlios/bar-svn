@@ -1270,7 +1270,7 @@ bool Storage_parseFTPSpecifier(const String ftpSpecifier,
   String_clear(loginName);
   String_clear(hostName);
 
-  if      (String_matchCString(ftpSpecifier,STRING_BEGIN,"^([^:]*?):(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)$",NULL,NULL,loginName,s,STRING_NO_ASSIGN,hostName,t,NULL))
+  if      (String_matchCString(ftpSpecifier,STRING_BEGIN,"^([^:]*?):(([^@]|\\@)*?)@([^@:/]*?):([0-9]+)$",NULL,NULL,loginName,s,STRING_NO_ASSIGN,hostName,t,NULL))
   {
     String_mapCString(loginName,STRING_BEGIN,LOGINNAME_MAP_FROM,LOGINNAME_MAP_TO,SIZE_OF_ARRAY(LOGINNAME_MAP_FROM));
     if (password != NULL) Password_setString(password,s);
@@ -1285,10 +1285,10 @@ bool Storage_parseFTPSpecifier(const String ftpSpecifier,
 
     result = TRUE;
   }
-  else if (String_matchCString(ftpSpecifier,STRING_BEGIN,"^(([^@]|\\@)*?)@([^@:/]*?):(\\d*?)$",NULL,NULL,loginName,STRING_NO_ASSIGN,hostName,t,NULL))
+  else if (String_matchCString(ftpSpecifier,STRING_BEGIN,"^(([^@]|\\@)*?)@([^@:/]*?):([0-9]+)$",NULL,NULL,loginName,STRING_NO_ASSIGN,hostName,s,NULL))
   {
     String_mapCString(loginName,STRING_BEGIN,LOGINNAME_MAP_FROM,LOGINNAME_MAP_TO,SIZE_OF_ARRAY(LOGINNAME_MAP_FROM));
-    if (hostPort != NULL) (*hostPort) = (uint)String_toInteger(t,STRING_BEGIN,NULL,NULL,0);
+    if (hostPort != NULL) (*hostPort) = (uint)String_toInteger(s,STRING_BEGIN,NULL,NULL,0);
 
     result = TRUE;
   }
