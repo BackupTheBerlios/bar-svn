@@ -1477,7 +1477,7 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
           if (String_empty(storageFileHandle->ftp.loginName)) String_set(storageFileHandle->ftp.loginName,ftpServer.loginName);
 
           /* check FTP login, get correct password */
-          error = ERROR_UNKNOWN;
+          error = ERROR_FTP_SESSION_FAIL;
           if ((error != ERROR_NONE) && !Password_empty(storageFileHandle->ftp.password))
           {
             error = checkFTPLogin(storageFileHandle->ftp.loginName,
@@ -1510,20 +1510,16 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
               Password_set(storageFileHandle->ftp.password,defaultFTPPassword);
             }
           }
-          if (error != ERROR_NONE)
+          if ((error != ERROR_NONE) && initFTPPassword(jobOptions))
           {
-            /* initialize default password */
-            if (initFTPPassword(jobOptions))
+            error = checkFTPLogin(storageFileHandle->ftp.loginName,
+                                  defaultFTPPassword,
+                                  storageFileHandle->ftp.hostName,
+                                  storageFileHandle->ftp.hostPort
+                                 );
+            if (error == ERROR_NONE)
             {
-              error = checkFTPLogin(storageFileHandle->ftp.loginName,
-                                    defaultFTPPassword,
-                                    storageFileHandle->ftp.hostName,
-                                    storageFileHandle->ftp.hostPort
-                                   );
-              if (error == ERROR_NONE)
-              {
-                Password_set(storageFileHandle->ftp.password,defaultFTPPassword);
-              }
+              Password_set(storageFileHandle->ftp.password,defaultFTPPassword);
             }
           }
           if (error != ERROR_NONE)
