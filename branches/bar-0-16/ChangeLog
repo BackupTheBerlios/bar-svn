@@ -35,6 +35,10 @@
   * add log type "index"
   * BARControl: fixed list of storage archives when removing an
     entry
+  * BARControl: ask for crypt password when starting job with
+    crypt password mode "ask"
+  * BARControl: give visual feedback when entered passwords in
+    password dialog are not equal
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
