@@ -230,8 +230,8 @@ String File_appendFileNameBuffer(String fileName, const char *buffer, ulong buff
 /***********************************************************************\
 * Name   : File_getFilePathName, File_getFilePathNameCString
 * Purpose: get path of filename
-* Input  : fileName - file name
-*          path     - path variable
+* Input  : path     - path variable
+*          fileName - file name
 * Output : -
 * Return : path variable
 * Notes  : -
@@ -243,8 +243,8 @@ String File_getFilePathNameCString(String path, const char *fileName);
 /***********************************************************************\
 * Name   : File_getFileBaseName, File_getFileBaseNameCString
 * Purpose: get basename of file
-* Input  : fileName - file name
-*          baseName - basename variable
+* Input  : baseName - basename variable
+*          fileName - file name
 * Output : -
 * Return : basename variable
 * Notes  : -
@@ -661,7 +661,7 @@ Errors File_copy(const String sourceFileName,
 
 /***********************************************************************\
 * Name   : File_exists, File_existsCString
-* Purpose: check if file exists
+* Purpose: check if file/directory exists
 * Input  : fileName - file name
 * Output : -
 * Return : TRUE if file/directory exists, FALSE otherweise
@@ -696,7 +696,7 @@ bool File_isDirectory(const String fileName);
 bool File_isDirectoryCString(const char *fileName);
 
 /***********************************************************************\
-* Name   : File_isFileReadable, File_isFileReadableCString
+* Name   : File_isReadable, File_isReadableCString
 * Purpose: check if file and is readable
 * Input  : fileName - file name
 * Output : -
@@ -709,8 +709,8 @@ bool File_isReadable(const String fileName);
 bool File_isReadableCString(const char *fileName);
 
 /***********************************************************************\
-* Name   : File_isDirectoryWriteable, File_isDirectoryWriteableCString
-* Purpose: check if file and is readable
+* Name   : File_isWriteable, File_isWriteableCString
+* Purpose: check if file or directory and is writable
 * Input  : fileName - file name
 * Output : -
 * Return : TRUE if file/directory exists and is writable, FALSE

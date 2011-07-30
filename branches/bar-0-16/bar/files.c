@@ -1306,7 +1306,7 @@ bool File_existsCString(const char *fileName)
 
   assert(fileName != NULL);
 
-  return (lstat(fileName,&fileStat) == 0);
+  return (lstat((strlen(fileName) > 0)?fileName:"",&fileStat) == 0);
 }
 
 bool File_isFile(const String fileName)
@@ -1355,7 +1355,7 @@ bool File_isDirectoryCString(const char *fileName)
 
 bool File_isReadable(const String fileName)
 {
-  return File_isReadableCString(String_cString(fileName));
+  return access(String_cString(fileName),F_OK|R_OK) == 0;
 }
 
 bool File_isReadableCString(const char *fileName)
@@ -1367,14 +1367,14 @@ bool File_isReadableCString(const char *fileName)
 
 bool File_isWriteable(const String fileName)
 {
-  return File_isWriteableCString(String_cString(fileName));
+  return access(!String_empty(fileName)?String_cString(fileName):".",W_OK) == 0;
 }
 
 bool File_isWriteableCString(const char *fileName)
 {
   assert(fileName != NULL);
 
-  return access(fileName,F_OK|W_OK) == 0;
+  return access((strlen(fileName) > 0)?fileName:".",W_OK) == 0;
 }
 
 Errors File_getFileInfo(FileInfo     *fileInfo,
