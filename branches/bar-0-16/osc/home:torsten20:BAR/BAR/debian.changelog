@@ -14,8 +14,29 @@ bar (0.16e) stable; urgency=low
     command, e. g. sending the log file via log-post-command
   * fixed error in pre-defined log-post-command in bar.cfg
   * fix losing failure error
+  * create job files with read/write permission for owner only
+  * do not print passwords to log/screen which may be included
+    in FTP specifier
+  * fixed missing delete temporary file on error in incremental
+    mode
+  * fixed adding index of FTP content to local archive database
+  * fixed string parser: parse \x as x if outside of " or '
+  * BARControl: fix Null-Pointer-Exception when server password
+    is not set
+  * improved FTP read: try to read all data when the network
+    connection is bad
+  * fix CD/DVD/BD write command: must be %directory, not %file
+  * BARControl: add command to remove all archives with error
+    state in tab restore
+  * BARControl: fix possible null-pointe-exception on communication
+    error
+  * BARControl: improved usability. Use tagged+selected entries
+    entires to remove/refresh  in tab restore.
+  * add log type "index"
+  * BARControl: fixed list of storage archives when removing an
+    entry
 
- -- Torsten Rupp <torsten.rupp.net>  Sun, 03 Jul 2011 00:00:00 +0200
+ -- Torsten Rupp <torsten.rupp.net>  Mon, 18 Jul 2011 00:00:00 +0200
 
 bar (0.16d) stable; urgency=low
   * barcontrol: fix parsing of ftp/scp/sftp archive names
