@@ -39,6 +39,7 @@
     crypt password mode "ask"
   * BARControl: give visual feedback when entered passwords in
     password dialog are not equal
+  * show date/time for directories entries in list, too
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
