@@ -1,4 +1,4 @@
-2011-07-18 0.16e
+2011-07-31 0.16e
   * create sub-directories when storing to file system or
     ftp server
   * fix creating directories: to not set parent directory
@@ -40,6 +40,8 @@
   * BARControl: give visual feedback when entered passwords in
     password dialog are not equal
   * show date/time for directories entries in list, too
+  * changed DVD write image command: removed sectors, added
+    -dvd-compat
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
