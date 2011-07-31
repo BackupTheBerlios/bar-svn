@@ -35,6 +35,11 @@ bar (0.16e) stable; urgency=low
   * add log type "index"
   * BARControl: fixed list of storage archives when removing an
     entry
+  * BARControl: ask for crypt password when starting job with
+    crypt password mode "ask"
+  * BARControl: give visual feedback when entered passwords in
+    password dialog are not equal
+  * show date/time for directories entries in list, too
 
  -- Torsten Rupp <torsten.rupp.net>  Mon, 18 Jul 2011 00:00:00 +0200
 
