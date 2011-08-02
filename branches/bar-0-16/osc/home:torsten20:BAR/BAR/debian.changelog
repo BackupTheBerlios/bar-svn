@@ -40,8 +40,10 @@ bar (0.16e) stable; urgency=low
   * BARControl: give visual feedback when entered passwords in
     password dialog are not equal
   * show date/time for directories entries in list, too
+  * changed DVD write image command: removed sectors, added
+    -dvd-compat
 
- -- Torsten Rupp <torsten.rupp.net>  Mon, 18 Jul 2011 00:00:00 +0200
+ -- Torsten Rupp <torsten.rupp.net>  Sun, 31 Jul 2011 00:00:00 +0200
 
 bar (0.16d) stable; urgency=low
   * barcontrol: fix parsing of ftp/scp/sftp archive names
