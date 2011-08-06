@@ -42,7 +42,10 @@
   * show date/time for directories entries in list, too
   * changed DVD write image command: removed sectors, added
     -dvd-compat
-  * output stdout/stderr of external commands with verbose level 4    
+  * output stdout/stderr of external commands with verbose level 4
+  * BARControl: added some warnings when selection of part size/
+    medium size/error correction codes may not fit to create a
+    CD/DVD/BD
 
 2011-05-31 0.16d
   * barcontrol: fix parsing of ftp/scp/sftp archive names
