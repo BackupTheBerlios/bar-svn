@@ -2118,9 +2118,20 @@ class TabJobs
             public void widgetSelected(SelectionEvent selectionEvent)
             {
               Button widget = (Button)selectionEvent.widget;
-              archivePartSizeFlag.set(false);
+
+              boolean changedFlag = archivePartSizeFlag.set(false);
               archivePartSize.set(0);
               BARServer.setOption(selectedJobId,"archive-part-size",0);
+
+              if (   changedFlag
+                  && (   storageType.equals("cd")
+                      || storageType.equals("dvd")
+                      || storageType.equals("bd")
+                     )
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a CD/DVD/BD without splitting enabled\nthe resulting archive file may not fit on medium.");
+              }
             }
             public void widgetDefaultSelected(SelectionEvent selectionEvent)
             {
@@ -3180,8 +3191,32 @@ class TabJobs
             public void widgetSelected(SelectionEvent selectionEvent)
             {
               Button widget = (Button)selectionEvent.widget;
-              storageType.set("cd");
+
+              boolean changedFlag = storageType.set("cd");
               BARServer.setOption(selectedJobId,"archive-name",getArchiveName());
+
+              if (   changedFlag
+                  && !archivePartSizeFlag.getBoolean()
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a CD without splitting enabled\nthe resulting archive file may not fit on medium.");
+              }
+              if (   changedFlag
+                  && archivePartSizeFlag.getBoolean()
+                  && (volumeSize.getLong() <= 0)
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a CD without setting medium size\nthe resulting archive file may not fit on medium.");
+              }
+              if (   changedFlag
+                  && archivePartSizeFlag.getBoolean()
+                  && (archivePartSize.getLong() > 0)
+                  && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                  && ecc.getBoolean()
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a CD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 250M, medium 500M\n- part size 140M, medium 560M\n");
+              }
             }
             public void widgetDefaultSelected(SelectionEvent selectionEvent)
             {
@@ -3203,8 +3238,32 @@ class TabJobs
             public void widgetSelected(SelectionEvent selectionEvent)
             {
               Button widget = (Button)selectionEvent.widget;
-              storageType.set("dvd");
+
+              boolean changedFlag = storageType.set("dvd");
               BARServer.setOption(selectedJobId,"archive-name",getArchiveName());
+
+              if (   changedFlag
+                  && !archivePartSizeFlag.getBoolean()
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a DVD without splitting enabled\nthe resulting archive file may not fit on medium.");
+              }
+              if (   changedFlag
+                  && archivePartSizeFlag.getBoolean()
+                  && (volumeSize.getLong() <= 0)
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a DVD without setting medium size\nthe resulting archive file may not fit on medium.");
+              }
+              if (   changedFlag
+                  && archivePartSizeFlag.getBoolean()
+                  && (archivePartSize.getLong() > 0)
+                  && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                  && ecc.getBoolean()
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a DVD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 500M, medium 3.5G\n- part size 600M, medium 3.6G");
+              }
             }
             public void widgetDefaultSelected(SelectionEvent selectionEvent)
             {
@@ -3226,8 +3285,32 @@ class TabJobs
             public void widgetSelected(SelectionEvent selectionEvent)
             {
               Button widget = (Button)selectionEvent.widget;
-              storageType.set("bd");
+
+              boolean changedFlag = storageType.set("bd");
               BARServer.setOption(selectedJobId,"archive-name",getArchiveName());
+
+              if (   changedFlag
+                  && !archivePartSizeFlag.getBoolean()
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a BD without splitting enabled\nthe resulting archive file may not fit on medium.");
+              }
+              if (   changedFlag
+                  && archivePartSizeFlag.getBoolean()
+                  && (volumeSize.getLong() <= 0)
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a BD without setting medium size\nthe resulting archive file may not fit on medium.");
+              }
+              if (   changedFlag
+                  && archivePartSizeFlag.getBoolean()
+                  && (archivePartSize.getLong() > 0)
+                  && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                  && ecc.getBoolean()
+                 )
+              {
+                Dialogs.warning(shell,"When writing to a BD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 1G, medium 20G\n- part size 5G, medium 20G\n");
+              }
             }
             public void widgetDefaultSelected(SelectionEvent selectionEvent)
             {
@@ -4027,6 +4110,7 @@ class TabJobs
                 }
                 catch (NumberFormatException exception)
                 {
+                  // ignored
                 }
                 widget.setBackground(color);
                 widget.setData("showedErrorDialog",false);
@@ -4041,8 +4125,18 @@ class TabJobs
                 try
                 {
                   long n = Units.parseByteSize(s);
-                  volumeSize.set(n);
+                  boolean changedFlag = volumeSize.set(n);
                   BARServer.setOption(selectedJobId,"volume-size",n);
+
+                  if (   changedFlag
+                      && archivePartSizeFlag.getBoolean()
+                      && (archivePartSize.getLong() > 0)
+                      && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                      && ecc.getBoolean()
+                     )
+                  {
+                    Dialogs.warning(shell,"When writing to a CD/DVD/BD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 140M, medium 560M\n- part size 500M, medium 3.5G\n- part size 600M, medium 3.6G");
+                  }
                 }
                 catch (NumberFormatException exception)
                 {
@@ -4061,8 +4155,18 @@ class TabJobs
                 try
                 {
                   long  n = Units.parseByteSize(s);
-                  volumeSize.set(n);
+                  boolean changedFlag = volumeSize.set(n);
                   BARServer.setOption(selectedJobId,"volume-size",n);
+
+                  if (   changedFlag
+                      && archivePartSizeFlag.getBoolean()
+                      && (archivePartSize.getLong() > 0)
+                      && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                      && ecc.getBoolean()
+                     )
+                  {
+                    Dialogs.warning(shell,"When writing to a CD/DVD/BD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 140M, medium 560G\n- part size 500M, medium 3.5G\n- part size 600M, medium 3.6G");
+                  }
                 }
                 catch (NumberFormatException exception)
                 {
@@ -4089,8 +4193,18 @@ class TabJobs
                 try
                 {
                   long n = Units.parseByteSize(s);
-                  volumeSize.set(n);
+                  boolean changedFlag = volumeSize.set(n);
                   BARServer.setOption(selectedJobId,"volume-size",n);
+
+                  if (   changedFlag
+                      && archivePartSizeFlag.getBoolean()
+                      && (archivePartSize.getLong() > 0)
+                      && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                      && ecc.getBoolean()
+                     )
+                  {
+                    Dialogs.warning(shell,"When writing to a CD/DVD/BD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 140M, medium 560G\n- part size 500M, medium 3.5G\n- part size 600M, medium 3.6G");
+                  }
                 }
                 catch (NumberFormatException exception)
                 {
@@ -4129,8 +4243,18 @@ class TabJobs
               {
                 Button  widget      = (Button)selectionEvent.widget;
                 boolean checkedFlag = widget.getSelection();
-                ecc.set(checkedFlag);
+                boolean changedFlag = ecc.set(checkedFlag);
                 BARServer.setOption(selectedJobId,"ecc",checkedFlag);
+
+                if (   changedFlag
+                    && archivePartSizeFlag.getBoolean()
+                    && (archivePartSize.getLong() > 0)
+                    && ((volumeSize.getLong()%archivePartSize.getLong()) < ((long)((double)archivePartSize.getLong()*0.1)))
+                    && ecc.getBoolean()
+                   )
+                {
+                  Dialogs.warning(shell,"When writing to a CD/DVD/BD with error-correction codes enabled\nsome free space should be available on medium for error-correction codes.\n\nGood settings may be:\n- part size 140M, medium 560G\n- part size 500M, medium 3.5G\n- part size 600M, medium 3.6G");
+                }
               }
               public void widgetDefaultSelected(SelectionEvent selectionEvent)
               {
