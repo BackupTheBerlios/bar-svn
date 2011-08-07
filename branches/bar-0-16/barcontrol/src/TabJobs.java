@@ -2169,7 +2169,7 @@ class TabJobs
           button.setToolTipText("Limit size of storage files to specified value.");
 
           widgetArchivePartSize = Widgets.newCombo(composite);
-          widgetArchivePartSize.setItems(new String[]{"32M","64M","128M","256M","512M","1G","2G"});
+          widgetArchivePartSize.setItems(new String[]{"32M","64M","128M","140M","256M","280M","512M","600M","1G","2G"});
           widgetArchivePartSize.setData("showedErrorDialog",false);
           Widgets.layout(widgetArchivePartSize,0,2,TableLayoutData.W);
           Widgets.addModifyListener(new WidgetModifyListener(widgetArchivePartSize,archivePartSizeFlag)
