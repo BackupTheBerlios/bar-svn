@@ -1862,27 +1862,36 @@ Errors Storage_init(StorageFileHandle            *storageFileHandle,
           case STORAGE_TYPE_CD:
             volumeSize = (jobOptions->volumeSize > 0LL)
                           ?jobOptions->volumeSize
-                          :(jobOptions->errorCorrectionCodesFlag
-                            ?CD_VOLUME_ECC_SIZE
-                            :CD_VOLUME_SIZE
+                          :((globalOptions.cd.volumeSize > 0LL)
+                            ?globalOptions.cd.volumeSize
+                            :(jobOptions->errorCorrectionCodesFlag
+                              ?CD_VOLUME_ECC_SIZE
+                              :CD_VOLUME_SIZE
+                             )
                            );
             maxMediumSize = MAX_CD_SIZE;
             break;
           case STORAGE_TYPE_DVD:
             volumeSize = (jobOptions->volumeSize > 0LL)
                           ?jobOptions->volumeSize
-                          :(jobOptions->errorCorrectionCodesFlag
-                            ?DVD_VOLUME_ECC_SIZE
-                            :DVD_VOLUME_SIZE
+                          :((globalOptions.dvd.volumeSize > 0LL)
+                            ?globalOptions.dvd.volumeSize
+                            :(jobOptions->errorCorrectionCodesFlag
+                              ?DVD_VOLUME_ECC_SIZE
+                              :DVD_VOLUME_SIZE
+                             )
                            );
             maxMediumSize = MAX_DVD_SIZE;
             break;
           case STORAGE_TYPE_BD:
             volumeSize = (jobOptions->volumeSize > 0LL)
                           ?jobOptions->volumeSize
-                          :(jobOptions->errorCorrectionCodesFlag
-                            ?BD_VOLUME_ECC_SIZE
-                            :BD_VOLUME_SIZE
+                          :((globalOptions.bd.volumeSize > 0LL)
+                            ?globalOptions.bd.volumeSize
+                            :(jobOptions->errorCorrectionCodesFlag
+                              ?BD_VOLUME_ECC_SIZE
+                              :BD_VOLUME_SIZE
+                            )
                            );
             maxMediumSize = MAX_BD_SIZE;
             break;
