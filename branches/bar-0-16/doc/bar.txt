@@ -190,6 +190,7 @@ OPTIONS
          --device-write-pre-command=<command>      write device pre-process command
          --device-write-post-command=<command>     write device post-process command
          --device-write-command=<command>          write device command
+         --volume-size=<n>[G|M|K]                  volume size
          --ecc                                     add error-correction codes with 'dvdisaster' tool
          --always-create-image                     always create image for CD/DVD/BD/device
          --database-file=<file name>               index database file name
