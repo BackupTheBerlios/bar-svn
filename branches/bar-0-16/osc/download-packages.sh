@@ -24,8 +24,8 @@ version=$1
 download "$OSC_URL/$OSC_PATH/CentOS_CentOS-5/i386"   'bar-.*\.rpm'     bar-$version-centos5_i386.rpm
 download "$OSC_URL/$OSC_PATH/CentOS_CentOS-5/x86_64" 'bar-.*\.rpm'     bar-$version-centos5_x86_64.rpm
 
-download "$OSC_URL/$OSC_PATH/Fedora_13/i386"         'bar-.*\.rpm'     bar-$version-fedora13_i386.rpm
-download "$OSC_URL/$OSC_PATH/Fedora_13/x86_64"       'bar-.*\.rpm'     bar-$version-fedora13_x86_64.rpm
+download "$OSC_URL/$OSC_PATH/Fedora_14/i386"         'bar-.*\.rpm'     bar-$version-fedora14_i386.rpm
+download "$OSC_URL/$OSC_PATH/Fedora_14/x86_64"       'bar-.*\.rpm'     bar-$version-fedora14_x86_64.rpm
 
 download "$OSC_URL/$OSC_PATH/RedHat_RHEL-5/i386"     'bar-.*\.rpm'     bar-$version-redhat5_i386.rpm
 download "$OSC_URL/$OSC_PATH/RedHat_RHEL-5/x86_64"   'bar-.*\.rpm'     bar-$version-redhat5_x86_64.rpm
