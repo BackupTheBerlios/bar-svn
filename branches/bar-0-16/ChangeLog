@@ -1,3 +1,13 @@
+2011-09-04 0.16f
+  * re-added option --volume-size, fixed setting CD/DVD/BD
+    volume size
+  * added check for Java version
+  * improved error messages
+  * do not print passwords which may be included in FTP
+    specifier when creating/list/restore entries
+  * barcontrol: ask for crypt password when restoring
+    single archive entries
+
 2011-07-31 0.16e
   * create sub-directories when storing to file system or
     ftp server
