@@ -59,11 +59,11 @@
 #define MAX_DVD_SIZE (2LL*4613734LL*1024LL)    // 9G (dual layer)
 #define MAX_BD_SIZE  (2LL*25LL*1024LL*1024LL)  // 50G (dual layer)
 
-#define CD_VOLUME_SIZE      MAX_CD_SIZE
+#define CD_VOLUME_SIZE      (700LL*1024LL*1024LL)
 #define CD_VOLUME_ECC_SIZE  (560LL*1024LL*1024LL)
-#define DVD_VOLUME_SIZE     MAX_DVD_SIZE
+#define DVD_VOLUME_SIZE     (4482LL*1024LL*1024LL)
 #define DVD_VOLUME_ECC_SIZE (3600LL*1024LL*1024LL)
-#define BD_VOLUME_SIZE      MAX_BD_SIZE
+#define BD_VOLUME_SIZE      (25LL*1024LL*1024LL*1024LL)
 #define BD_VOLUME_ECC_SIZE  (20LL*1024LL*1024LL*1024LL)
 
 /***************************** Datatypes *******************************/
@@ -1147,8 +1147,8 @@ String Storage_getName(String       storageName,
   return storageName;
 }
 
-String Storage_getPrintableName(String string,
-                                String storageName
+String Storage_getPrintableName(String       string,
+                                const String storageName
                                )
 {
   String storageSpecifier;
@@ -3121,7 +3121,7 @@ Errors Storage_create(StorageFileHandle *storageFileHandle,
       /* check if archive file exists */
       if (!storageFileHandle->jobOptions->overwriteArchiveFilesFlag && File_exists(fileName))
       {
-        return ERROR_FILE_EXITS;
+        return ERRORX(FILE_EXISTS,0,String_cString(fileName));
       }
 
       if (!storageFileHandle->jobOptions->dryRunFlag)
