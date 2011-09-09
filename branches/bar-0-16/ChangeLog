@@ -1,4 +1,4 @@
-2011-09-04 0.16f
+2011-09-10 0.16f
   * re-added option --volume-size, fixed setting CD/DVD/BD
     volume size
   * added check for Java version
@@ -7,6 +7,15 @@
     specifier when creating/list/restore entries
   * barcontrol: ask for crypt password when restoring
     single archive entries
+  * fixed URI parser: clear port number if not set
+  * improved index database: do not set error state when
+    connection to server cannot be opened
+  * fixed memory leaks
+  * back-ported file handle debug code
+  * do not set index state to error if archive cannot be
+    decrypted because of missing password
+  * fix bug in ftplib: listing directory did not close
+    temporary file
 
 2011-07-31 0.16e
   * create sub-directories when storing to file system or
