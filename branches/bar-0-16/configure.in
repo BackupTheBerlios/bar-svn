@@ -906,6 +906,7 @@ if test $ENABLE_FTP = "yes"; then
       (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-without-perror.patch) 1>/dev/null 2>/dev/null
       (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-ftpaccess.patch) 1>/dev/null 2>/dev/null
       (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-receive-timeout.patch) 1>/dev/null 2>/dev/null
+      (cd packages/ftplib-3.1; patch --batch -N -p1 <$cwd/misc/ftplib-3.1-ftpdir-file-close.patch) 1>/dev/null 2>/dev/null
     fi
     if test $result -eq 1; then
       (cd ftplib/linux; make) 1>/dev/null 2>/dev/null
