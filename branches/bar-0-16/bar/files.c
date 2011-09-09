@@ -9,6 +9,8 @@
 \***********************************************************************/
 
 /****************************** Includes *******************************/
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,6 +23,9 @@
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
+#ifdef HAVE_BACKTRACE
+  #include <execinfo.h>
+#endif
 #include <assert.h>
 
 #include "global.h"
@@ -28,15 +33,52 @@
 #include "stringlists.h"
 #include "devices.h"
 
+#ifndef NDEBUG
+  #include <pthread.h>
+  #include "lists.h"
+#endif /* not NDEBUG */
+
 #include "files.h"
 
 /****************** Conditional compilation switches *******************/
 
 /***************************** Constants *******************************/
+#define DEBUG_MAX_CLOSED_LIST 100
 
 /***************************** Datatypes *******************************/
+#ifndef NDEBUG
+  typedef struct DebugFileNode
+  {
+    LIST_NODE_HEADER(struct DebugFileNode);
+
+    const char *fileName;
+    ulong      lineNb;
+    #ifdef HAVE_BACKTRACE
+      void *stackTrace[16];
+      int  stackTraceSize;
+    #endif /* HAVE_BACKTRACE */
+    const char *closeFileName;
+    ulong      closeLineNb;
+    #ifdef HAVE_BACKTRACE
+      void *closeStackTrace[16];
+      int  closeStackTraceSize;
+    #endif /* HAVE_BACKTRACE */
+    FILE *file;
+  } DebugFileNode;
+
+  typedef struct
+  {
+    LIST_HEADER(DebugFileNode);
+  } DebugFileList;
+#endif /* not NDEBUG */
 
 /***************************** Variables *******************************/
+#ifndef NDEBUG
+  LOCAL pthread_once_t  debugFileInitFlag = PTHREAD_ONCE_INIT;
+  LOCAL pthread_mutex_t debugFileLock;
+  LOCAL DebugFileList   debugOpenFileList;
+  LOCAL DebugFileList   debugClosedFileList;
+#endif /* not NDEBUG */
 
 /****************************** Macros *********************************/
 
@@ -47,6 +89,40 @@
 #ifdef __cplusplus
   extern "C" {
 #endif
+
+#if !defined(NDEBUG) && defined(HAVE_BACKTRACE)
+/***********************************************************************\
+* Name   : File_debugDumpStackTrace
+* Purpose: print function names of stack trace
+* Input  : title          - title text
+*          stackTrace     - stack trace
+*          stackTraceSize - size of stack trace
+* Output : -
+* Return : -
+* Notes  : -
+\***********************************************************************/
+
+LOCAL void File_debugDumpStackTrace(FILE *handle, const char *title, int indent, void *stackTrace[], int stackTraceSize)
+{
+  const char **functionNames;
+  int        z,i;
+
+  for (i = 0; i < indent; i++) fprintf(handle," ");
+  fprintf(handle,"C stack trace: %s\n",title);
+  functionNames = (const char **)backtrace_symbols(stackTrace,stackTraceSize);
+  if (functionNames != NULL)
+  {
+    for (z = 1; z < stackTraceSize; z++)
+    {
+      for (i = 0; i < indent; i++) fprintf(handle," ");
+      fprintf(handle,"  %2d %p: %s\n",z,stackTrace[z],functionNames[z]);
+    }
+    free(functionNames);
+  }
+}
+#endif /* !defined(NDEBUG) && defined(HAVE_BACKTRACE) */
+
+/*---------------------------------------------------------------------*/
 
 String File_newFileName(void)
 {
@@ -98,13 +174,13 @@ String File_appendFileName(String fileName, const String name)
 
   if (!String_empty(fileName))
   {
-    if (String_index(fileName,String_length(fileName)-1) != FILES_PATHNAME_SEPARATOR_CHAR)
+    if (!String_endsWithChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR))
     {
       String_appendChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR);
     }
   }
   String_append(fileName,name);
-
+  
   return fileName;
 }
 
@@ -115,13 +191,13 @@ String File_appendFileNameCString(String fileName, const char *name)
 
   if (!String_empty(fileName))
   {
-    if (String_index(fileName,String_length(fileName)-1) != FILES_PATHNAME_SEPARATOR_CHAR)
+    if (!String_endsWithChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR))
     {
       String_appendChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR);
     }
   }
   String_appendCString(fileName,name);
-
+  
   return fileName;
 }
 
@@ -131,7 +207,7 @@ String File_appendFileNameChar(String fileName, char ch)
 
   if (!String_empty(fileName))
   {
-    if (String_index(fileName,String_length(fileName)-1) != FILES_PATHNAME_SEPARATOR_CHAR)
+    if (!String_endsWithChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR))
     {
       String_appendChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR);
     }
@@ -147,7 +223,7 @@ String File_appendFileNameBuffer(String fileName, const char *buffer, ulong buff
 
   if (!String_empty(fileName))
   {
-    if (String_index(fileName,String_length(fileName)-1) != FILES_PATHNAME_SEPARATOR_CHAR)
+    if (!String_endsWithChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR))
     {
       String_appendChar(fileName,FILES_PATHNAME_SEPARATOR_CHAR);
     }
@@ -287,7 +363,7 @@ Errors File_getTmpFileNameCString(String fileName, char const *pattern, const St
   handle = mkstemp(s);
   if (handle == -1)
   {
-    error = ERRORX(IO_ERROR,errno,s);
+    error = ERRORX(IO_ERROR,errno,s); 
     free(s);
     return error;
   }
@@ -345,25 +421,55 @@ Errors File_getTmpDirectoryNameCString(String directoryName, char const *pattern
 
 /*---------------------------------------------------------------------*/
 
+#ifdef NDEBUG
 Errors File_open(FileHandle    *fileHandle,
                  const String  fileName,
                  FileOpenModes fileOpenMode
                 )
+#else /* not NDEBUG */
+Errors __File_open(const char    *__fileName__,
+                   ulong         __lineNb__,
+                   FileHandle    *fileHandle,
+                   const String  fileName,
+                   FileOpenModes fileOpenMode
+                  )
+#endif /* NDEBUG */
 {
-  return File_openCString(fileHandle,
-                          String_cString(fileName),
-                          fileOpenMode
-                         );
+  #ifdef NDEBUG
+    return File_openCString(fileHandle,
+                            String_cString(fileName),
+                            fileOpenMode
+                           );
+  #else /* not NDEBUG */
+    return __File_openCString(__fileName__,
+                              __lineNb__,
+                              fileHandle,
+                              String_cString(fileName),
+                              fileOpenMode
+                             );
+  #endif /* NDEBUG */
 }
 
+#ifdef NDEBUG
 Errors File_openCString(FileHandle    *fileHandle,
                         const char    *fileName,
                         FileOpenModes fileOpenMode
                        )
+#else /* not NDEBUG */
+Errors __File_openCString(const char    *__fileName__,
+                          ulong         __lineNb__,
+                          FileHandle    *fileHandle,
+                          const char    *fileName,
+                          FileOpenModes fileOpenMode
+                         )
+#endif /* NDEBUG */
 {
   off_t  n;
   Errors error;
   String pathName;
+  #ifndef NDEBUG
+    DebugFileNode *debugFileNode;
+  #endif /* not NDEBUG */
 
   assert(fileHandle != NULL);
   assert(fileName != NULL);
@@ -498,16 +604,72 @@ Errors File_openCString(FileHandle    *fileHandle,
     #endif /* NDEBUG */
   }
 
+  #ifndef NDEBUG
+    pthread_once(&debugFileInitFlag,File_debugInit);
+
+    pthread_mutex_lock(&debugFileLock);
+    {
+      /* find file in closed-list; reuse or allocate new debug node */
+      debugFileNode = debugClosedFileList.head;
+      while ((debugFileNode != NULL) && (debugFileNode->file != fileHandle->file))
+      {
+        debugFileNode = debugFileNode->next;
+      }
+      if (debugFileNode != NULL)
+      {
+        List_remove(&debugClosedFileList,debugFileNode);
+      }
+      else
+      {
+        debugFileNode = LIST_NEW_NODE(DebugFileNode);
+        if (debugFileNode == NULL)
+        {
+          HALT_INSUFFICIENT_MEMORY();
+        }
+      }
+
+      /* init file node */
+      debugFileNode->fileName = __fileName__;
+      debugFileNode->lineNb   = __lineNb__;
+      #ifdef HAVE_BACKTRACE
+        debugFileNode->stackTraceSize = backtrace(debugFileNode->stackTrace,SIZE_OF_ARRAY(debugFileNode->stackTrace));
+      #endif /* HAVE_BACKTRACE */
+      debugFileNode->closeFileName = NULL;
+      debugFileNode->closeLineNb   = 0;
+      #ifdef HAVE_BACKTRACE
+        debugFileNode->closeStackTraceSize = 0;
+      #endif /* HAVE_BACKTRACE */
+      debugFileNode->file     = fileHandle->file;
+
+      /* add string to open-list */
+fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
+      List_append(&debugOpenFileList,debugFileNode);
+    }
+    pthread_mutex_unlock(&debugFileLock);
+  #endif /* not NDEBUG */
+
   return ERROR_NONE;
 }
 
+#ifdef NDEBUG
 Errors File_openDescriptor(FileHandle    *fileHandle,
                            int           fileDescriptor,
                            FileOpenModes fileOpenMode
                           )
+#else /* not NDEBUG */
+Errors __File_openDescriptor(const char    *__fileName__,
+                             ulong         __lineNb__,
+                             FileHandle    *fileHandle,
+                             int           fileDescriptor,
+                             FileOpenModes fileOpenMode
+                            )
+#endif /* NDEBUG */
 {
   off_t  n;
   Errors error;
+  #ifndef NDEBUG
+    DebugFileNode *debugFileNode;
+  #endif /* not NDEBUG */
 
   assert(fileHandle != NULL);
   assert(fileDescriptor >= 0);
@@ -578,17 +740,120 @@ Errors File_openDescriptor(FileHandle    *fileHandle,
     #endif /* NDEBUG */
   }
 
+  #ifndef NDEBUG
+    pthread_once(&debugFileInitFlag,File_debugInit);
+
+    pthread_mutex_lock(&debugFileLock);
+    {
+      /* find file in closed-list; reuse or allocate new debug node */
+      debugFileNode = debugClosedFileList.head;
+      while ((debugFileNode != NULL) && (debugFileNode->file != fileHandle->file))
+      {
+        debugFileNode = debugFileNode->next;
+      }
+      if (debugFileNode != NULL)
+      {
+        List_remove(&debugClosedFileList,debugFileNode);
+      }
+      else
+      {
+        debugFileNode = LIST_NEW_NODE(DebugFileNode);
+        if (debugFileNode == NULL)
+        {
+          HALT_INSUFFICIENT_MEMORY();
+        }
+      }
+
+      /* init file node */
+      debugFileNode->fileName = __fileName__;
+      debugFileNode->lineNb   = __lineNb__;
+      #ifdef HAVE_BACKTRACE
+        debugFileNode->stackTraceSize = backtrace(debugFileNode->stackTrace,SIZE_OF_ARRAY(debugFileNode->stackTrace));
+      #endif /* HAVE_BACKTRACE */
+      debugFileNode->closeFileName = NULL;
+      debugFileNode->closeLineNb   = 0;
+      #ifdef HAVE_BACKTRACE
+        debugFileNode->closeStackTraceSize = 0;
+      #endif /* HAVE_BACKTRACE */
+      debugFileNode->file     = fileHandle->file;
+
+      /* add string to open-list */
+fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
+      List_append(&debugOpenFileList,debugFileNode);
+    }
+    pthread_mutex_unlock(&debugFileLock);
+  #endif /* not NDEBUG */
+
   return ERROR_NONE;
 }
 
+#ifdef NDEBUG
 Errors File_close(FileHandle *fileHandle)
+#else /* not NDEBUG */
+Errors __File_close(const char *__fileName__, ulong __lineNb__, FileHandle *fileHandle)
+#endif /* NDEBUG */
 {
+  #ifndef NDEBUG
+    DebugFileNode *debugFileNode;
+  #endif /* not NDEBUG */
+
   assert(fileHandle != NULL);
   assert(fileHandle->file != NULL);
   assert(fileHandle->name != NULL);
 
+  #ifndef NDEBUG
+    pthread_once(&debugFileInitFlag,File_debugInit);
+
+    pthread_mutex_lock(&debugFileLock);
+    {
+      /* find file in open-list */
+      debugFileNode = debugOpenFileList.head;
+      while ((debugFileNode != NULL) && (debugFileNode->file != fileHandle->file))
+      {
+        debugFileNode = debugFileNode->next;
+      }
+      if (debugFileNode != NULL)
+      {
+        /* remove from open list */
+fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
+        List_remove(&debugOpenFileList,debugFileNode);
+
+        /* add to closed list */
+        debugFileNode->closeFileName = __fileName__;
+        debugFileNode->closeLineNb   = __lineNb__;
+        #ifdef HAVE_BACKTRACE
+          debugFileNode->closeStackTraceSize = backtrace(debugFileNode->closeStackTrace,SIZE_OF_ARRAY(debugFileNode->closeStackTrace));
+        #endif /* HAVE_BACKTRACE */
+        List_append(&debugClosedFileList,debugFileNode);
+
+        /* shorten closed list */
+        while (debugClosedFileList.count > DEBUG_MAX_CLOSED_LIST)
+        {
+          debugFileNode = (DebugFileNode*)List_getFirst(&debugClosedFileList);
+          LIST_DELETE_NODE(debugFileNode);
+        }
+      }
+      else
+      {
+        fprintf(stderr,"DEBUG WARNING: file '%p' not found in debug list at %s, line %lu\n",
+                fileHandle->file,
+                __fileName__,
+                __lineNb__
+               );
+        #ifdef HAVE_BACKTRACE
+          File_debugPrintCurrentStackTrace();
+        #endif /* HAVE_BACKTRACE */
+        HALT_INTERNAL_ERROR("");
+      }
+    }
+    pthread_mutex_unlock(&debugFileLock);
+  #endif /* not NDEBUG */
+ 
+  /* close file */
   fclose(fileHandle->file);
   fileHandle->file = NULL;
+
+  /* free resources */
   String_delete(fileHandle->name);
 
   return ERROR_NONE;
@@ -1902,6 +2167,85 @@ Errors File_getFileSystemInfo(const          String pathName,
 
   return ERROR_NONE;
 }
+
+#ifndef NDEBUG
+void File_debugInit(void)
+{
+  pthread_mutex_init(&debugFileLock,NULL);
+  List_init(&debugOpenFileList);
+  List_init(&debugClosedFileList);
+}
+
+void File_debugDone(void)
+{
+  pthread_once(&debugFileInitFlag,File_debugInit);
+
+  pthread_mutex_lock(&debugFileLock);
+  {
+    List_done(&debugClosedFileList,NULL,NULL);
+    List_done(&debugOpenFileList,NULL,NULL);
+  }
+  pthread_mutex_unlock(&debugFileLock);
+}
+
+void File_debugDumpInfo(FILE *handle)
+{
+  DebugFileNode *debugFileNode;
+
+  pthread_once(&debugFileInitFlag,File_debugInit);
+
+  pthread_mutex_lock(&debugFileLock);
+  {
+fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
+    for (debugFileNode = debugOpenFileList.head; debugFileNode != NULL; debugFileNode = debugFileNode->next)
+    {
+fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
+      fprintf(handle,"DEBUG: file %p opened at %s, line %lu\n",
+              debugFileNode->file,
+              debugFileNode->fileName,
+              debugFileNode->lineNb
+             );
+    }
+  }
+  pthread_mutex_unlock(&debugFileLock);
+}
+
+void File_debugPrintInfo()
+{
+  File_debugDumpInfo(stderr);
+}
+
+void File_debugPrintStatistics(void)
+{
+  pthread_once(&debugFileInitFlag,File_debugInit);
+
+  pthread_mutex_lock(&debugFileLock);
+  {
+    fprintf(stderr,"DEBUG: %lu file(s) open\n",
+            List_count(&debugOpenFileList)
+           );
+    fprintf(stderr,"DEBUG: %lu file(s) in closed list\n",
+            List_count(&debugClosedFileList)
+           );
+  }
+  pthread_mutex_unlock(&debugFileLock);
+}
+
+void File_debugPrintCurrentStackTrace(void)
+{
+  #ifdef HAVE_BACKTRACE
+    const int MAX_STACK_TRACE_SIZE = 256;
+
+    void *stackTrace[MAX_STACK_TRACE_SIZE];
+    int  stackTraceSize;
+  #endif /* HAVE_BACKTRACE */
+
+  #ifdef HAVE_BACKTRACE
+    stackTraceSize = backtrace(stackTrace,MAX_STACK_TRACE_SIZE);
+    File_debugDumpStackTrace(stderr,"",0,stackTrace,stackTraceSize);
+  #endif /* HAVE_BACKTRACE */
+}
+#endif /* not NDEBUG */
 
 #ifdef __cplusplus
   }
