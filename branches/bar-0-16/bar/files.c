@@ -642,7 +642,6 @@ Errors __File_openCString(const char    *__fileName__,
       debugFileNode->file     = fileHandle->file;
 
       /* add string to open-list */
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
       List_append(&debugOpenFileList,debugFileNode);
     }
     pthread_mutex_unlock(&debugFileLock);
@@ -778,7 +777,6 @@ Errors __File_openDescriptor(const char    *__fileName__,
       debugFileNode->file     = fileHandle->file;
 
       /* add string to open-list */
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
       List_append(&debugOpenFileList,debugFileNode);
     }
     pthread_mutex_unlock(&debugFileLock);
@@ -815,7 +813,6 @@ Errors __File_close(const char *__fileName__, ulong __lineNb__, FileHandle *file
       if (debugFileNode != NULL)
       {
         /* remove from open list */
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
         List_remove(&debugOpenFileList,debugFileNode);
 
         /* add to closed list */
@@ -2196,10 +2193,8 @@ void File_debugDumpInfo(FILE *handle)
 
   pthread_mutex_lock(&debugFileLock);
   {
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
     for (debugFileNode = debugOpenFileList.head; debugFileNode != NULL; debugFileNode = debugFileNode->next)
     {
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
       fprintf(handle,"DEBUG: file %p opened at %s, line %lu\n",
               debugFileNode->file,
               debugFileNode->fileName,
