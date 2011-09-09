@@ -1,0 +1,14 @@
+--- ftplib-3.1.org/linux/ftplib.c	2011-09-09 19:38:28.320974507 +0200
++++ ftplib-3.1/linux/ftplib.c	2011-09-09 19:39:06.970974514 +0200
+@@ -1141,7 +1141,11 @@
+     if (local == NULL)
+ 	local = (typ == FTPLIB_FILE_WRITE) ? stdin : stdout;
+     if (!FtpAccess(path, typ, mode, nControl, &nData))
++    {
++        if (localfile != NULL)
++	    fclose(local);
+ 	return 0;
++    }
+     dbuf = malloc(FTPLIB_BUFSIZ);
+     if (typ == FTPLIB_FILE_WRITE)
+     {
