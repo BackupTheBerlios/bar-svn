@@ -1296,6 +1296,8 @@ bool Storage_parseFTPSpecifier(const String ftpSpecifier,
 
   String_clear(loginName);
   String_clear(hostName);
+  if (password != NULL) Password_clear(password);
+  if (hostPort != NULL) (*hostPort) = 0;
 
   if      (String_matchCString(ftpSpecifier,STRING_BEGIN,"^([^:]*?):(([^@]|\\@)*?)@([^@:/]*?):([0-9]+)$",NULL,NULL,loginName,s,STRING_NO_ASSIGN,hostName,t,NULL))
   {
@@ -3845,12 +3847,12 @@ void Storage_close(StorageFileHandle *storageFileHandle)
             if (!storageFileHandle->jobOptions->dryRunFlag)
             {
               assert(storageFileHandle->ftp.data != NULL);
-              FtpQuit(storageFileHandle->ftp.data);
+              FtpClose(storageFileHandle->ftp.data);
             }
             break;
           case STORAGE_MODE_READ:
             assert(storageFileHandle->ftp.data != NULL);
-            FtpQuit(storageFileHandle->ftp.data);
+            FtpClose(storageFileHandle->ftp.data);
             break;
           #ifndef NDEBUG
             default:
@@ -3859,7 +3861,7 @@ void Storage_close(StorageFileHandle *storageFileHandle)
           #endif /* NDEBUG */
         }
         assert(storageFileHandle->ftp.control != NULL);
-        FtpQuit(storageFileHandle->ftp.control);
+        FtpClose(storageFileHandle->ftp.control);
       #else /* not HAVE_FTP */
       #endif /* HAVE_FTP */
       break;
@@ -5207,7 +5209,7 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
           {
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            return error;
+            break;
           }
 
           /* parse storage specifier string */
@@ -5216,13 +5218,13 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
           hostName  = String_new();
           if (!Storage_parseFTPSpecifier(storageSpecifier,loginName,password,hostName,&hostPort))
           {
+            error = ERROR_FTP_SESSION_FAIL;
             String_delete(hostName);
             Password_delete(password);
             String_delete(loginName);
             File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            error = ERROR_FTP_SESSION_FAIL;
             break;
           }
 
@@ -5298,24 +5300,25 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
           /* connect */
           if (!Network_hostExists(hostName))
           {
+            error = ERRORX(HOST_NOT_FOUND,0,String_cString(hostName));
             String_delete(hostName);
             Password_delete(password);
             String_delete(loginName);
             File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            error = ERRORX(HOST_NOT_FOUND,0,String_cString(hostName));
             break;
           }
           if (FtpConnect(String_cString(hostName),&control) != 1)
           {
+            error = ERROR_FTP_SESSION_FAIL;
             String_delete(hostName);
             Password_delete(password);
             String_delete(loginName);
             File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            return ERROR_FTP_SESSION_FAIL;
+            break;
           }
 
           /* login */
@@ -5326,6 +5329,7 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
                       ) != 1
              )
           {
+            error = ERROR_FTP_AUTHENTIFICATION;
             Password_undeploy(password);
             FtpClose(control);
             String_delete(hostName);
@@ -5334,7 +5338,6 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
             File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
             String_delete(storageDirectoryListHandle->ftp.line);
             String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-            error = ERROR_FTP_AUTHENTIFICATION;
             break;
           }
           Password_undeploy(password);
@@ -5346,6 +5349,7 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
             FtpOptions(FTPLIB_CONNMODE,FTPLIB_PASSIVE,control);
             if (FtpDir(String_cString(storageDirectoryListHandle->ftp.fileListFileName),String_cString(pathName),control) != 1)
             {
+              error = ERRORX(OPEN_DIRECTORY,0,String_cString(pathName));
               FtpClose(control);
               String_delete(hostName);
               Password_delete(password);
@@ -5353,7 +5357,6 @@ Errors Storage_openDirectoryList(StorageDirectoryListHandle *storageDirectoryLis
               File_delete(storageDirectoryListHandle->ftp.fileListFileName,FALSE);
               String_delete(storageDirectoryListHandle->ftp.line);
               String_delete(storageDirectoryListHandle->ftp.fileListFileName);
-              error = ERROR_OPEN_DIRECTORY;
               break;
             }
           }
@@ -5422,11 +5425,11 @@ error = ERROR_FUNCTION_NOT_SUPPORTED;
           hostName  = String_new();
           if (!Storage_parseSSHSpecifier(storageSpecifier,loginName,hostName,&hostPort))
           {
+            error = ERROR_SSH_SESSION_FAIL;
             String_delete(hostName);
             String_delete(loginName);
             free(storageDirectoryListHandle->sftp.buffer);
             String_delete(storageDirectoryListHandle->sftp.pathName);
-            error = ERROR_SSH_SESSION_FAIL;
             break;
           }
           String_set(storageDirectoryListHandle->sftp.pathName,pathName);
