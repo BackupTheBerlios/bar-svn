@@ -7388,6 +7388,7 @@ LOCAL void serverCommand_debugMemoryPrintInfo(ClientInfo *clientInfo, uint id, c
 
   Array_debugPrintInfo();
   String_debugPrintInfo();
+  File_debugPrintInfo();
 
   sendClientResult(clientInfo,id,TRUE,ERROR_NONE,"");
 }
@@ -7447,6 +7448,7 @@ LOCAL void serverCommand_debugMemoryDumpInfo(ClientInfo *clientInfo, uint id, co
 
   Array_debugDumpInfo(handle);
   String_debugDumpInfo(handle);
+  File_debugDumpInfo(handle);
 
   fclose(handle);
 
@@ -8223,8 +8225,6 @@ Errors Server_run(uint             port,
     /* connect new clients */
     if (serverFlag && FD_ISSET(Network_getServerSocket(&serverSocketHandle),&selectSet))
     {
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
-File_debugPrintInfo();
       error = Network_accept(&socketHandle,
                              &serverSocketHandle,
                              SOCKET_FLAG_NON_BLOCKING
@@ -8248,8 +8248,6 @@ File_debugPrintInfo();
     }
     if (serverTLSFlag && FD_ISSET(Network_getServerSocket(&serverTLSSocketHandle),&selectSet))
     {
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
-File_debugPrintInfo();
       error = Network_accept(&socketHandle,
                              &serverTLSSocketHandle,
                              SOCKET_FLAG_NON_BLOCKING
