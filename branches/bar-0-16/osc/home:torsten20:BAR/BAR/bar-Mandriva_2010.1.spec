@@ -61,9 +61,9 @@ mkdir packages
   ln -s packages/ftplib-3.1 ftplib
 )
 (
-  cp %{_sourcedir}/libssh2-1.2.6.tar.gz packages
-  (cd packages; tar xzf libssh2-1.2.6.tar.gz)
-  ln -s packages/libssh2-1.2.6 libssh2
+  cp %{_sourcedir}/libssh2-1.3.0.tar.gz packages
+  (cd packages; tar xzf libssh2-1.3.0.tar.gz)
+  ln -s packages/libssh2-1.3.0 libssh2
 )
 (
   cp %{_sourcedir}/gnutls-2.10.2.tar.bz2 packages

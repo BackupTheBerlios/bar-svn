@@ -7,8 +7,17 @@ bar (0.16f) stable; urgency=low
     specifier when creating/list/restore entries
   * barcontrol: ask for crypt password when restoring
     single archive entries
+  * fixed URI parser: clear port number if not set
+  * improved index database: do not set error state when
+    connection to server cannot be opened
+  * fixed memory leaks
+  * back-ported file handle debug code
+  * do not set index state to error if archive cannot be
+    decrypted because of missing password
+  * fix bug in ftplib: listing directory did not close
+    temporary file
 
- -- Torsten Rupp <torsten.rupp.net>  Sun, 04 Sep 2011 00:00:00 +0200
+ -- Torsten Rupp <torsten.rupp.net>  Sat, 10 Sep 2011 00:00:00 +0200
 
 bar (0.16e) stable; urgency=low
   * create sub-directories when storing to file system or
