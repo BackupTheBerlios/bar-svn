@@ -326,6 +326,25 @@ Errors Network_connect(SocketHandle *socketHandle,
           close(socketHandle->handle);
           return ERROR_SSH_SESSION_FAIL;
         }
+        if      (globalOptions.verboseLevel >= 5) libssh2_trace(socketHandle->ssh2.session,
+                                                                  LIBSSH2_TRACE_SOCKET
+                                                                | LIBSSH2_TRACE_TRANS
+                                                                | LIBSSH2_TRACE_KEX
+                                                                | LIBSSH2_TRACE_AUTH
+                                                                | LIBSSH2_TRACE_CONN
+                                                                | LIBSSH2_TRACE_SCP
+                                                                | LIBSSH2_TRACE_SFTP
+                                                                | LIBSSH2_TRACE_ERROR
+                                                                | LIBSSH2_TRACE_PUBLICKEY
+                                                               );
+        else if (globalOptions.verboseLevel >= 4) libssh2_trace(socketHandle->ssh2.session,
+                                                                  LIBSSH2_TRACE_KEX
+                                                                | LIBSSH2_TRACE_AUTH
+                                                                | LIBSSH2_TRACE_SCP
+                                                                | LIBSSH2_TRACE_SFTP
+                                                                | LIBSSH2_TRACE_ERROR
+                                                                | LIBSSH2_TRACE_PUBLICKEY
+                                                               );
         if (libssh2_session_startup(socketHandle->ssh2.session,
                                     socketHandle->handle
                                    ) != 0
@@ -340,6 +359,7 @@ Errors Network_connect(SocketHandle *socketHandle,
 // NYI/???: does not work?
 //          libssh2_keepalive_config(socketHandle->ssh2.session,0,2*60);
         #endif /* HAVE_SSH2_KEEPALIVE_CONFIG */
+//libssh2_trace(socketHandle->ssh2.session,LIBSSH2_TRACE_SOCKET);
 
 #if 1
         plainPassword = Password_deploy(password);
@@ -813,7 +833,7 @@ Errors Network_initServer(ServerSocketHandle *serverSocketHandle,
       {
         void              *certData;
         ulong             certDataSize;
-        gnutls_datum_t    datum; 
+        gnutls_datum_t    datum;
         gnutls_x509_crt_t cert;
 
         // check if all key files exists and can be read
@@ -1233,7 +1253,7 @@ Errors Network_execute(NetworkExecuteHandle *networkExecuteHandle,
     /* disable stderr if not requested */
     if ((ioMask & NETWORK_EXECUTE_IO_MASK_STDERR) == 0) libssh2_channel_handle_extended_data(networkExecuteHandle->channel,LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE);
 
-    return ERROR_NONE;  
+    return ERROR_NONE;
   #else /* not HAVE_SSH2 */
     UNUSED_VARIABLE(networkExecuteHandle);
     UNUSED_VARIABLE(ioMask);
