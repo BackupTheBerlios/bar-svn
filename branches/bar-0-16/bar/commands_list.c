@@ -2361,7 +2361,7 @@ if (String_length(line)>0) fprintf(stderr,"%s,%d: error=%s\n",__FILE__,__LINE__,
       case STORAGE_TYPE_DVD:
       case STORAGE_TYPE_BD:
       case STORAGE_TYPE_DEVICE:
-        printError("List archives on CD/DVD/BD/DEVICE is not supported!\n");
+        printError("List archives on CD/DVD/BD/device is not supported!\n");
         failError = ERROR_FUNCTION_NOT_SUPPORTED;
         break;
       default:
