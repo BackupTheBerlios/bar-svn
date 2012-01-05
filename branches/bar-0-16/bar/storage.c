@@ -2956,7 +2956,7 @@ Errors Storage_postProcess(StorageFileHandle *storageFileHandle,
                                           SIZE_OF_ARRAY(textMacros),
                                           (ExecuteIOFunction)processExecOutput,
                                           (ExecuteIOFunction)processExecOutput,
-                                          NULL 
+                                          NULL
                                          );
               printInfo(0,(error == ERROR_NONE)?"ok\n":"FAIL\n");
             }
@@ -3788,6 +3788,7 @@ Errors Storage_open(StorageFileHandle *storageFileHandle,
         return error;
       }
 #endif /* 0 */
+      return ERROR_FUNCTION_NOT_SUPPORTED;
       break;
     case STORAGE_TYPE_DEVICE:
       /* init variables */
