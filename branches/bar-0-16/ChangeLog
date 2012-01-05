@@ -1,4 +1,4 @@
-2011-09-17 0.16g
+2012-01-05 0.16g
   * fixed memory leak
   * added verbose level 5, output ssh debug messages for
     level 4 and 5
