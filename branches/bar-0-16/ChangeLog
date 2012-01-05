@@ -2,6 +2,9 @@
   * fixed memory leak
   * added verbose level 5, output ssh debug messages for
     level 4 and 5
+  * fixed crash when archive on CD/DVD/BD/device should
+    be listed/tested/extracted directly. Please mount
+    a CD/DVD/BD/device and use the file operations instead
 
 2011-09-10 0.16f
   * re-added option --volume-size, fixed setting CD/DVD/BD
@@ -422,7 +425,7 @@
   * barcontrol: added version number in about-dialog
   * fixed parsing of schedule data (type was missing)
   * fixed detection of size of current archive (was always 0)
-  * new scheme to build a incremental file name from an 
+  * new scheme to build a incremental file name from an
     archive file name if no incremental file name is given:
       - discard all %-macros
       - discard all #
