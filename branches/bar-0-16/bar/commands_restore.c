@@ -124,7 +124,7 @@ LOCAL String getDestinationFileName(String       destinationFileName,
   while (File_getNextSplitFileName(&fileNameTokenizer,&name))
   {
     File_appendFileName(destinationFileName,name);
-  }     
+  }
   File_doneSplitFileName(&fileNameTokenizer);
 
   /* create destination file name */
@@ -407,7 +407,7 @@ Errors Command_restore(StringList                      *archiveNameList,
               if (!jobOptions->dryRunFlag)
               {
                 parentDirectoryName = File_getFilePathName(String_new(),destinationFileName);
-                if (!File_exists(parentDirectoryName))
+                if (!String_empty(parentDirectoryName) && !File_exists(parentDirectoryName))
                 {
                   /* create directory */
                   error = File_makeDirectory(parentDirectoryName,
@@ -1108,7 +1108,7 @@ Errors Command_restore(StringList                      *archiveNameList,
               if (!jobOptions->dryRunFlag)
               {
                 parentDirectoryName = File_getFilePathName(String_new(),destinationFileName);
-                if (!File_exists(parentDirectoryName))
+                if (!String_empty(parentDirectoryName) && !File_exists(parentDirectoryName))
                 {
                   /* create directory */
                   error = File_makeDirectory(parentDirectoryName,
@@ -1347,7 +1347,7 @@ Errors Command_restore(StringList                      *archiveNameList,
                 if (!jobOptions->dryRunFlag)
                 {
                   parentDirectoryName = File_getFilePathName(String_new(),destinationFileName);
-                  if (!File_exists(parentDirectoryName))
+                  if (!String_empty(parentDirectoryName) && !File_exists(parentDirectoryName))
                   {
                     /* create directory */
                     error = File_makeDirectory(parentDirectoryName,
@@ -1729,7 +1729,7 @@ Errors Command_restore(StringList                      *archiveNameList,
               if (!jobOptions->dryRunFlag)
               {
                 parentDirectoryName = File_getFilePathName(String_new(),destinationFileName);
-                if (!File_exists(parentDirectoryName))
+                if (!String_empty(parentDirectoryName) && !File_exists(parentDirectoryName))
                 {
                   /* create directory */
                   error = File_makeDirectory(parentDirectoryName,
