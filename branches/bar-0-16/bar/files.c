@@ -180,7 +180,7 @@ String File_appendFileName(String fileName, const String name)
     }
   }
   String_append(fileName,name);
-  
+
   return fileName;
 }
 
@@ -197,7 +197,7 @@ String File_appendFileNameCString(String fileName, const char *name)
     }
   }
   String_appendCString(fileName,name);
-  
+
   return fileName;
 }
 
@@ -289,7 +289,7 @@ String File_getFileBaseNameCString(String baseName, const char *fileName)
   }
   else
   {
-    String_clear(baseName);
+    String_setCString(baseName,fileName);
   }
 
   return baseName;
@@ -363,7 +363,7 @@ Errors File_getTmpFileNameCString(String fileName, char const *pattern, const St
   handle = mkstemp(s);
   if (handle == -1)
   {
-    error = ERRORX(IO_ERROR,errno,s); 
+    error = ERRORX(IO_ERROR,errno,s);
     free(s);
     return error;
   }
@@ -524,7 +524,7 @@ Errors __File_openCString(const char    *__fileName__,
     case FILE_OPENMODE_WRITE:
       /* create directory if needed */
       pathName = File_getFilePathNameCString(File_newFileName(),fileName);
-      if (!File_exists(pathName))
+      if (!String_empty(pathName) && !File_exists(pathName))
       {
         error = File_makeDirectory(pathName,
                                    FILE_DEFAULT_USER_ID,
@@ -533,6 +533,7 @@ Errors __File_openCString(const char    *__fileName__,
                                   );
         if (error != ERROR_NONE)
         {
+          File_deleteFileName(pathName);
           return error;
         }
       }
@@ -563,7 +564,7 @@ Errors __File_openCString(const char    *__fileName__,
     case FILE_OPENMODE_APPEND:
       /* create directory if needed */
       pathName = File_getFilePathNameCString(File_newFileName(),fileName);
-      if (!File_exists(pathName))
+      if (!String_empty(pathName) && !File_exists(pathName))
       {
         error = File_makeDirectory(pathName,
                                    FILE_DEFAULT_USER_ID,
@@ -572,6 +573,7 @@ Errors __File_openCString(const char    *__fileName__,
                                   );
         if (error != ERROR_NONE)
         {
+          File_deleteFileName(pathName);
           return error;
         }
       }
@@ -845,7 +847,7 @@ Errors __File_close(const char *__fileName__, ulong __lineNb__, FileHandle *file
     }
     pthread_mutex_unlock(&debugFileLock);
   #endif /* not NDEBUG */
- 
+
   /* close file */
   fclose(fileHandle->file);
   fileHandle->file = NULL;
