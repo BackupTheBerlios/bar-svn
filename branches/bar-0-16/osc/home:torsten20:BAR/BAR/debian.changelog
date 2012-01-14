@@ -1,3 +1,17 @@
+bar (0.16g) stable; urgency=low
+  * fix restore: do not create empty parent directories
+  * fix restoring archive entries without directory part
+  * added verbose level 5, output ssh debug messages for
+    level 4 and 5
+  * fixed crash when archive on CD/DVD/BD/device should
+    be listed/tested/extracted directly. Please mount
+    a CD/DVD/BD/device and use the file operations instead.
+    Next version of BAR will support reading CD/DVD/BD
+    directly
+  * fixed memory leaks
+
+ -- Torsten Rupp <torsten.rupp.net>  Sat, 14 Jan 2012 00:00:00 +0100
+
 bar (0.16f) stable; urgency=low
   * re-added option --volume-size, fixed setting CD/DVD/BD
     volume size
@@ -471,7 +485,7 @@ bar (0.11) stable; urgency=low
   * barcontrol: added version number in about-dialog
   * fixed parsing of schedule data (type was missing)
   * fixed detection of size of current archive (was always 0)
-  * new scheme to build a incremental file name from an 
+  * new scheme to build a incremental file name from an
     archive file name if no incremental file name is given:
       - discard all %-macros
       - discard all #
