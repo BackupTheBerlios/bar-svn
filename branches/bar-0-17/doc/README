@@ -1,0 +1,590 @@
+BAR - BAckup aRchiver
+
+BAR is backup archiver program. It can create compressed, encrypted
+and splitted archives of files and disk images which can be stored
+on a hard disk, cd, dvd, bd or directly on a server via ftp, scp or
+sftp. BAR can create full and incremental/differential archives. A
+server-mode and a scheduler is integrated for making
+automated backups in the background.
+
+--- Features
+
+* create, list, test, compare and extract archives of files
+  and disk images
+* fast access to entries in archives: can find and extract single
+  files without decompressing/decryption of the whole archive
+* full and incremental/differential backup files archives
+* support for raw and several file systems for disk images (ext,
+  fat, reiserfs)
+* can split archives into parts of selectable size; each part can
+  be read independent
+* compress of data with zlib, bzip2 or lzma algorithms
+* encrypt archive content with gcrypt algorithms (BLOWFISH,
+  TWOFISH, AES, a. o.),
+* asymmetric encryption with RSA
+* store archives directly on external server via ftp or scp,
+* with external tools: store archives on CD/DVD/BD including
+  error correction codes,
+* support storage on a generic device,
+* server mode with included scheduler for doing backups regularly.
+  Controlling the server can be done via network connection
+  (plain & TLS/SSL),
+* optional internal database with information to all stored files
+  and disk images,
+* graphical front end for server to check server status, create
+  jobs, start jobs and stop jobs.
+
+--- Requirements
+* Unix system
+* glibc 2.3.2 or higher (mandatory)
+* PTHREADs library (mandatory)
+* zlib library (mandatory)
+* bzib2 library from http://www.bzip.org (optional)
+* lzma library from http://tukaani.org/xz (optional)
+* xdelta library from http://xdelta.org (optional)
+* ssh2 library from http://www.libssh2.org (optional)
+* gcrypt library from http://www.gnupg.org (optional)
+* gnutls library from http://www.gnu.org/software/gnutls
+  (optional)
+* ftplib from http://nbpfaus.net/~pfau/ftplib (optional)
+* cdio library from www.gnu.org/software/libcdio/libcdio.html (optional)
+* long long datatype (because of large files)
+* perl (only for compiling)
+* external tools for DVD: mkisofs, dvdisaster, growisofs,
+  eject (optional)
+* Java for graphical frontend (see below)
+* SWT 3.6 (optional)
+* ANT and launch4j (optional)
+* EPM (optional)
+
+--- Installation
+
+There are pre-compiled binary packages available for several
+system. You can download them from
+
+  http://www.kigen.de/projects/bar/index.html
+
+If there is no binary package available for your system, you
+can compile bar by yourself. The following additional packages
+are mandatory:
+
+* http://www.zlib.net/zlib-1.2.3.tar.gz
+
+The following additional packages are optional:
+
+* http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz
+* http://tukaani.org/xz/xz-4.999.8beta.tar.gz
+* ftp://ftp.gnupg.org/gcrypt/libgpg-error/libgpg-error-1.7.tar.bz2
+* ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.4.4.tar.bz2
+* ftp://ftp.gnu.org/pub/gnu/gnutls/gnutls-2.8.1.tar.bz2
+* http://www.nbpfaus.net/~pfau/ftplib/ftplib-3.1-src.tar.gz
+* http://nbpfaus.net/~pfau/ftplib/ftplib-3.1-1.patch
+* http://prdownloads.sourceforge.net/libssh2/libssh2-1.1.tar.gz?download
+* http://www.epmhome.org/index.php
+
+There are two ways to use the additional packages:
+
+1a)
+
+Extract the archives and place links in the bar build
+directory before executing bar configure:
+
+zlib:
+  http://www.zlib.net/zlib-1.2.5.tar.gz
+
+  ln -s zlib-1.2.5 zlib
+
+bzip2:
+  http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz
+
+  ln -s bzip2-1.0.5 bzip2
+
+lzma:
+  http://tukaani.org/xz/xz-4.999.8beta.tar.gz
+
+  ln -s xz-4.999.8beta xz
+
+xdelta:
+  http://xdelta.googlecode.com/files/xdelta3.0.0.tar.gz
+
+  ln -s xdelta3.0.0 xdelta3
+
+gcrypt:
+  ftp://ftp.gnupg.org/gcrypt/libgpg-error/libgpg-error-1.7.tar.bz2
+  ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.4.4.tar.bz2
+
+  ln -s libgpg-error-1.7 libgpg
+  ln -s libgcrypt-1.4.4 libgcrypt
+
+gnutls:
+  ftp://ftp.gnu.org/pub/gnu/gnutls/gnutls-2.8.1.tar.bz2
+
+  ln -s gnutls-2.8.1 gnutls
+
+ftplib:
+  http://www.nbpfaus.net/~pfau/ftplib/ftplib-3.1-src.tar.gz
+  http://nbpfaus.net/~pfau/ftplib/ftplib-3.1-1.patch
+
+  cd ftplib-3.1; patch -p3 < ftplib-3.1-1.patch; cd ..
+  ln -s ftplib-3.1 ftplib
+
+ssh2:
+  http://www.libssh2.org/download/libssh2-1.2.2.tar.gz
+
+  ln -s libssh2-1.2.2 libssh2
+
+cdio:
+  ftp://ftp.gnu.org/gnu/libcdio/libcdio-0.82.tar.gz
+
+  ln -s libcdio-0.82 libcdio
+
+epm:
+  http://ftp.easysw.com/pub/epm/4.1/epm-4.1-source.tar.bz2
+
+  ln -s epm-4.1 epm
+
+  Note: you may apply the patch misc/epm-4-1-rpm.patch in case you
+  see problems creating RPM packages with EPM on your system
+
+You can execute the supplied script 'download-third-party-packages.sh'
+to download (wget required) all additional packages, extract them to a
+temporary directory and set the required links for bar:
+
+  download-third-party-packages.sh
+
+Note: bar configure will build the additional packages into a temporary
+      directory and link the libraries statically.
+
+1b)
+
+Install the additional packages on the system:
+
+zlib:
+  http://www.zlib.net/zlib-1.2.3.tar.gz
+
+  tar xjf zlib-1.2.3.tar.bz2
+  cd zlib-1.2.3
+  ./configure
+  make
+  make install
+
+  ldconfig
+
+bzip2:
+  http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz
+
+  tar xzf bzip2-1.0.5.tar.gz
+  cd bzip2-1.0.5/
+  make
+  make install
+
+  ldconfig
+
+lzma:
+  http://tukaani.org/xz/xz-4.999.8beta.tar.gz
+
+  tar xzf xz-4.999.8beta.tar.gz
+  cd xz-4.999.8beta
+  ./configure
+  make
+  make install
+
+  ldconfig
+
+xdelta:
+  http://xdelta.googlecode.com/files/xdelta3.0.0.tar.gz
+
+  ln -s xdelta3.0.0 xdelta3
+
+gcrypt:
+  ftp://ftp.gnupg.org/gcrypt/libgpg-error/libgpg-error-1.7.tar.bz2
+  ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.4.4.tar.bz2
+
+  tar xjf libgpg-error-1.7.tar.bz2
+  cd libgpg-error-1.7
+  ./configure
+  make
+  make install
+
+  tar xjf libgcrypt-1.4.4.tar.bz2
+  cd libgcrypt-1.4.4
+  ./configure
+  make
+  make install
+
+  ldconfig
+
+gnutls:
+  ftp://ftp.gnu.org/pub/gnu/gnutls/gnutls-2.8.1.tar.bz2
+
+  tar xjf gnutls-2.8.1.tar.bz2
+  cd gnutls-2.8.1
+  ./configure
+  make
+  make install
+  ldconfig
+
+ftplib:
+  http://www.nbpfaus.net/~pfau/ftplib/ftplib-3.1-src.tar.gz
+  http://nbpfaus.net/~pfau/ftplib/ftplib-3.1-1.patch
+
+  tar xzf ftplib-3.1-src.tar.gz
+  cd ftplib-3.1
+  patch -p3 < ftplib-3.1-1.patch
+  patch -p1 < <BAR source directory>/ftplib-3.1-without-perror.patch
+  cd ftplib-3.1/linux
+  make
+  cp libftp.a /usr/local/lib
+  cp libftp.so.3.1 /usr/local/lib
+  cp ftplib.h /usr/local/include
+  cd /usr/local/lib
+  ln -s libftp.so.3.1 libftp.so
+  ln -s libftp.so.3.1 libftp.so.3
+
+  ldconfig
+
+ssh2:
+  http://www.libssh2.org/download/libssh2-1.2.2.tar.gz
+
+  tar xzf libssh2-1.2.2.tar.gz
+  cd libssh2-1.2.2
+  ./configure
+  patch -p1 < <BAR source directory>/misc/libssh2-1.1-keepalive.patch
+  make
+  make install
+
+  ldconfig
+
+  Notes: - newer versions of libssh2 already include the seek-patch.
+         - the keepalive patch is optional
+
+cdio:
+  ftp://ftp.gnu.org/gnu/libcdio/libcdio-0.82.tar.gz
+
+  tar xzf libcdio-0.82.tar.gz
+  cd libcdio-0.82
+  ./configure
+  make
+  make install
+
+  ldconfig
+
+epm:
+  http://ftp.easysw.com/pub/epm/4.1/epm-4.1-source.tar.bz2
+
+  tar xjf epm-4.1-source.tar.bz2
+  cd epm-4.1
+  patch -p1 < <BAR source directory>/misc/epm-4.1-rpm.patch
+  ./configure
+  make
+  make install
+
+1c)
+
+On a Debian system you can use the following packages (or newer versions):
+
+  gcc
+  openjdk-6-jdk
+  make
+  epm
+  perl
+  zlib1g
+  zlib1g-dev
+  libbz2-1.0
+  libbz2-dev
+  liblzma
+  liblzma-dev
+  libxdelta2
+  libxdelta2-dev
+  libssl0.9.8
+  libssl-dev
+  libssh2-1
+  libssh2-1-dev
+  libgcrypt11
+  libgcrypt11-dev
+  gnutls-bin
+  libgnutls26
+  libgnutls-dev
+  ftplib3
+  ftplib-dev
+  libcdio10
+  libcdio-dev
+
+On SUSE system you may use the following packages (or newer versions):
+
+  gcc
+  make
+  perl
+  zlib
+  zlib-devel
+  zlib-devel-static
+  libbz2-1
+  libbz2-devel
+  liblzma0
+  libxdelta2
+  libxdelta2-devel
+  xz-devel
+  libgcrypt11
+  libgcrypt-devel
+  gnutls
+  libgnutls26
+  libgnutls-devel
+  openssl-devel
+  java_1_0_6-openjdk
+  java_1_0_6-openjdk-devel
+
+  Note 1: most libraries are only available as dynamic libraries. To
+  compile a static linked BAR, download the additional packages
+  instead of installing the packages above.
+
+  Note 2: download EPM and apply the patch to get a working EPM on SuSE.
+
+On CentOS system you can use the following packages (or newer versions):
+
+  gcc
+  make-3.81-3
+  zlib-1.2.3-3
+  bzip2-devel-1.0.3-4
+  libgcrypt-devel-1.4.4-5
+  libgpg-error-devel-1.4.2
+  gnutls-devel-1.4.1-3
+  openssl-devel
+
+  Note 1: download lzma, ftplib, libssh2
+
+  Note 2: download EPM and apply the patch to get a working EPM on SuSE.
+
+On a Ubuntu system you can use the following packages (or newer versions):
+
+  gcc
+  openjdk-6-jdk
+  make
+  perl
+  zlib1g
+  zlib1g-dev
+  libbz2-1.0
+  libbz2-dev
+  liblzma
+  liblzma-dev
+  libxdelta2
+  libxdelta2-dev
+  libssl0.9.8  
+  libssl-dev
+  libssh2-1
+  libssh2-1-dev
+  libgcrypt11
+  libgcrypt11-dev
+  libgpg-error0
+  libgpg-error-dev
+  gnutls-bin
+  libgnutls26
+  libgnutls-dev
+  ftplib3
+  ftplib-dev
+  libcdio10
+  libcdio-dev
+  patch
+
+2)
+
+Then compile and install BAR with:
+
+  ./configure
+  make
+  make install
+
+Test BAR with:
+
+  make test
+
+Note: for the image tests some commands are executed with sudo.
+Create a file /etc/sudores.d/bar with:
+
+--- cut ---
+# allow BAR tests
+Cmnd_Alias BAR_LOSETUP=\
+  /sbin/losetup -d /dev/loop[01], \
+  /sbin/losetup /dev/loop[01] test/dev[01].dat
+Cmnd_Alias BAR_CHMOD=\
+  /bin/chmod o+rw /dev/loop[01]
+Cmnd_Alias BAR_DD=\
+  /bin/dd if=/dev/loop[01] of=-
+Cmnd_Alias BAR_MKFS=\
+  /sbin/mkfs -t * /dev/loop[01]
+Cmnd_Alias BAR_MOUNT=\
+  /bin/mount /dev/loop[01] test/dev[01]
+Cmnd_Alias BAR_UMOUNT=\
+  /bin/umount test/dev[01]
+Cmnd_Alias BAR_CP=\
+  /bin/cp -r -p test/data/* test/dev[01]
+Cmnd_Alias BAR_DIFF=\
+  /usr/bin/diff -r test/dev0 test/dev1
+
+ALL ALL=NOPASSWD:\
+  BAR_LOSETUP,\
+  BAR_CHMOD,\
+  BAR_DD,\
+  BAR_MKFS,\
+  BAR_MOUNT,\
+  BAR_UMOUNT,\
+  BAR_CP, \
+  BAR_DIFF
+--- cut ---
+
+--- Compression
+
+For compression zip, bzip2 or lzma can be used. The compression
+algorithms offer different levels of compression ration and time.
+The following values give a rough impression for compression of
+some arbitary data:
+
+Type    Size   Ratio
+--------------------------
+Orignal 764M   -
+zip9    261M   65.9%
+bzip9   259M   66.1%
+lzma9   214M   72.0%
+
+The compression of lzma9 is better than for zip9 or bzip9, but
+the compression time also increased significantly.
+
+--- Archive files and encryption
+
+For encryption the algorithms of the gcrypt library are used.
+The BAR archive files are not encrypted in a single block,
+instead each stored file is encrypted. The archive file
+structure is readable (an BAR archive is organized in
+"chunks"; see archiv_format.def if you are interested in
+details), thus everybody can detect e. g. how many files are
+stored in the archive, but nobody except the owner of the
+passphrase used for encryption can read the contents of the
+files nor the file meta data, e. g. file names (as long as the
+used encryption algorithm is not broken by someone).
+
+For asymmetric encryption a pair of keys with hybrit
+encryption is used: the file meta data and file data is
+encrypted with a symmetric algorithmis, e. g. AES or Twofish.
+The key for symmetric encryption is chosen from random data,
+encrypted asymmetric with the public key and stored in the BAR
+archive files, too. Those archives can only be read when the
+private key is available to decrypt the symmetric key. With
+asymmetric encryption BAR archives can be created without
+knowledge of the password needed for decryption.
+
+--- Storage on a DVD
+
+For storing archive files on DVD an external program like
+"growisofs" is needed which is actually writing data to a DVD.
+BAR create the archive files in a temporary directory and then
+call the external tool for burning the DVD. The tool
+"growisofs" is recommented for storing archive files directly
+on DVD. An ISO image can also be created first e. g. with
+mkisofs. BAR support external pre- and post-processing
+commands when creating an ISO-image and burning a DVD. With
+these commands e. g. dvdisaster can be integrated into BAR to
+create RS-protected backup DVDs.
+
+The following external tools are needed with the default
+settings of BAR to create an DVD:
+
+- growisofs
+- mkisofs
+- dvdisaster
+- eject
+- nice
+
+--- Graphical frontend
+
+BARControl is a graphical user interface for BAR. It is
+written in Java with SWT (Note: the former version used
+TclTk). To run the graphical user interface a Java
+runtime environment V1.6 (JRE6) or newer or Java
+development kit V1.6 (JDK6) or newer is required.
+
+To start the graphical user interface (for 32bit
+systems) type in
+
+On Linux:
+
+  barcontrol.sh
+
+resp.
+
+  java -jar barcontrol-linux.jar
+
+On Windows:
+
+If jar is packed with launch4j into an .exe:
+
+  barcontrol.exe
+
+resp.
+
+  java -jar barcontrol-windows.jar
+
+
+BARControl ask for server name where BAR is running and the
+login password and then connect to the running BAR server
+either via TLS or a plain socket connection. BARControl can
+edit jobs on a server, display the current status of jobs
+and start or stop jobs.
+
+To use BARControl the BAR server daemon have to be
+startet first. Either enter
+
+  bar --daemon
+
+or use the start-script 'barserver' from /etc/init.d.
+
+Please note that for a TLS connection the TSL keys and
+cerificate files have to be available.
+
+Note: If you want to use a ssh tunnel to connect to the bar
+      server connect the ssh tunnel to port number 38523
+      (plain connection) or 38524 (TLS connenction).
+
+Install Java, SWT, launch4j:
+
+* Download Java JRE V1.6 (JRE6) from http://www.sun.com
+* Install Java
+
+In case you do not want to use the included SWT 3.6
+in barcontrol-linux.jar or barcontrol-windows.jar and
+use instead barcontrol.jar (which does not include the
+SWT files) SWT have to be installed:
+
+* Download SWT from http://www.eclipse.org/swt
+* Install SWT to some directory
+
+To start BARControl with the installed SWT you have to
+specify the path to the swt.jar file, e. g.
+
+  java -classpath /usr/local/swt/swt.jar:barcontrol.jar BARControl
+
+If a single executable file should be created the
+BARControl jar file can be wrapped with launch4j:
+
+* Download launch4j from http://launch4j.sourceforge.net
+* Install
+
+Note: call configure with
+
+  --with-launchj4-dir=<path>
+
+--- License
+
+BAR and all files are under the GPL version 2. The full GPL
+version 2 license text can be found here:
+
+  http://www.gnu.org/licenses/gpl-2.0.html
+
+BARControl is using SWT. SWT is under the "Eclipse Public License"
+which can be found here:
+
+  http://www.eclipse.org/org/documents/epl-v10.php
+
+--- Contact
+
+Send an email to
+
+torsten.rupp@gmx.net
