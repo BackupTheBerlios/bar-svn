@@ -1,0 +1,59 @@
+ToDo
+
+- check if file date/permission/owner/group is correct
+- internal pipeling of commands for e. g. repacking, remove/add encryption
+- support ssh-agent (extend libssh2?)
+- improve logfile
+- ssl server: check common name?
+- improve password quality checker
+- novice/expert mode in barcontrol.tcl
+- barconfig for creating/edit bar.cfg
+- Windows port
+- re-read configuration when modified
+- configure band-width on run-time
+- ACL
+- send job from server to other server
+- send-only ssh-login (possible?)
+- clear internal performance arrays before next job is started
+- avoid negative bytes/s in performance monitor
+- multiple instances of backup threads
+- check ssl certificates
+- multi-threaded compression? multi-core usage
+- store partitions which are mounted ("on-the-fly-freeze")
+- md5 file check sum?
+- support sparse file when restoring
+- compile-info (what is included, which version)
+- delete tempora ry image directory when writing dvd
+- support for config reload with SIGHUP
+- support lzo compression library
+- support for rmt? (tape control tool)
+- support xdelta compression
+- barcontrol: file separator character
+- rename archive.? -> archives.?
+- remove "Function" in lists.h types
+- barcontrol: change *gif -> *png
+- option/command to clear cached pass phrases in bar server
+- storage on Samba server directly
+- sorrage on webdav server directly
+- general handling of strings containing LF, CR..
+- doc: min. password length for 3DES
+- progress bar when writing CDs
+- when writing a DVD do not write more data then given volume size, e. g. 4*1G<=4G, do not write 5*1G
+- dvd: eject last disk
+- schedule: add tag text which can be used in the archive file name
+- add debug version to packages
+- support SMB without mounting
+- disable CTS in crypt and fill last block with random data: this avoid that the
+  blocks are reordered because of CTS (block n and n-1 are exchanged!) and blocks
+  must be written and read with identically buffer sizes! For writting single blocks
+  CTS is not used anyway
+- -pedantic -std=gnu99
+- define max. number of concurrent connections to sftp/scp host
+  including background index thread; pause index thread on demand
+- execute VACUUM on database/enable auto-vacuum?
+- combine full-backup and incremental-backup into new full-backup
+- replace ftplib by curl
+- limit used bandwidth when creating index (all data is transmitted?)
+- add allocator of connection (ftp, scp, sftp) and limit number of connections
+- pre/post-script in barcontrol
+- valgrind-test for delta-compression
