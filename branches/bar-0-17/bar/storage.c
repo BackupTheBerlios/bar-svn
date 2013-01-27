@@ -1241,27 +1241,28 @@ bool Storage_parseSSHSpecifier(const String sshSpecifier,
   String_clear(loginName);
 
   s = String_new();
-  if      (String_matchCString(sshSpecifier,STRING_BEGIN,"^(([^@]|\\@)*?)@([^@:/]*?):[[:digit:]]+$",NULL,NULL,loginName,STRING_NO_ASSIGN,hostName,s,NULL))
+  if      (String_matchCString(sshSpecifier,STRING_BEGIN,"^(([^@]|\\@)*?)@([^:]+?):(\\d*)/{0,1}$",NULL,NULL,loginName,STRING_NO_ASSIGN,hostName,s,NULL))
   {
     // <login name>@<host name>:<host port>
-    result = String_parse(sshSpecifier,STRING_BEGIN,"%S@%S:%d",NULL,loginName,hostName,hostPort);
-
-    String_mapCString(loginName,STRING_BEGIN,LOGINNAME_MAP_FROM,LOGINNAME_MAP_TO,SIZE_OF_ARRAY(LOGINNAME_MAP_FROM));
+    if (loginName != NULL) String_mapCString(loginName,STRING_BEGIN,LOGINNAME_MAP_FROM,LOGINNAME_MAP_TO,SIZE_OF_ARRAY(LOGINNAME_MAP_FROM));
     if (hostPort != NULL) (*hostPort) = (uint)String_toInteger(s,STRING_BEGIN,NULL,NULL,0);
 
     result = TRUE;
   }
-  else if (String_matchCString(sshSpecifier,STRING_BEGIN,"^(([^@]|\\@)*?)@([^@/]*?)$",NULL,NULL,loginName,STRING_NO_ASSIGN,hostName,NULL))
+  else if (String_matchCString(sshSpecifier,STRING_BEGIN,"^(([^@]|\\@)*?)@([^/]+)/{0,1}$",NULL,NULL,loginName,STRING_NO_ASSIGN,hostName,NULL))
   {
     // <login name>@<host name>
-    String_mapCString(loginName,STRING_BEGIN,LOGINNAME_MAP_FROM,LOGINNAME_MAP_TO,SIZE_OF_ARRAY(LOGINNAME_MAP_FROM));
+    if (loginName != NULL) String_mapCString(loginName,STRING_BEGIN,LOGINNAME_MAP_FROM,LOGINNAME_MAP_TO,SIZE_OF_ARRAY(LOGINNAME_MAP_FROM));
 
     result = TRUE;
   }
-  else if (String_matchCString(sshSpecifier,STRING_BEGIN,"^([^@:/]*?):[[:digit:]]+$",NULL,NULL,hostName,s,NULL))
+  else if (String_matchCString(sshSpecifier,STRING_BEGIN,"^([^@:/]*?):(\\d*)/{0,1}$",NULL,NULL,hostName,s,NULL))
   {
     // <host name>:<host port>
-    if (hostPort != NULL) (*hostPort) = (uint)String_toInteger(s,STRING_BEGIN,NULL,NULL,0);
+    if (hostPort != NULL)
+    {
+      if (!String_isEmpty(s)) (*hostPort) = (uint)String_toInteger(s,STRING_BEGIN,NULL,NULL,0);
+    }
 
     result = TRUE;
   }
@@ -1292,9 +1293,11 @@ bool Storage_parseDeviceSpecifier(const String deviceSpecifier,
 
   String_clear(deviceName);
 
-  if (String_matchCString(deviceSpecifier,STRING_BEGIN,"[^:]*:.*",NULL,NULL,NULL))
+  if (String_matchCString(deviceSpecifier,STRING_BEGIN,"^([^:]*):$",NULL,NULL,deviceName,NULL))
   {
-    result = String_parse(deviceSpecifier,STRING_BEGIN,"%S:%S",NULL,deviceName,NULL);
+    // <device name>
+
+    result = TRUE;
   }
   else
   {
@@ -1343,12 +1346,13 @@ Errors Storage_parseName(const String     storageName,
 
   if      (String_startsWithCString(storageName,"ftp://"))
   {
-    if (   String_matchCString(storageName,6,"^[^:]*:([^@]|\\@)*?@[^/]*/{0,1}",&nextIndex,NULL,NULL)  // ftp://<login name>:<login password>@<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,6,"^([^@]|\\@)*?@[^/]*/{0,1}",&nextIndex,NULL,NULL)        // ftp://<login name>@<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,6,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // ftp://<host name>[:<host port>]/<file name>
+#warning ftp port?
+    if (   String_matchCString(storageName,6,"^[^:]+:([^@]|\\@)+?@[^/]+/{0,1}",&nextIndex,NULL,NULL)  // ftp://<login name>:<login password>@<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,6,"^([^@]|\\@)+?@[^/]+/{0,1}",&nextIndex,NULL,NULL)        // ftp://<login name>@<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,6,"^[^/]+/{0,1}",&nextIndex,NULL,NULL)                     // ftp://<host name>[:<host port>]/<file name>
        )
     {
-      String_sub(storageSpecifier->string,storageName,6,nextIndex-1);
+      String_sub(storageSpecifier->string,storageName,6,nextIndex);
       if (!Storage_parseFTPSpecifier(storageSpecifier->string,
                                      storageSpecifier->hostName,
                                      &storageSpecifier->hostPort,
@@ -1363,6 +1367,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // ftp://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,6,STRING_END);
     }
 
@@ -1370,12 +1375,12 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"ssh://"))
   {
-    if (   String_matchCString(storageName,6,"^([^@]|\\@)*?@[^:]*:[^/]*/{0,1}",&nextIndex,NULL,NULL)  // ssh://<login name>@<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,6,"^[^:]*:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // ssh://<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,6,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // ssh://<host name>/<file name>
+    if (   String_matchCString(storageName,6,"^([^@]|\\@)+?@[^:]+:\\d*/{0,1}",&nextIndex,NULL,NULL)   // ssh://<login name>@<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,6,"^[^:]+:\\d*/{0,1}",&nextIndex,NULL,NULL)                // ssh://<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,6,"^[^/]+/{0,1}",&nextIndex,NULL,NULL)                     // ssh://<host name>/<file name>
        )
     {
-      String_sub(storageSpecifier->string,storageName,6,nextIndex-1);
+      String_sub(storageSpecifier->string,storageName,6,nextIndex);
       if (!Storage_parseSSHSpecifier(storageSpecifier->string,
                                      storageSpecifier->hostName,
                                      &storageSpecifier->hostPort,
@@ -1389,6 +1394,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // ssh://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,6,STRING_END);
     }
 
@@ -1396,12 +1402,12 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"scp://"))
   {
-    if (   String_matchCString(storageName,6,"^([^@]|\\@)*?@[^:]*:[^/]*/{0,1}",&nextIndex,NULL,NULL)  // scp://<login name>@<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,6,"^[^:]*:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // scp://<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,6,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // scp://<host name>/<file name>
+    if (   String_matchCString(storageName,6,"^([^@]|\\@)+?@[^:]+:\\d*/{0,1}",&nextIndex,NULL,NULL)   // scp://<login name>@<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,6,"^[^:]+:\\d*/{0,1}",&nextIndex,NULL,NULL)                // scp://<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,6,"^[^/]+/{0,1}",&nextIndex,NULL,NULL)                     // scp://<host name>/<file name>
        )
     {
-      String_sub(storageSpecifier->string,storageName,6,nextIndex-1);
+      String_sub(storageSpecifier->string,storageName,6,nextIndex);
       if (!Storage_parseSSHSpecifier(storageSpecifier->string,
                                      storageSpecifier->hostName,
                                      &storageSpecifier->hostPort,
@@ -1415,6 +1421,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // scp://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,6,STRING_END);
     }
 
@@ -1422,12 +1429,12 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"sftp://"))
   {
-    if (   String_matchCString(storageName,7,"^([^@]|\\@)*?@[^:]*:[^/]*/{0,1}",&nextIndex,NULL,NULL)  // sftp://<login name>@<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,7,"^[^:]*:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // sftp://<host name>[:<host port>]/<file name>
-        || String_matchCString(storageName,7,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // sftp://<host name>/<file name>
+    if (   String_matchCString(storageName,7,"^([^@]|\\@)+?@[^:]+:\\d*/{0,1}",&nextIndex,NULL,NULL)   // sftp://<login name>@<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,7,"^[^:]+:\\d*/{0,1}",&nextIndex,NULL,NULL)                // sftp://<host name>:[<host port>]/<file name>
+        || String_matchCString(storageName,7,"^[^/]+/{0,1}",&nextIndex,NULL,NULL)                     // sftp://<host name>/<file name>
        )
     {
-      String_sub(storageSpecifier->string,storageName,7,nextIndex-1);
+      String_sub(storageSpecifier->string,storageName,7,nextIndex);
       if (!Storage_parseSSHSpecifier(storageSpecifier->string,
                                      storageSpecifier->hostName,
                                      &storageSpecifier->hostPort,
@@ -1441,6 +1448,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // sftp://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,7,STRING_END);
     }
 
@@ -1448,11 +1456,10 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"cd://"))
   {
-    if (   String_matchCString(storageName,5,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // cd://<device name>:<file name>
-        || String_matchCString(storageName,5,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // cd://<file name>
-       )
+    if (String_matchCString(storageName,5,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL))
     {
-      String_sub(storageSpecifier->string,storageName,5,nextIndex-1);
+      // cd://<device name>:<file name>
+      String_sub(storageSpecifier->string,storageName,5,nextIndex);
       if (!Storage_parseDeviceSpecifier(storageSpecifier->string,
                                         NULL,
                                         storageSpecifier->deviceName
@@ -1465,6 +1472,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // cd://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,5,STRING_END);
     }
 
@@ -1472,11 +1480,10 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"dvd://"))
   {
-    if (   String_matchCString(storageName,6,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // dvd://<device name>:<file name>
-        || String_matchCString(storageName,6,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // dvd://<device name>:<file name>
-       )
+    if (String_matchCString(storageName,6,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL))
     {
-      String_sub(storageSpecifier->string,storageName,6,nextIndex-1);
+      // dvd://<device name>:<file name>
+      String_sub(storageSpecifier->string,storageName,6,nextIndex);
       if (!Storage_parseDeviceSpecifier(storageSpecifier->string,
                                         NULL,
                                         storageSpecifier->deviceName
@@ -1489,6 +1496,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // dvd://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,6,STRING_END);
     }
 
@@ -1496,11 +1504,10 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"bd://"))
   {
-    if (   String_matchCString(storageName,5,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // bd://<device name>:<file name>
-        || String_matchCString(storageName,5,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // bd://<device name>:<file name>
-       )
+    if (String_matchCString(storageName,5,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL))
     {
-      String_sub(storageSpecifier->string,storageName,5,nextIndex-1);
+      // bd://<device name>:<file name>
+      String_sub(storageSpecifier->string,storageName,5,nextIndex);
       if (!Storage_parseDeviceSpecifier(storageSpecifier->string,
                                         NULL,
                                         storageSpecifier->deviceName
@@ -1513,6 +1520,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // bd://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,5,STRING_END);
     }
 
@@ -1520,11 +1528,10 @@ Errors Storage_parseName(const String     storageName,
   }
   else if (String_startsWithCString(storageName,"device://"))
   {
-    if (   String_matchCString(storageName,9,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL)               // device://<device name>:<file name>
-        || String_matchCString(storageName,9,"^[^/]*/{0,1}",&nextIndex,NULL,NULL)                     // device://<device name>:<file name>
-       )
+    if (String_matchCString(storageName,9,"^[^:]+:[^/]*/{0,1}",&nextIndex,NULL,NULL))
     {
-      String_sub(storageSpecifier->string,storageName,9,nextIndex-1);
+      // device://<device name>:<file name>
+      String_sub(storageSpecifier->string,storageName,9,nextIndex);
       if (!Storage_parseDeviceSpecifier(storageSpecifier->string,
                                         NULL,
                                         storageSpecifier->deviceName
@@ -1537,6 +1544,7 @@ Errors Storage_parseName(const String     storageName,
     }
     else
     {
+      // device://<file name>
       if (fileName != NULL) String_sub(fileName,storageName,9,STRING_END);
     }
 
