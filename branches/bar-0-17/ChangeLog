@@ -1,5 +1,6 @@
 2013-01-26 0.17a
   * fixed wring CD/DVD/BD: do not write an empty last medium
+  * improved database index
 
 2012-10-03 0.17
   * finally: added support for xdelta compression!
