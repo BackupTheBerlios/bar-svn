@@ -3,6 +3,7 @@
   * improved database index
   * fixed parsing CD/DVD/BD/device specifier: last character was
     missing
+  * fixed logging of skipped own files
 
 2012-10-03 0.17
   * finally: added support for xdelta compression!
