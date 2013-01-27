@@ -4422,8 +4422,7 @@ Errors Command_create(const char                      *storageName,
     }
     else
     {
-      printInfo(1,"skipped (reason: own created file)\n");
-      logMessage(LOG_TYPE_ENTRY_ACCESS_DENIED,"skipped '%s'\n",String_cString(entryMsg.name));
+      printInfo(1,"Add '%s'...skipped (reason: own created file)\n",String_cString(entryMsg.name));
       createInfo.statusInfo.skippedEntries++;
       abortFlag |= !updateStatusInfo(&createInfo);
     }
