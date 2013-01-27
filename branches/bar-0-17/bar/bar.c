@@ -2009,7 +2009,6 @@ LOCAL void freeBandWidthNode(BandWidthNode *bandWidthNode, void *userData)
   assert(bandWidthNode != NULL);
 
   UNUSED_VARIABLE(userData);
-fprintf(stderr,"%s, %d: \n",__FILE__,__LINE__);
 
   String_delete(bandWidthNode->fileName);
 }
