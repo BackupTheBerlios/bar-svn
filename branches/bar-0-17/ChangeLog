@@ -1,5 +1,12 @@
+2013-05-05 0.17b
+  * fixed parsing of storage specifier (ftp, scp/sftp,
+    cd/dvd/bd): user name
+  * fixed dialog text when password is requested
+  * improved checking host name for ftp/scp/sftp login
+  * fixed lost string resource
+
 2013-01-26 0.17a
-  * fixed wring CD/DVD/BD: do not write an empty last medium
+  * fixed writing CD/DVD/BD: do not write an empty last medium
   * improved database index
   * fixed parsing CD/DVD/BD/device specifier: last character was
     missing
