@@ -1798,6 +1798,7 @@ remoteBarFlag=FALSE;
                                String_cString(printableStorageName),
                                Errors_getText(error)
                               );
+                    String_delete(deltaSourceName);
                     String_delete(deviceName);
                     if (failError == ERROR_NONE) failError = error;
                     break;
