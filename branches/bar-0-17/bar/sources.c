@@ -1001,7 +1001,7 @@ Errors Source_openEntry(SourceHandle     *sourceHandle,
       {
         // open temporary restored file
         error = File_open(&sourceHandle->tmpFileHandle,tmpFileName,FILE_OPEN_READ);
-        if (error != ERROR_NONE)
+        if (error == ERROR_NONE)
         {
           sourceHandle->tmpFileName = tmpFileName;
           restoredFlag = TRUE;
