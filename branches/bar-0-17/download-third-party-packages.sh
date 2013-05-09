@@ -20,6 +20,7 @@ RMF="rm -f"
 RMRF="rm -rf"
 TAR="tar"
 WGET="wget"
+WGET_OPTIONS="--timeout=30 --tries=3"
 
 # --------------------------------- variables --------------------------------
 
@@ -222,8 +223,8 @@ if test $cleanFlag -eq 0; then
      fi
      fileName=`ls zlib-*.tar.gz 2>/dev/null`
      if test ! -f "$fileName"; then
-       fileName=`wget --quiet -O - 'http://www.zlib.net'|grep -E -e 'http://zlib.net/zlib-.*\.tar\.gz'|head -1|sed 's|.*http://zlib.net/\(.*\.tar\.gz\)".*|\1|g'`
-       $WGET "http://www.zlib.net/$fileName"
+       fileName=`$WGET $WGET_OPTIONS --quiet -O - 'http://www.zlib.net'|grep -E -e 'http://zlib.net/zlib-.*\.tar\.gz'|head -1|sed 's|.*http://zlib.net/\(.*\.tar\.gz\)".*|\1|g'`
+       $WGET $WGET_OPTIONS "http://www.zlib.net/$fileName"
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf $fileName
@@ -243,7 +244,7 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f bzip2-1.0.5.tar.gz; then
-       $WGET 'http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz'
+       $WGET $WGET_OPTIONS 'http://www.bzip.org/1.0.5/bzip2-1.0.5.tar.gz'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf bzip2-1.0.5.tar.gz
@@ -264,8 +265,8 @@ if test $cleanFlag -eq 0; then
      fi
      fileName=`ls xz-*.tar.gz 2>/dev/null`
      if test ! -f "$fileName"; then
-       fileName=`wget --quiet -O - 'http://tukaani.org/xz'|grep -E -e 'xz-.*\.tar\.gz'|head -1|sed 's|.*href="\(xz.*\.tar\.gz\)".*|\1|g'`
-       $WGET "http://tukaani.org/xz/$fileName"
+       fileName=`$WGET $WGET_OPTIONS --quiet -O - 'http://tukaani.org/xz'|grep -E -e 'xz-.*\.tar\.gz'|head -1|sed 's|.*href="\(xz.*\.tar\.gz\)".*|\1|g'`
+       $WGET $WGET_OPTIONS "http://tukaani.org/xz/$fileName"
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf $fileName
@@ -285,7 +286,7 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f xdelta3.0.0.tar.gz; then
-       $WGET 'http://xdelta.googlecode.com/files/xdelta3.0.0.tar.gz'
+       $WGET $WGET_OPTIONS 'http://xdelta.googlecode.com/files/xdelta3.0.0.tar.gz'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf xdelta3.0.0.tar.gz
@@ -306,13 +307,13 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f libgpg-error-1.7.tar.bz2; then
-       $WGET 'ftp://ftp.gnupg.org/gcrypt/libgpg-error/libgpg-error-1.7.tar.bz2'
+       $WGET $WGET_OPTIONS 'ftp://ftp.gnupg.org/gcrypt/libgpg-error/libgpg-error-1.7.tar.bz2'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xjf libgpg-error-1.7.tar.bz2
      fi
      if test ! -f libgcrypt-1.4.4.tar.bz2; then
-       $WGET 'ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.4.4.tar.bz2'
+       $WGET $WGET_OPTIONS 'ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.4.4.tar.bz2'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xjf libgcrypt-1.4.4.tar.bz2
@@ -333,10 +334,10 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f ftplib-3.1-src.tar.gz; then
-       $WGET 'http://www.nbpfaus.net/~pfau/ftplib/ftplib-3.1-src.tar.gz'
+       $WGET $WGET_OPTIONS 'http://www.nbpfaus.net/~pfau/ftplib/ftplib-3.1-src.tar.gz'
      fi
      if test ! -f ftplib-3.1-1.patch; then
-       $WGET 'http://nbpfaus.net/~pfau/ftplib/ftplib-3.1-1.patch'
+       $WGET $WGET_OPTIONS 'http://nbpfaus.net/~pfau/ftplib/ftplib-3.1-1.patch'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf ftplib-3.1-src.tar.gz
@@ -357,7 +358,7 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f openssl-1.0.1c.tar.gz; then
-       $WGET 'http://www.openssl.org/source/openssl-1.0.1c.tar.gz'
+       $WGET $WGET_OPTIONS 'http://www.openssl.org/source/openssl-1.0.1c.tar.gz'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf openssl-1.0.1c.tar.gz
@@ -377,7 +378,7 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f libssh2-1.4.2.tar.gz; then
-       $WGET 'http://www.libssh2.org/download/libssh2-1.4.2.tar.gz'
+       $WGET $WGET_OPTIONS 'http://www.libssh2.org/download/libssh2-1.4.2.tar.gz'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf libssh2-1.4.2.tar.gz
@@ -397,7 +398,7 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f gnutls-2.10.2.tar.bz2; then
-       $WGET 'ftp://ftp.gnu.org/pub/gnu/gnutls/gnutls-2.10.2.tar.bz2'
+       $WGET $WGET_OPTIONS 'ftp://ftp.gnu.org/pub/gnu/gnutls/gnutls-2.10.2.tar.bz2'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xjf gnutls-2.10.2.tar.bz2
@@ -418,7 +419,7 @@ if test $cleanFlag -eq 0; then
      fi
 
      if test ! -f libcdio-0.82.tar.gz; then
-       $WGET 'ftp://ftp.gnu.org/gnu/libcdio/libcdio-0.82.tar.gz'
+       $WGET $WGET_OPTIONS 'ftp://ftp.gnu.org/gnu/libcdio/libcdio-0.82.tar.gz'
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xzf libcdio-0.82.tar.gz
@@ -438,7 +439,10 @@ if test $cleanFlag -eq 0; then
        cd $tmpDirectory
      fi
      if test ! -f epm-4.1-source.tar.bz2; then
-       $WGET 'http://ftp.easysw.com/pub/epm/4.1/epm-4.1-source.tar.bz2'
+       $WGET $WGET_OPTIONS 'http://ftp.easysw.com/pub/epm/4.1/epm-4.1-source.tar.bz2'
+       if test $? -ne 0; then
+         exit $?
+       fi
      fi
      if test $noDecompressFlag -eq 0; then
        $TAR xjf epm-4.1-source.tar.bz2
