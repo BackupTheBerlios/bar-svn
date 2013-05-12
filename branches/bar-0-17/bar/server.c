@@ -7921,10 +7921,11 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
   const char* MAP_TEXT[] = {"\\n","\\r","\\\\"};
 
   bool                checkedStorageOnlyFlag;
-  ulong               entryMaxCount;
+  uint                entryMaxCount;
   bool                newestEntriesOnlyFlag;
   String              string;
   String              pattern;
+  uint                entryCount;
   IndexList           indexList;
   IndexNode           *indexNode;
   String              regexpString;
@@ -7958,7 +7959,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected max. number of entries to send");
     return;
   }
-  entryMaxCount = String_toInteger64(arguments[1],STRING_BEGIN,NULL,NULL,0);
+  entryMaxCount = String_toInteger(arguments[1],STRING_BEGIN,NULL,NULL,0);
   if (argumentCount < 3)
   {
     sendClientResult(clientInfo,id,TRUE,ERROR_EXPECTED_PARAMETER,"expected newest entries only flag");
@@ -7976,6 +7977,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
   {
     // initialise variables
     pattern      = String_mapCString(String_duplicate(string),STRING_BEGIN,MAP_TEXT,MAP_BIN,SIZE_OF_ARRAY(MAP_TEXT));
+    entryCount   = 0;
     List_init(&indexList);
     regexpString = String_new();
     storageName  = String_new();
@@ -7985,7 +7987,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
     string3      = String_new();
 
     // collect index data
-    if ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+    if ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
     {
       if (checkedStorageOnlyFlag)
       {
@@ -8015,7 +8017,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         String_delete(pattern);
         return;
       }
-      while (   ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+      while (   ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
              && !commandAborted(clientInfo,id)
              && Index_getNextFile(&databaseQueryHandle,
                                   &storageId,
@@ -8041,6 +8043,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
           if (indexNode == NULL)
           {
             indexNode = newIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_FILE,storageName,name,timeModified);
+            entryCount++;
           }
           if (indexNode == NULL) break;
 
@@ -8061,12 +8064,13 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         else
         {
           SEND_FILE_ENTRY(storageName,storageDateTime,name,size,timeModified,userId,groupId,permission,fragmentOffset,fragmentSize);
+          entryCount++;
         }
       }
       Index_doneList(&databaseQueryHandle);
     }
 
-    if ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+    if ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
     {
       if (checkedStorageOnlyFlag)
       {
@@ -8096,7 +8100,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         String_delete(pattern);
         return;
       }
-      while (   ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+      while (   ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
              && !commandAborted(clientInfo,id)
              && Index_getNextImage(&databaseQueryHandle,
                                    &storageId,
@@ -8118,6 +8122,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
           if (indexNode == NULL)
           {
             indexNode = newIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_IMAGE,storageName,name,timeModified);
+            entryCount++;
           }
           if (indexNode == NULL) break;
 
@@ -8135,12 +8140,13 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         else
         {
           SEND_IMAGE_ENTRY(storageName,storageDateTime,name,size,blockOffset,blockCount);
+          entryCount++;
         }
       }
       Index_doneList(&databaseQueryHandle);
     }
 
-    if ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+    if ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
     {
       if (checkedStorageOnlyFlag)
       {
@@ -8170,7 +8176,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         String_delete(pattern);
         return;
       }
-      while (   ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+      while (   ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
              && !commandAborted(clientInfo,id)
              && Index_getNextDirectory(&databaseQueryHandle,
                                        &storageId,
@@ -8193,6 +8199,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
           if (indexNode == NULL)
           {
             indexNode = newIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_DIRECTORY,storageName,name,timeModified);
+            entryCount++;
           }
           if (indexNode == NULL) break;
 
@@ -8210,12 +8217,13 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         else
         {
           SEND_DIRECTORY_ENTRY(storageName,storageDateTime,name,timeModified,userId,groupId,permission);
+          entryCount++;
         }
       }
       Index_doneList(&databaseQueryHandle);
     }
 
-    if ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+    if ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
     {
       if (checkedStorageOnlyFlag)
       {
@@ -8246,7 +8254,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         return;
       }
       destinationName = String_new();
-      while (   ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+      while (   ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
              && !commandAborted(clientInfo,id)
              && Index_getNextLink(&databaseQueryHandle,
                                   &storageId,
@@ -8270,6 +8278,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
           if (indexNode == NULL)
           {
             indexNode = newIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_LINK,storageName,name,timeModified);
+            entryCount++;
           }
           if (indexNode == NULL) break;
 
@@ -8288,13 +8297,14 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         else
         {
           SEND_LINK_ENTRY(storageName,storageDateTime,name,destinationName,timeModified,userId,groupId,permission);
+          entryCount++;
         }
       }
       Index_doneList(&databaseQueryHandle);
       String_delete(destinationName);
     }
 
-    if ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+    if ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
     {
       if (checkedStorageOnlyFlag)
       {
@@ -8325,7 +8335,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         return;
       }
       destinationName = String_new();
-      while (   ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+      while (   ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
              && !commandAborted(clientInfo,id)
              && Index_getNextHardLink(&databaseQueryHandle,
                                       &storageId,
@@ -8351,6 +8361,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
           if (indexNode == NULL)
           {
             indexNode = newIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_HARDLINK,storageName,name,timeModified);
+            entryCount++;
           }
           if (indexNode == NULL) break;
 
@@ -8371,13 +8382,14 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         else
         {
           SEND_HARDLINK_ENTRY(storageName,storageDateTime,name,size,timeModified,userId,groupId,permission,fragmentOffset,fragmentSize);
+          entryCount++;
         }
       }
       Index_doneList(&databaseQueryHandle);
       String_delete(destinationName);
     }
 
-    if ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+    if ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
     {
       if (checkedStorageOnlyFlag)
       {
@@ -8407,7 +8419,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         String_delete(pattern);
         return;
       }
-      while (   ((entryMaxCount == 0L) || (List_count(&indexList) < entryMaxCount))
+      while (   ((entryMaxCount == 0L) || (entryCount < entryMaxCount))
              && !commandAborted(clientInfo,id)
              && Index_getNextSpecial(&databaseQueryHandle,
                                      &storageId,
@@ -8430,6 +8442,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
           if (indexNode == NULL)
           {
             indexNode = newIndexEntryNode(&indexList,ARCHIVE_ENTRY_TYPE_SPECIAL,storageName,name,timeModified);
+            entryCount++;
           }
           if (indexNode == NULL) break;
 
@@ -8447,6 +8460,7 @@ LOCAL void serverCommand_indexEntriesList(ClientInfo *clientInfo, uint id, const
         else
         {
           SEND_SPECIAL_ENTRY(storageName,storageDateTime,name,timeModified,userId,groupId,permission);
+          entryCount++;
         }
       }
       Index_doneList(&databaseQueryHandle);
